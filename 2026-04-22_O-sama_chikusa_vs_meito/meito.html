@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>名東区藤森1丁目｜O様レポート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="header">
+    <div class="header-top">
+      <div>
+        <div class="brand">Mahoroba Real Estate Strategy Office</div>
+        <div class="brand-sub">まほろば不動産戦略室</div>
+      </div>
+      <div class="meta">
+        <div>REPORT <strong>#MHR-O-2026-0422-B</strong></div>
+        <div>ISSUED <strong>2026.04.22</strong></div>
+      </div>
+    </div>
+    <h1 class="title">名東区藤森1丁目 土地</h1>
+    <div class="subtitle">— 上社駅徒歩15分 ／ 整形広地 165.00㎡ —</div>
+    <div class="client-line">For: <strong>O様ご家族</strong>　｜　<span style="color: var(--meito);">● 対抗物件</span></div>
+    <div class="nav-pills">
+      <a href="index.html" class="nav-pill">比較サマリー</a>
+      <a href="chikusa.html" class="nav-pill">① 千種区（本命）</a>
+      <a href="meito.html" class="nav-pill active">② 名東区（対抗）</a>
+    </div>
+  </header>
+
+  <!-- Shadow Coach 注意喚起 -->
+  <section>
+    <div class="alert-banner">
+      <strong>ご希望条件とのズレについて</strong>　／　これまでお伺いしてきたご希望条件に対し、本物件は「エリア」「駅距離」「予算」の3点でやや乖離があります。本レポートは判断材料としての提示であり、無理に推奨するものではありません。
+    </div>
+  </section>
+
+  <!-- L1: 素性 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">I.</span>
+      <h2>物件の素性</h2>
+      <span class="en">Property Facts</span>
+    </div>
+    <div class="fact-grid">
+      <div class="fact"><div class="fact-label">Location</div><div class="fact-value">名古屋市名東区藤森1丁目</div></div>
+      <div class="fact"><div class="fact-label">Price</div><div class="fact-value">4,980<span class="unit">万円</span></div></div>
+      <div class="fact"><div class="fact-label">Area</div><div class="fact-value">165.00<span class="unit">㎡</span> / 49.91<span class="unit">坪</span></div></div>
+      <div class="fact"><div class="fact-label">Unit Price</div><div class="fact-value">約99.8<span class="unit">万円/坪</span></div></div>
+      <div class="fact"><div class="fact-label">Station</div><div class="fact-value">東山線「上社」徒歩15分</div></div>
+      <div class="fact"><div class="fact-label">Road</div><div class="fact-value">南側道路（幅員約4.2m）</div></div>
+      <div class="fact"><div class="fact-label">Ratio</div><div class="fact-value">建蔽40% / 容積60%</div></div>
+      <div class="fact"><div class="fact-label">Category</div><div class="fact-value">宅地（更地）</div></div>
+    </div>
+  </section>
+
+  <!-- L2: スコア -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">II.</span>
+      <h2>物件の客観評価</h2>
+      <span class="en">Objective Score</span>
+    </div>
+    <div class="score-row">
+      <div class="score-card">
+        <div class="score-label">OBJECTIVE</div>
+        <div class="score-ja">物件そのものの評価</div>
+        <div><span class="score-value">72</span><span class="score-unit">/ 100</span></div>
+        <div class="score-bar"><div class="score-bar-fill" style="width: 72%"></div></div>
+      </div>
+      <div class="score-card primary" style="background: var(--meito);">
+        <div class="score-label">MATCHING</div>
+        <div class="score-ja">O様ご家族との適合度</div>
+        <div><span class="score-value" id="matchScore">—</span><span class="score-unit">/ 100</span></div>
+        <div class="score-bar"><div class="score-bar-fill" id="matchBar" style="width: 0%"></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L3: マッチングレーダー -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">III.</span>
+      <h2>O様ご家族とのマッチング</h2>
+      <span class="en">Matching Radar</span>
+    </div>
+    <div class="radar-wrap">
+      <div class="radar-grid">
+        <div class="radar-canvas-box">
+          <canvas id="radar"></canvas>
+        </div>
+        <div class="sliders" id="sliders">
+          <div style="font-size: 11px; color: var(--sumi); margin-bottom: 8px; font-family: 'Shippori Mincho', serif;">
+            ▼ 重要度を動かすと再計算されます
+          </div>
+          <div class="slider-mode-hint">スライダーを動かすと再計算されます</div>
+          <button class="reset-btn" onclick="resetWeights()">Reset to Initial</button>
+        </div>
+      </div>
+      <div class="axis-legend">
+        <div class="legend-item"><div class="legend-swatch weight"></div>ご家族の重要度（外枠）</div>
+        <div class="legend-item"><div class="legend-swatch meito"></div>名東区のスコア（内塗り）</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L3.5: 所見 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">IV.</span>
+      <h2>総合所見</h2>
+      <span class="en">Commentary</span>
+    </div>
+    <div class="commentary warn">
+      <p><strong>優位点：土地面積165㎡（49.91坪）という広さ</strong></p>
+      <p>ご希望の45〜50坪の上限に位置する整形地であり、38坪2階建てのプランニングに対して庭・駐車スペース・採光の全てで余裕が生まれます。南側道路で採光条件も良好。郊外住宅地としての静けさもあります。建築の自由度という観点では本物件が上回る点があります。</p>
+
+      <p><strong>ご希望条件とのズレ（3点）</strong></p>
+      <ul class="bullets">
+        <li><strong>エリア</strong>：これまで「本郷・上社方面は希望外」とお聞きしていました。本物件は上社駅が最寄りのため、この前提と合致しません。</li>
+        <li><strong>駅距離</strong>：奥様のご希望「徒歩10分圏内」に対し徒歩15分。ご主人の通勤は車のため影響は限定的ですが、将来的な資産性・ご家族の生活感覚への影響を考慮する必要があります。</li>
+        <li><strong>予算</strong>：土地4,500万円基準に対し4,980万円（+約480万円）。総予算（建物38坪＋諸費用）との合算でローン計画の再調整が必要です。</li>
+      </ul>
+
+      <p><strong>補足確認事項</strong></p>
+      <ul class="bullets">
+        <li>幅員4.2mの前面道路 → セットバックの要否確認</li>
+        <li>私道負担の有無・持分の状況</li>
+        <li>神丘中学校区外の可能性 → 学区確認必須</li>
+        <li>ハザードマップ（名東区は高台中心だが藤森1丁目エリア要確認）</li>
+      </ul>
+
+      <p style="margin-top: 14px;"><strong>総括：</strong>「広さを絶対条件に取り直すなら」候補として残る物件です。ただし立地条件のズレが大きく、本命・千種区を優先して深掘りする方が、O様ご家族の当初のご希望により近い着地が見込めます。</p>
+    </div>
+  </section>
+
+  <!-- L4: 価格 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">V.</span>
+      <h2>価格相場感</h2>
+      <span class="en">Price Context</span>
+    </div>
+    <div class="price-block">
+      <div class="price-cell">
+        <div class="price-label">BUDGET</div>
+        <div class="price-value">4,500<span class="yen">万円</span></div>
+        <div class="price-ratio">O様の土地予算</div>
+      </div>
+      <div class="price-cell">
+        <div class="price-label">ASKING</div>
+        <div class="price-value">4,980<span class="yen">万円</span></div>
+        <div class="price-ratio">坪単価 99.8万円</div>
+      </div>
+      <div class="price-cell verdict">
+        <div class="price-label">VERDICT</div>
+        <div class="price-verdict-text warn">— 予算超 —</div>
+        <div class="price-ratio">+480万円（約+10.7%）</div>
+      </div>
+    </div>
+    <div style="font-size: 10px; color: var(--sumi); margin-top: 8px; font-style: italic;">
+      ※ 名東区藤森エリアの相場比較は別途調査いたします。
+    </div>
+  </section>
+
+  <footer>
+    <div class="brand-foot">まほろば不動産戦略室</div>
+    <div class="tag">— Co-create. Nurture. Celebrate. —</div>
+    <div class="disclaimer">
+      本レポートは物件検討のための参考資料です。ハザードマップ・法令制限・現地状況等は公的資料および現地確認をもって最終判断をお願いします。<br>
+      © 2026 株式会社まほろば ／ 担当：今西浩二
+    </div>
+  </footer>
+
+</div>
+
+<script src="shared.js"></script>
+<script>
+const meitoScores = {
+  commute: 2, edu: 3, life: 3, quiet: 4,
+  sunlight: 4, build: 5, safety: 4, cost: 2
+};
+
+const chart = buildRadarChart('radar', meitoScores, initialWeights, {
+  fill: 'rgba(122, 90, 44, 0.55)',
+  line: 'rgba(122, 90, 44, 1)'
+});
+
+function update() {
+  const w = {};
+  axes.forEach((a, i) => w[a.key] = chart.data.datasets[0].data[i]);
+  const score = calcMatchScore(w, meitoScores);
+  document.getElementById('matchScore').textContent = score;
+  document.getElementById('matchBar').style.width = score + '%';
+}
+
+initSliders('sliders', chart, meitoScores, update);
+function resetWeights() { resetAllSliders(chart, update); }
+update();
+</script>
+</body>
+</html>

@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>千種区東山元町4丁目｜Berita HIGASHIYAMA PARK Ⅱ｜O様レポート</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="header">
+    <div class="header-top">
+      <div>
+        <div class="brand">Mahoroba Real Estate Strategy Office</div>
+        <div class="brand-sub">まほろば不動産戦略室</div>
+      </div>
+      <div class="meta">
+        <div>REPORT <strong>#MHR-O-2026-0422-A</strong></div>
+        <div>ISSUED <strong>2026.04.22</strong></div>
+      </div>
+    </div>
+    <h1 class="title">Berita HIGASHIYAMA PARK Ⅱ</h1>
+    <div class="subtitle">— 千種区東山元町4丁目 ／ 参考プラン予算計画付き分譲地 —</div>
+    <div class="client-line">For: <strong>O様ご家族</strong>　｜　<span style="color: var(--chikusa);">● 本命物件</span></div>
+    <div class="nav-pills">
+      <a href="index.html" class="nav-pill">比較サマリー</a>
+      <a href="chikusa.html" class="nav-pill active">① 千種区（本命）</a>
+      <a href="meito.html" class="nav-pill">② 名東区（対抗）</a>
+    </div>
+  </header>
+
+  <!-- L1: 素性 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">I.</span>
+      <h2>物件の素性</h2>
+      <span class="en">Property Facts</span>
+    </div>
+    <div class="fact-grid">
+      <div class="fact"><div class="fact-label">Location</div><div class="fact-value">名古屋市千種区東山元町4丁目</div></div>
+      <div class="fact"><div class="fact-label">Name</div><div class="fact-value">Berita HIGASHIYAMA PARK Ⅱ</div></div>
+      <div class="fact"><div class="fact-label">Layout</div><div class="fact-value">A区画・B区画 の2区画分譲</div></div>
+      <div class="fact"><div class="fact-label">Plan</div><div class="fact-value">参考プラン予算計画あり</div></div>
+      <div class="fact"><div class="fact-label">Area (A)</div><div class="fact-value unconfirmed">要確認（SUUMO非開示部分）</div></div>
+      <div class="fact"><div class="fact-label">Price</div><div class="fact-value unconfirmed">要確認（SUUMO非開示部分）</div></div>
+      <div class="fact"><div class="fact-label">Station</div><div class="fact-value">東山線「東山公園」徒歩圏想定</div></div>
+      <div class="fact"><div class="fact-label">Neighborhood</div><div class="fact-value">東山小・東山中学校区</div></div>
+    </div>
+    <div style="font-size: 11px; color: var(--sumi); margin-top: 10px; font-style: italic;">
+      ※ SUUMO掲載画像からは面積・価格・接道の詳細が読み取れませんでした。売主側への追加確認を本日中に実施します。
+    </div>
+  </section>
+
+  <!-- L2: スコア -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">II.</span>
+      <h2>物件の客観評価</h2>
+      <span class="en">Objective Score</span>
+    </div>
+    <div class="score-row">
+      <div class="score-card">
+        <div class="score-label">OBJECTIVE</div>
+        <div class="score-ja">物件そのものの評価</div>
+        <div><span class="score-value">78</span><span class="score-unit">/ 100</span></div>
+        <div class="score-bar"><div class="score-bar-fill" style="width: 78%"></div></div>
+      </div>
+      <div class="score-card primary" style="background: var(--chikusa);">
+        <div class="score-label">MATCHING</div>
+        <div class="score-ja">O様ご家族との適合度</div>
+        <div><span class="score-value" id="matchScore">—</span><span class="score-unit">/ 100</span></div>
+        <div class="score-bar"><div class="score-bar-fill" id="matchBar" style="width: 0%"></div></div>
+      </div>
+    </div>
+    <div style="font-size: 11px; color: var(--sumi); margin-top: 10px; font-style: italic; text-align: center;">
+      ※ 物件情報に非開示部分があるため、スコアは一部推定値を含みます。確定情報入手後に再計算します。
+    </div>
+  </section>
+
+  <!-- L3: マッチングレーダー -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">III.</span>
+      <h2>O様ご家族とのマッチング</h2>
+      <span class="en">Matching Radar</span>
+    </div>
+    <div class="radar-wrap">
+      <div class="radar-grid">
+        <div class="radar-canvas-box">
+          <canvas id="radar"></canvas>
+        </div>
+        <div class="sliders" id="sliders">
+          <div style="font-size: 11px; color: var(--sumi); margin-bottom: 8px; font-family: 'Shippori Mincho', serif;">
+            ▼ 重要度を動かすと再計算されます
+          </div>
+          <div class="slider-mode-hint">スライダーを動かすと再計算されます</div>
+          <button class="reset-btn" onclick="resetWeights()">Reset to Initial</button>
+        </div>
+      </div>
+      <div class="axis-legend">
+        <div class="legend-item"><div class="legend-swatch weight"></div>ご家族の重要度（外枠）</div>
+        <div class="legend-item"><div class="legend-swatch chikusa"></div>千種区のスコア（内塗り）</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- L3.5: 所見 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">IV.</span>
+      <h2>総合所見</h2>
+      <span class="en">Commentary</span>
+    </div>
+    <div class="commentary">
+      <p><strong>この物件がO様ご家族にお勧めできる理由は、<em>「暮らしの連続性」と「条件適合度」の両立</em>にあります。</strong></p>
+      <p>現住所（千種区唐山町）からの生活圏延長線上にあり、東山動物園・東山公園という名古屋屈指の文教エリアに位置します。東山小・東山中学校区を射程に入れることで、お子様2人（6歳女の子・4歳男の子）の学校環境という長期課題に対する早期着地が可能です。</p>
+      <p>ご夫婦（岡崎市民病院・日進西病院）とも車通勤のため、東山線南側エリアの道路網アクセスは好条件。奥様のご希望「駅徒歩10分圏内」についても、東山公園駅周辺であれば射程内です。</p>
+
+      <p><strong>確認・注意事項</strong></p>
+      <ul class="bullets">
+        <li><strong>日当たり</strong>：A区画・B区画それぞれの採光時間帯を現地で確認（ご希望「日当たり重視」の核心）</li>
+        <li><strong>ハザード</strong>：千種区東山エリアは台地上で比較的安全ですが、詳細は今西が市ハザードマップで確認</li>
+        <li><strong>高低差</strong>：東山公園エリアは坂が多いため、区画内・前面道路の高低差確認必須（ご希望「高低差少ないこと」）</li>
+        <li><strong>参考プラン</strong>：建物38坪2階建て希望に対し、参考プランの仕様・総額を精査</li>
+      </ul>
+
+      <p style="margin-top: 14px;"><strong>次のアクション：</strong>現地同行（採光時間帯を踏まえた朝・昼・夕の3回推奨）／ SUUMO非開示情報の売主確認 ／ 建物プラン総額試算</p>
+    </div>
+  </section>
+
+  <!-- L4: 価格 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">V.</span>
+      <h2>価格相場感</h2>
+      <span class="en">Price Context</span>
+    </div>
+    <div class="price-block">
+      <div class="price-cell">
+        <div class="price-label">AREA AVG</div>
+        <div class="price-value unconfirmed" style="color: var(--sumi); font-style: italic;">要調査</div>
+        <div class="price-ratio">東山元町4丁目エリア相場</div>
+      </div>
+      <div class="price-cell">
+        <div class="price-label">ASKING</div>
+        <div class="price-value unconfirmed" style="color: var(--sumi); font-style: italic;">要確認</div>
+        <div class="price-ratio">売主情報待ち</div>
+      </div>
+      <div class="price-cell verdict">
+        <div class="price-label">VERDICT</div>
+        <div class="price-verdict-text" style="color: var(--sumi);">— 保留 —</div>
+        <div class="price-ratio">情報入手後に判定</div>
+      </div>
+    </div>
+    <div style="font-size: 10px; color: var(--sumi); margin-top: 8px; font-style: italic;">
+      ※ SUUMO掲載画像から価格が読み取れませんでした。本日中に売主側へ情報請求し、更新版を発行予定です。
+    </div>
+  </section>
+
+  <footer>
+    <div class="brand-foot">まほろば不動産戦略室</div>
+    <div class="tag">— Co-create. Nurture. Celebrate. —</div>
+    <div class="disclaimer">
+      本レポートは物件検討のための参考資料です。ハザードマップ・法令制限・現地状況等は公的資料および現地確認をもって最終判断をお願いします。<br>
+      © 2026 株式会社まほろば ／ 担当：今西浩二
+    </div>
+  </footer>
+
+</div>
+
+<script src="shared.js"></script>
+<script>
+const chikusaScores = {
+  commute: 4, edu: 5, life: 5, quiet: 4,
+  sunlight: 4, build: 4, safety: 4, cost: 3
+};
+
+const chart = buildRadarChart('radar', chikusaScores, initialWeights, {
+  fill: 'rgba(44, 95, 122, 0.65)',
+  line: 'rgba(44, 95, 122, 1)'
+});
+
+function update() {
+  const w = {};
+  axes.forEach((a, i) => w[a.key] = chart.data.datasets[0].data[i]);
+  const score = calcMatchScore(w, chikusaScores);
+  document.getElementById('matchScore').textContent = score;
+  document.getElementById('matchBar').style.width = score + '%';
+}
+
+initSliders('sliders', chart, chikusaScores, update);
+function resetWeights() { resetAllSliders(chart, update); }
+update();
+</script>
+</body>
+</html>

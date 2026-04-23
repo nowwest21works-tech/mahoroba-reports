@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>物件比較レポート｜O様ご家族｜千種区 vs 名東区</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@400;500;600;700;800&family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+<div class="sheet">
+
+  <header class="header">
+    <div class="header-top">
+      <div>
+        <div class="brand">Mahoroba Real Estate Strategy Office</div>
+        <div class="brand-sub">まほろば不動産戦略室</div>
+      </div>
+      <div class="meta">
+        <div>REPORT <strong>#MHR-O-2026-0422</strong></div>
+        <div>ISSUED <strong>2026.04.22</strong></div>
+      </div>
+    </div>
+    <h1 class="title">2物件比較レポート</h1>
+    <div class="subtitle">— Chikusa vs Meito : A Comparative Property Review —</div>
+    <div class="client-line">For: <strong>O様ご家族</strong>（ご夫婦とも勤務医／お子様2名）</div>
+    <div class="nav-pills">
+      <a href="index.html" class="nav-pill active">比較サマリー</a>
+      <a href="chikusa.html" class="nav-pill">① 千種区（本命）</a>
+      <a href="meito.html" class="nav-pill">② 名東区（対抗）</a>
+    </div>
+  </header>
+
+  <!-- Shadow Coach所見 -->
+  <section>
+    <div class="alert-banner">
+      <strong>⚠️ 最初にお伝えすべきこと</strong>　／　O様にこれまで伺ってきたご希望条件（東山線南側・徒歩10分圏内・土地予算4,500万円前後）に照らすと、<strong>名東区藤森は立地条件で複数のズレ</strong>があります。本レポートでは事実を正直に開示した上で、改めて「本命・千種区」の適合度をご確認いただく構成としています。
+    </div>
+  </section>
+
+  <!-- 比較カード -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">I.</span>
+      <h2>物件の概要比較</h2>
+      <span class="en">At a Glance</span>
+    </div>
+    <div class="comparison-card">
+      <div class="comparison-col chikusa-col">
+        <div class="property-badge honmei">① 本命 Honmei</div>
+        <div class="comparison-name">Berita HIGASHIYAMA PARK Ⅱ</div>
+        <div class="comparison-addr">名古屋市千種区東山元町4丁目</div>
+        <div style="font-size: 12px; color: var(--ink-soft); line-height: 1.8;">
+          参考プラン予算計画付き<br>
+          A・B 2区画ある分譲地<br>
+          東山公園エリア・教育環境良好
+        </div>
+        <a href="chikusa.html" class="detail-link">詳細を見る →</a>
+      </div>
+      <div class="comparison-divider">vs.</div>
+      <div class="comparison-col meito-col">
+        <div class="property-badge taikou">② 対抗 Taikou</div>
+        <div class="comparison-name">名東区藤森1丁目 土地</div>
+        <div class="comparison-addr">名古屋市名東区藤森1丁目</div>
+        <div style="font-size: 12px; color: var(--ink-soft); line-height: 1.8;">
+          価格 4,980万円／165.00㎡（49.91坪）<br>
+          上社駅 徒歩15分／南側道路<br>
+          建蔽40-60%
+        </div>
+        <a href="meito.html" class="detail-link">詳細を見る →</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- マッチスコア比較 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">II.</span>
+      <h2>マッチングスコア比較</h2>
+      <span class="en">Matching Score</span>
+    </div>
+    <div class="score-row">
+      <div class="score-card primary" style="background: var(--chikusa);">
+        <div class="score-label">① CHIKUSA</div>
+        <div class="score-ja">千種区・本命物件</div>
+        <div><span class="score-value" id="chikusaScore">—</span><span class="score-unit">/ 100</span></div>
+        <div class="score-bar"><div class="score-bar-fill" id="chikusaBar" style="width: 0%"></div></div>
+      </div>
+      <div class="score-card" style="border-top: 2px solid var(--meito);">
+        <div class="score-label">② MEITO</div>
+        <div class="score-ja">名東区・対抗物件</div>
+        <div><span class="score-value" id="meitoScore" style="color: var(--meito);">—</span><span class="score-unit">/ 100</span></div>
+        <div class="score-bar"><div class="score-bar-fill" id="meitoBar" style="width: 0%; background: var(--meito);"></div></div>
+      </div>
+    </div>
+    <div style="font-size: 11px; color: var(--sumi); margin-top: 10px; font-style: italic; text-align: center;">
+      ※ マッチングスコアはO様ご家族の優先順位（日当たり重視・ハザード懸念・教育環境・駅近）に基づく相対評価です
+    </div>
+  </section>
+
+  <!-- 重ね合わせレーダー -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">III.</span>
+      <h2>8軸マッチングの重ね合わせ</h2>
+      <span class="en">Overlay Radar</span>
+    </div>
+    <div class="radar-wrap">
+      <div class="radar-grid">
+        <div class="radar-canvas-box">
+          <canvas id="compareRadar"></canvas>
+        </div>
+        <div class="sliders" id="compareSliders">
+          <div style="font-size: 11px; color: var(--sumi); margin-bottom: 8px; font-family: 'Shippori Mincho', serif;">
+            ▼ O様ご家族の重要度を動かすと、両物件のスコアが同時に再計算されます
+          </div>
+          <div class="slider-mode-hint">スライダーで比較基準を調整</div>
+          <button class="reset-btn" onclick="resetAllWeights()">Reset to Initial</button>
+        </div>
+      </div>
+      <div class="axis-legend">
+        <div class="legend-item"><div class="legend-swatch weight"></div>ご家族の重要度</div>
+        <div class="legend-item"><div class="legend-swatch chikusa"></div>千種区</div>
+        <div class="legend-item"><div class="legend-swatch meito"></div>名東区</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 総合所見 -->
+  <section>
+    <div class="section-head">
+      <span class="section-num">IV.</span>
+      <h2>プロからの総合所見</h2>
+      <span class="en">Strategist's Commentary</span>
+    </div>
+    <div class="commentary">
+      <p><strong>結論：本命・千種区を軸に進めることをおすすめします。</strong></p>
+      <p>千種区東山元町4丁目は、O様ご家族の現住所（唐山町）の生活圏の延長であり、東山小・東山中学校区を射程に入れた選択となります。以前より気にされていた「日当たり」「ハザード懸念の低さ」「駅近」との親和性が高く、ご夫婦の通勤（車）にも対応しやすい立地です。</p>
+
+      <p><strong>名東区藤森について、正直にお伝えします。</strong></p>
+      <ul class="bullets">
+        <li><strong>エリア適合</strong>：これまで伺ってきたご希望では「本郷・上社方面は希望外」とお聞きしています。本物件は上社駅徒歩15分で、このラインに該当します。</li>
+        <li><strong>駅距離</strong>：奥様のご希望「徒歩10分圏内」を超える徒歩15分です。</li>
+        <li><strong>予算</strong>：土地予算4,500万円前後に対し4,980万円（+約480万円）。建物38坪2階建てと合算すると、総予算のバランス調整が必要です。</li>
+        <li><strong>優位点もあります</strong>：165㎡（49.91坪）という土地の広さは希望値45〜50坪の上限に位置し、2階建てのプランニングは余裕が生まれます。静けさ・環境面は郊外住宅地として良好。</li>
+      </ul>
+
+      <p style="margin-top: 14px;"><strong>次にご提案したいアクション：</strong></p>
+      <ul class="bullets">
+        <li>千種区物件（本命）の現地同行・採光時間帯確認・参考プラン詳細ヒアリング</li>
+        <li>千種区の価格・面積が非開示部分あり → 売主側に追加情報請求</li>
+        <li>名東区は「広さを取るなら」という選択肢として保留扱い。無理に比較検討せず、条件により合致する千種区を掘り下げる方が早道です</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>
+    <div class="brand-foot">まほろば不動産戦略室</div>
+    <div class="tag">— Co-create. Nurture. Celebrate. —</div>
+    <div class="disclaimer">
+      本レポートは物件検討のための参考資料です。ハザードマップ・法令制限・現地状況等は公的資料および現地確認をもって最終判断をお願いします。<br>
+      © 2026 株式会社まほろば ／ 担当：今西浩二
+    </div>
+  </footer>
+
+</div>
+
+<script src="shared.js"></script>
+<script>
+// 千種区スコア（推定・要現地確認項目あり）
+const chikusaScores = {
+  commute: 4,   // 東山線東山公園駅エリア・駅近可能性、車通勤も道路網良好
+  edu: 5,       // 東山小・東山中学校区、神丘中学校区候補
+  life: 5,      // 東山動物園・千種区の商業集積
+  quiet: 4,     // 住宅地、教育施設近隣
+  sunlight: 4,  // 要現地確認（区画により変動）
+  build: 4,     // A/B 2区画あり参考プラン付き
+  safety: 4,    // 要ハザード確認（千種区東山は台地上で比較的安全エリア）
+  cost: 3       // 千種区相場相応・東山元町は人気エリア
+};
+
+// 名東区スコア（同上）
+const meitoScores = {
+  commute: 2,   // 上社徒歩15分・希望エリア外
+  edu: 3,       // 神丘中学校区ではない可能性大
+  life: 3,      // 郊外
+  quiet: 4,     // 郊外住宅地・静けさ良好
+  sunlight: 4,  // 165㎡の広さで採光確保しやすい・南側道路
+  build: 5,     // 49.91坪は広さ十分・注文住宅の自由度高
+  safety: 4,    // 要ハザード確認（名東区は高台中心）
+  cost: 2       // 予算オーバー・希望外エリアで高め
+};
+
+let currentWeights = {...initialWeights};
+
+const compareCtx = document.getElementById('compareRadar').getContext('2d');
+const compareChart = new Chart(compareCtx, {
+  type: 'radar',
+  data: {
+    labels: axes.map(a => a.label),
+    datasets: [
+      {
+        label: 'ご家族の重要度',
+        data: axes.map(a => currentWeights[a.key]),
+        backgroundColor: 'rgba(239, 234, 224, 0.85)',
+        borderColor: 'rgba(139, 135, 133, 0.6)',
+        borderWidth: 1,
+        borderDash: [3, 3],
+        pointRadius: 0,
+        order: 3
+      },
+      {
+        label: '千種区',
+        data: axes.map(a => chikusaScores[a.key]),
+        backgroundColor: 'rgba(44, 95, 122, 0.55)',
+        borderColor: 'rgba(44, 95, 122, 1)',
+        borderWidth: 2,
+        pointBackgroundColor: '#2C5F7A',
+        pointBorderColor: '#F7F4EC',
+        pointBorderWidth: 2,
+        pointRadius: 4,
+        order: 1
+      },
+      {
+        label: '名東区',
+        data: axes.map(a => meitoScores[a.key]),
+        backgroundColor: 'rgba(122, 90, 44, 0.3)',
+        borderColor: 'rgba(122, 90, 44, 0.9)',
+        borderWidth: 2,
+        borderDash: [5, 3],
+        pointBackgroundColor: '#7A5A2C',
+        pointBorderColor: '#F7F4EC',
+        pointBorderWidth: 2,
+        pointRadius: 3,
+        order: 2
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    plugins: { legend: { display: false } },
+    scales: {
+      r: {
+        min: 0, max: 5,
+        ticks: { stepSize: 1, display: false, backdropColor: 'transparent' },
+        grid: { color: 'rgba(139, 135, 133, 0.2)' },
+        angleLines: { color: 'rgba(139, 135, 133, 0.25)' },
+        pointLabels: {
+          font: { family: 'Shippori Mincho, serif', size: 12, weight: '500' },
+          color: '#3D3832'
+        }
+      }
+    },
+    animation: { duration: 600, easing: 'easeOutQuart' }
+  }
+});
+
+function updateCompareScores() {
+  const ch = calcMatchScore(currentWeights, chikusaScores);
+  const me = calcMatchScore(currentWeights, meitoScores);
+  document.getElementById('chikusaScore').textContent = ch;
+  document.getElementById('meitoScore').textContent = me;
+  document.getElementById('chikusaBar').style.width = ch + '%';
+  document.getElementById('meitoBar').style.width = me + '%';
+}
+
+// スライダー生成
+const slidersContainer = document.getElementById('compareSliders');
+const hint = slidersContainer.querySelector('.slider-mode-hint');
+axes.forEach((a, i) => {
+  const row = document.createElement('div');
+  row.className = 'slider-row';
+  row.innerHTML = `
+    <div class="slider-head">
+      <span class="slider-name">${a.label}</span>
+      <span class="slider-val" id="val-${a.key}">${initialWeights[a.key]}</span>
+    </div>
+    <input type="range" min="1" max="5" step="1" value="${initialWeights[a.key]}" id="slider-${a.key}">
+  `;
+  slidersContainer.insertBefore(row, hint);
+  row.querySelector('input').addEventListener('input', (e) => {
+    const v = parseInt(e.target.value);
+    currentWeights[a.key] = v;
+    document.getElementById(`val-${a.key}`).textContent = v;
+    compareChart.data.datasets[0].data[i] = v;
+    compareChart.update('none');
+    updateCompareScores();
+  });
+});
+
+function resetAllWeights() {
+  currentWeights = {...initialWeights};
+  axes.forEach((a, i) => {
+    document.getElementById(`slider-${a.key}`).value = initialWeights[a.key];
+    document.getElementById(`val-${a.key}`).textContent = initialWeights[a.key];
+    compareChart.data.datasets[0].data[i] = initialWeights[a.key];
+  });
+  compareChart.update();
+  updateCompareScores();
+}
+
+updateCompareScores();
+</script>
+</body>
+</html>
