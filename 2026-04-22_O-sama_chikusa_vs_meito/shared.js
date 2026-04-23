@@ -1,4 +1,4 @@
-// ===== Shared Report Logic =====
+// ===== Shared Report Logic (v0.2 - Notion物件選定DB反映) =====
 const axes = [
   { key: 'commute',  label: '通勤・移動' },
   { key: 'edu',      label: '子育て・教育' },
@@ -10,17 +10,10 @@ const axes = [
   { key: 'cost',     label: 'コスパ' }
 ];
 
-// O様の重要度配分（Notion顧客DB＋Shadow Coach分析より導出）
-// 日当たり重視・ハザード懸念・神丘中学校区・奥様駅近希望
+// O様ご家族の重要度（Notion顧客DB・Shadow Coach分析より）
 const initialWeights = {
-  commute: 4,   // 車通勤メインだが奥様駅近希望
-  edu: 5,       // 神丘中学校区・小学生＋年中
-  life: 4,      // 共働き医師家庭の時短
-  quiet: 4,     // ご主人環境優位
-  sunlight: 5,  // 明記「日当たり重視」
-  build: 4,     // 注文住宅志向・38坪2F建て
-  safety: 5,    // 明記「ハザード懸念少ないこと」
-  cost: 3       // 医者夫婦・価値相応判断
+  commute: 5, edu: 5, life: 4, quiet: 4,
+  sunlight: 5, build: 4, safety: 5, cost: 4
 };
 
 function buildRadarChart(canvasId, objectiveScores, weights, propertyColor) {
@@ -31,7 +24,7 @@ function buildRadarChart(canvasId, objectiveScores, weights, propertyColor) {
       labels: axes.map(a => a.label),
       datasets: [
         {
-          label: '奥様・ご主人の重要度',
+          label: 'ご家族の重要度',
           data: axes.map(a => weights[a.key]),
           backgroundColor: 'rgba(239, 234, 224, 0.85)',
           borderColor: 'rgba(139, 135, 133, 0.6)',
