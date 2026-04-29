@@ -246,6 +246,46 @@
   }
   details summary:hover { color: var(--accent); }
   details[open] summary { color: var(--ink); }
+
+  /* ========== ハザードマップ ========== */
+  .hazard-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+  .hazard-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px;
+    background: white; border: 1px solid var(--line);
+    border-radius: 2px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 12px;
+  }
+  .hazard-row:hover { border-color: var(--ink); }
+  .hazard-row input[type="checkbox"] {
+    width: 16px; height: 16px;
+    accent-color: var(--accent);
+    cursor: pointer;
+  }
+  .hazard-row .hazard-color {
+    width: 12px; height: 12px; border-radius: 2px; flex-shrink: 0;
+    border: 1px solid rgba(0,0,0,0.15);
+  }
+  .hazard-row .hazard-name { flex: 1; font-weight: 500; }
+  .hazard-row .hazard-tag { font-size: 10px; color: var(--ink-soft); letter-spacing: 0.05em; }
+
+  .opacity-control {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: rgba(200, 68, 58, 0.04);
+    border-left: 2px solid var(--accent);
+    margin-top: 4px;
+  }
+  .opacity-control label { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.05em; flex-shrink: 0; }
+  .opacity-control input[type="range"] {
+    flex: 1; accent-color: var(--accent);
+  }
+  .opacity-control .opacity-val {
+    font-size: 11px; font-family: 'Shippori Mincho', serif;
+    width: 32px; text-align: right;
+  }
 </style>
 </head>
 <body>
@@ -295,6 +335,45 @@
       <div class="color-swatch" data-color="#1a1a1a" style="background:#1a1a1a"></div>
     </div>
     <input type="text" id="label-input" placeholder="ラベル（例：最寄り駅 / 候補物件A）" />
+  </div>
+
+  <!-- ハザードマップ -->
+  <div class="section">
+    <h2>ハザード情報を重ねる</h2>
+    <div class="hazard-list" id="hazard-list">
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="flood" />
+        <span class="hazard-color" style="background:#4a90d9"></span>
+        <span class="hazard-name">洪水浸水想定区域</span>
+        <span class="hazard-tag">想定最大規模</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="landslide" />
+        <span class="hazard-color" style="background:#a06040"></span>
+        <span class="hazard-name">土砂災害警戒区域</span>
+        <span class="hazard-tag">土石流</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="hightide" />
+        <span class="hazard-color" style="background:#5fb6c4"></span>
+        <span class="hazard-name">高潮浸水想定区域</span>
+        <span class="hazard-tag">想定最大規模</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="tsunami" />
+        <span class="hazard-color" style="background:#9b6db5"></span>
+        <span class="hazard-name">津波浸水想定区域</span>
+        <span class="hazard-tag">最大クラス</span>
+      </label>
+    </div>
+    <div class="opacity-control">
+      <label>透明度</label>
+      <input type="range" id="hazard-opacity" min="10" max="100" value="60" />
+      <span class="opacity-val" id="hazard-opacity-val">60%</span>
+    </div>
+    <div class="hint" style="margin-top:8px">
+      出典：<strong>国土交通省 ハザードマップポータルサイト</strong>。AIが構造的に苦手な「土地の温度感」の最初の手がかり。必ず現地確認・自治体公表資料との突合をしてください。
+    </div>
   </div>
 
   <!-- 円リスト -->
@@ -508,6 +587,70 @@
   });
   document.getElementById('search-input').addEventListener('keydown', (e) => {
     if (e.key === 'Enter') searchAddress(document.getElementById('search-input').value);
+  });
+
+  // ========== ハザードマップ ==========
+  // 国交省ハザードマップポータルサイトの公開タイル
+  const HAZARD_TILES = {
+    flood: {
+      url: 'https://disaportaldata.gsi.go.jp/raster/01_flood_l2_shinsuishin_data/{z}/{x}/{y}.png',
+      attribution: '出典：<a href="https://disaportal.gsi.go.jp/" target="_blank">国土交通省 ハザードマップポータルサイト</a>',
+      maxZoom: 17, minZoom: 2
+    },
+    landslide: {
+      url: 'https://disaportaldata.gsi.go.jp/raster/05_dosekiryukeikaikuiki/{z}/{x}/{y}.png',
+      attribution: '出典：<a href="https://disaportal.gsi.go.jp/" target="_blank">国土交通省 ハザードマップポータルサイト</a>',
+      maxZoom: 17, minZoom: 2
+    },
+    hightide: {
+      url: 'https://disaportaldata.gsi.go.jp/raster/03_hightide_l2_shinsuishin_data/{z}/{x}/{y}.png',
+      attribution: '出典：<a href="https://disaportal.gsi.go.jp/" target="_blank">国土交通省 ハザードマップポータルサイト</a>',
+      maxZoom: 17, minZoom: 2
+    },
+    tsunami: {
+      url: 'https://disaportaldata.gsi.go.jp/raster/04_tsunami_newlegend_data/{z}/{x}/{y}.png',
+      attribution: '出典：<a href="https://disaportal.gsi.go.jp/" target="_blank">国土交通省 ハザードマップポータルサイト</a>',
+      maxZoom: 17, minZoom: 2
+    }
+  };
+  const hazardLayers = {}; // key -> L.tileLayer
+  let hazardOpacity = 0.6;
+
+  function toggleHazard(key, enabled) {
+    if (enabled) {
+      if (!hazardLayers[key]) {
+        const cfg = HAZARD_TILES[key];
+        hazardLayers[key] = L.tileLayer(cfg.url, {
+          attribution: cfg.attribution,
+          maxZoom: cfg.maxZoom,
+          minZoom: cfg.minZoom,
+          opacity: hazardOpacity
+        });
+      }
+      hazardLayers[key].addTo(map);
+      hazardLayers[key].setOpacity(hazardOpacity);
+    } else {
+      if (hazardLayers[key]) map.removeLayer(hazardLayers[key]);
+    }
+  }
+
+  document.querySelectorAll('.hazard-row input[type="checkbox"]').forEach(cb => {
+    cb.addEventListener('change', (e) => {
+      const key = cb.dataset.hazard;
+      toggleHazard(key, cb.checked);
+      const names = { flood: '洪水', landslide: '土砂', hightide: '高潮', tsunami: '津波' };
+      showStatus(`${names[key]}ハザード：${cb.checked ? 'ON' : 'OFF'}`);
+    });
+  });
+
+  const opacitySlider = document.getElementById('hazard-opacity');
+  const opacityVal = document.getElementById('hazard-opacity-val');
+  opacitySlider.addEventListener('input', () => {
+    hazardOpacity = opacitySlider.value / 100;
+    opacityVal.textContent = `${opacitySlider.value}%`;
+    Object.values(hazardLayers).forEach(layer => {
+      if (map.hasLayer(layer)) layer.setOpacity(hazardOpacity);
+    });
   });
 
   // ========== 全削除（2段階クリック方式：confirmに依存しない） ==========
