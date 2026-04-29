@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>まほろば｜マップ円描画ツール</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<style>
+  :root {
+    --bg: #f5f1eb;
+    --panel: #fafaf7;
+    --ink: #1a1a1a;
+    --ink-soft: #4a4a48;
+    --line: #d8d2c4;
+    --accent: #c8443a;
+    --accent-soft: #e8a89f;
+    --indigo: #2c3e50;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; font-family: 'Noto Sans JP', sans-serif; color: var(--ink); background: var(--bg); }
+  body { display: flex; overflow: hidden; }
+
+  /* ========== サイドパネル ========== */
+  #panel {
+    width: 360px;
+    height: 100vh;
+    background: var(--panel);
+    border-right: 1px solid var(--line);
+    overflow-y: auto;
+    flex-shrink: 0;
+    transition: margin-left 0.3s ease;
+  }
+  #panel.collapsed { margin-left: -360px; }
+
+  .panel-header {
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(to bottom, #fafaf7, #f5f1eb);
+  }
+  .panel-header h1 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+  .panel-header h1 .accent { color: var(--accent); }
+  .panel-header .subtitle {
+    font-size: 11px;
+    color: var(--ink-soft);
+    letter-spacing: 0.15em;
+  }
+
+  .section { padding: 18px 24px; border-bottom: 1px solid var(--line); }
+  .section h2 {
+    font-family: 'Shippori Mincho', serif;
+    font-size: 13px;
+    letter-spacing: 0.2em;
+    color: var(--ink-soft);
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section h2::before {
+    content: ''; display: inline-block;
+    width: 16px; height: 1px; background: var(--accent);
+  }
+
+  /* ========== 入力 ========== */
+  .input-row { display: flex; gap: 6px; margin-bottom: 8px; }
+  input[type="text"], input[type="number"] {
+    flex: 1; padding: 9px 12px;
+    border: 1px solid var(--line);
+    background: white; border-radius: 2px;
+    font-family: inherit; font-size: 13px; color: var(--ink);
+    transition: border-color 0.2s;
+  }
+  input[type="text"]:focus, input[type="number"]:focus {
+    outline: none; border-color: var(--accent);
+  }
+  button {
+    padding: 9px 14px; border: 1px solid var(--ink);
+    background: var(--ink); color: var(--panel);
+    border-radius: 2px; cursor: pointer;
+    font-family: inherit; font-size: 12px; font-weight: 500;
+    letter-spacing: 0.08em;
+    transition: all 0.2s;
+  }
+  button:hover { background: var(--accent); border-color: var(--accent); }
+  button.ghost { background: transparent; color: var(--ink); }
+  button.ghost:hover { background: var(--ink); color: var(--panel); }
+
+  /* ========== プリセット半径 ========== */
+  .preset-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px;
+    margin-bottom: 10px;
+  }
+  .preset-btn {
+    padding: 8px 4px; border: 1px solid var(--line);
+    background: white; color: var(--ink);
+    border-radius: 2px; cursor: pointer;
+    font-family: inherit; font-size: 11px;
+    transition: all 0.2s;
+    display: flex; flex-direction: column; align-items: center; gap: 2px;
+  }
+  .preset-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .preset-btn.active { background: var(--ink); color: var(--panel); border-color: var(--ink); }
+  .preset-btn .label { font-size: 13px; font-weight: 700; font-family: 'Shippori Mincho', serif; }
+  .preset-btn .desc { font-size: 9px; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .preset-btn.active .desc { color: var(--accent-soft); }
+
+  /* ========== 色パレット ========== */
+  .color-palette { display: flex; gap: 8px; margin-bottom: 8px; }
+  .color-swatch {
+    width: 28px; height: 28px; border-radius: 50%;
+    cursor: pointer; border: 2px solid transparent;
+    transition: transform 0.15s;
+  }
+  .color-swatch:hover { transform: scale(1.1); }
+  .color-swatch.active { border-color: var(--ink); transform: scale(1.15); }
+
+  /* ========== ヒント ========== */
+  .hint {
+    font-size: 11px; color: var(--ink-soft);
+    line-height: 1.6; padding: 10px 12px;
+    background: rgba(200, 68, 58, 0.06);
+    border-left: 2px solid var(--accent);
+    margin-top: 4px;
+  }
+
+  /* ========== 円リスト ========== */
+  .circle-list { display: flex; flex-direction: column; gap: 8px; }
+  .circle-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: white; border: 1px solid var(--line);
+    border-radius: 2px;
+    transition: all 0.2s;
+  }
+  .circle-item:hover { border-color: var(--ink); }
+  .circle-item .swatch {
+    width: 14px; height: 14px; border-radius: 50%;
+    flex-shrink: 0; border: 1px solid rgba(0,0,0,0.2);
+  }
+  .circle-item .info { flex: 1; min-width: 0; }
+  .circle-item .label-text {
+    font-size: 13px; font-weight: 500;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .circle-item .meta { font-size: 10px; color: var(--ink-soft); letter-spacing: 0.05em; }
+  .circle-item .actions { display: flex; gap: 4px; }
+  .icon-btn {
+    width: 26px; height: 26px; padding: 0;
+    border: 1px solid var(--line); background: white; color: var(--ink-soft);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; cursor: pointer;
+    border-radius: 2px;
+  }
+  .icon-btn:hover { border-color: var(--accent); color: var(--accent); background: white; }
+  .icon-btn.danger:hover { border-color: var(--accent); color: var(--accent); background: white; }
+
+  .empty {
+    text-align: center; padding: 24px 12px;
+    color: var(--ink-soft); font-size: 12px;
+    font-family: 'Shippori Mincho', serif;
+    letter-spacing: 0.1em;
+    border: 1px dashed var(--line);
+  }
+
+  /* ========== マップ ========== */
+  #map { flex: 1; height: 100vh; }
+  .leaflet-container { font-family: 'Noto Sans JP', sans-serif; background: #e8e4dc; }
+
+  /* カスタムマーカーラベル */
+  .circle-label {
+    background: var(--ink); color: var(--panel);
+    padding: 3px 8px; border-radius: 2px;
+    font-size: 11px; font-weight: 500;
+    white-space: nowrap;
+    border: none;
+    letter-spacing: 0.05em;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  }
+  .circle-label::before { display: none; }
+
+  /* トグルボタン */
+  #toggle-panel {
+    position: absolute; top: 16px; left: 16px;
+    z-index: 1000;
+    width: 40px; height: 40px;
+    background: var(--panel); border: 1px solid var(--line);
+    border-radius: 2px; cursor: pointer;
+    display: none; align-items: center; justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    font-size: 18px; color: var(--ink);
+    padding: 0;
+  }
+  #toggle-panel:hover { background: var(--ink); color: var(--panel); }
+  #panel.collapsed ~ #map-wrap #toggle-panel { display: flex; }
+
+  /* ステータス */
+  #status {
+    position: absolute; bottom: 16px; left: 50%;
+    transform: translateX(-50%); z-index: 1000;
+    background: var(--ink); color: var(--panel);
+    padding: 8px 16px; border-radius: 2px;
+    font-size: 12px; letter-spacing: 0.05em;
+    opacity: 0; transition: opacity 0.3s;
+    pointer-events: none;
+  }
+  #status.show { opacity: 1; }
+
+  /* スクロールバー */
+  #panel::-webkit-scrollbar { width: 6px; }
+  #panel::-webkit-scrollbar-track { background: var(--bg); }
+  #panel::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+  /* モバイル */
+  @media (max-width: 768px) {
+    body { flex-direction: column; }
+    #panel { width: 100%; height: 50vh; border-right: none; border-bottom: 1px solid var(--line); }
+    #panel.collapsed { margin-left: 0; margin-top: -50vh; }
+    #map { height: 50vh; }
+    #panel.collapsed ~ #map-wrap { height: 100vh; }
+    #panel.collapsed ~ #map-wrap #map { height: 100vh; }
+  }
+
+  .map-wrap { flex: 1; position: relative; }
+
+  .footer-note {
+    padding: 14px 24px; font-size: 10px; color: var(--ink-soft);
+    text-align: center; letter-spacing: 0.1em;
+    font-family: 'Shippori Mincho', serif;
+  }
+
+  details summary {
+    cursor: pointer; padding: 8px 24px;
+    font-size: 11px; color: var(--ink-soft);
+    letter-spacing: 0.15em;
+    border-bottom: 1px solid var(--line);
+    user-select: none;
+  }
+  details summary:hover { color: var(--accent); }
+  details[open] summary { color: var(--ink); }
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <div class="panel-header">
+    <h1>まほろば<span class="accent">圏</span>マップ</h1>
+    <div class="subtitle">PROPERTY · DISTANCE · CIRCLE</div>
+  </div>
+
+  <!-- 住所検索 -->
+  <div class="section">
+    <h2>場所を探す</h2>
+    <div class="input-row">
+      <input type="text" id="search-input" placeholder="例：名古屋駅 / 千種区 / 〒〇〇〇..." />
+      <button id="search-btn">検索</button>
+    </div>
+    <div class="hint">地名・駅名・住所で地図移動。地図上を直接クリックでも円を置けます。</div>
+  </div>
+
+  <!-- 半径 -->
+  <div class="section">
+    <h2>半径を選ぶ</h2>
+    <div class="preset-grid">
+      <button class="preset-btn" data-radius="500"><span class="label">500m</span><span class="desc">徒歩6分</span></button>
+      <button class="preset-btn active" data-radius="800"><span class="label">800m</span><span class="desc">徒歩10分</span></button>
+      <button class="preset-btn" data-radius="1000"><span class="label">1km</span><span class="desc">徒歩13分</span></button>
+      <button class="preset-btn" data-radius="2000"><span class="label">2km</span><span class="desc">自転車8分</span></button>
+      <button class="preset-btn" data-radius="3000"><span class="label">3km</span><span class="desc">学区目安</span></button>
+      <button class="preset-btn" data-radius="5000"><span class="label">5km</span><span class="desc">商圏目安</span></button>
+    </div>
+    <div class="input-row">
+      <input type="number" id="custom-radius" placeholder="カスタム半径 (m)" min="50" max="50000" />
+      <button id="apply-custom" class="ghost">適用</button>
+    </div>
+  </div>
+
+  <!-- 色とラベル -->
+  <div class="section">
+    <h2>色とラベル</h2>
+    <div class="color-palette" id="color-palette">
+      <div class="color-swatch active" data-color="#c8443a" style="background:#c8443a"></div>
+      <div class="color-swatch" data-color="#2c3e50" style="background:#2c3e50"></div>
+      <div class="color-swatch" data-color="#3a8c5f" style="background:#3a8c5f"></div>
+      <div class="color-swatch" data-color="#d4a017" style="background:#d4a017"></div>
+      <div class="color-swatch" data-color="#7a4e9c" style="background:#7a4e9c"></div>
+      <div class="color-swatch" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+    </div>
+    <input type="text" id="label-input" placeholder="ラベル（例：最寄り駅 / 候補物件A）" />
+  </div>
+
+  <!-- 円リスト -->
+  <div class="section">
+    <h2>配置した円<span id="count-badge" style="margin-left:auto;font-size:11px;color:var(--ink-soft);font-family:'Shippori Mincho',serif;letter-spacing:0;"></span></h2>
+    <div id="circle-list" class="circle-list"></div>
+  </div>
+
+  <!-- 操作 -->
+  <details>
+    <summary>使い方ヒント</summary>
+    <div style="padding: 14px 24px 18px; font-size: 12px; color: var(--ink-soft); line-height: 1.7;">
+      <strong style="color:var(--ink);">▸ 円を置く</strong><br>
+      地図上をクリック、または住所検索後その地点に追加されます。<br><br>
+      <strong style="color:var(--ink);">▸ 不動産業務での使い方</strong><br>
+      ・候補物件から徒歩10分圏（800m）を可視化<br>
+      ・複数候補駅の徒歩圏が重なるエリアを発見<br>
+      ・学区・商圏・通勤圏の重なりを目視<br><br>
+      <strong style="color:var(--ink);">▸ 円の編集</strong><br>
+      リストの「⊕」でその円にズーム、「✕」で削除。
+    </div>
+  </details>
+
+  <div style="padding: 12px 24px;">
+    <button id="clear-all" class="ghost" style="width:100%">すべての円を削除</button>
+  </div>
+
+  <div class="footer-note">
+    OpenStreetMap contributors · まほろば不動産戦略室
+  </div>
+</div>
+
+<div class="map-wrap" id="map-wrap">
+  <button id="toggle-panel" title="パネル開閉">☰</button>
+  <div id="map"></div>
+  <div id="status"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<script>
+  // ========== 状態 ==========
+  let currentRadius = 800;
+  let currentColor = '#c8443a';
+  let circles = []; // { id, marker, circle, center, radius, color, label }
+  let nextId = 1;
+
+  // ========== マップ初期化 ==========
+  // 名古屋駅をデフォルトに（まほろば不動産・名古屋拠点）
+  const map = L.map('map', { zoomControl: false }).setView([35.1709, 136.8815], 14);
+  L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    maxZoom: 19,
+    attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+  }).addTo(map);
+
+  // ========== ステータス通知 ==========
+  const statusEl = document.getElementById('status');
+  function showStatus(msg, ms = 2000) {
+    statusEl.textContent = msg;
+    statusEl.classList.add('show');
+    clearTimeout(showStatus._t);
+    showStatus._t = setTimeout(() => statusEl.classList.remove('show'), ms);
+  }
+
+  // ========== 円の追加 ==========
+  function addCircle(lat, lng, radius = currentRadius, color = currentColor, label = '') {
+    const id = nextId++;
+    const userLabel = label || document.getElementById('label-input').value.trim() || `地点${id}`;
+
+    const circle = L.circle([lat, lng], {
+      radius: radius,
+      color: color,
+      fillColor: color,
+      fillOpacity: 0.15,
+      weight: 2,
+      opacity: 0.7
+    }).addTo(map);
+
+    const marker = L.marker([lat, lng], {
+      icon: L.divIcon({
+        className: '',
+        html: `<div class="circle-label" style="background:${color}">${escapeHtml(userLabel)} · ${formatRadius(radius)}</div>`,
+        iconSize: [null, null],
+        iconAnchor: [0, 0]
+      })
+    }).addTo(map);
+
+    circles.push({ id, marker, circle, center: [lat, lng], radius, color, label: userLabel });
+    renderList();
+    showStatus(`「${userLabel}」を配置しました（${formatRadius(radius)}）`);
+
+    // 入力リセット
+    document.getElementById('label-input').value = '';
+  }
+
+  function removeCircle(id) {
+    const idx = circles.findIndex(c => c.id === id);
+    if (idx === -1) return;
+    map.removeLayer(circles[idx].circle);
+    map.removeLayer(circles[idx].marker);
+    circles.splice(idx, 1);
+    renderList();
+  }
+
+  function zoomToCircle(id) {
+    const c = circles.find(c => c.id === id);
+    if (!c) return;
+    map.fitBounds(c.circle.getBounds(), { padding: [40, 40] });
+  }
+
+  function formatRadius(m) {
+    return m >= 1000 ? `${(m / 1000).toFixed(m % 1000 === 0 ? 0 : 1)}km` : `${m}m`;
+  }
+
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  // ========== リスト描画 ==========
+  function renderList() {
+    const listEl = document.getElementById('circle-list');
+    const badge = document.getElementById('count-badge');
+    badge.textContent = circles.length > 0 ? `（${circles.length}）` : '';
+
+    if (circles.length === 0) {
+      listEl.innerHTML = '<div class="empty">まだ円がありません</div>';
+      return;
+    }
+
+    listEl.innerHTML = circles.map(c => `
+      <div class="circle-item">
+        <div class="swatch" style="background:${c.color}"></div>
+        <div class="info">
+          <div class="label-text">${escapeHtml(c.label)}</div>
+          <div class="meta">半径 ${formatRadius(c.radius)}　·　${c.center[0].toFixed(4)}, ${c.center[1].toFixed(4)}</div>
+        </div>
+        <div class="actions">
+          <button class="icon-btn" title="この円にズーム" onclick="zoomToCircle(${c.id})">⊕</button>
+          <button class="icon-btn danger" title="削除" onclick="removeCircle(${c.id})">✕</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  // ========== マップクリック ==========
+  map.on('click', (e) => {
+    addCircle(e.latlng.lat, e.latlng.lng);
+  });
+
+  // ========== 半径プリセット ==========
+  document.querySelectorAll('.preset-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      currentRadius = parseInt(btn.dataset.radius);
+      document.getElementById('custom-radius').value = '';
+    });
+  });
+
+  document.getElementById('apply-custom').addEventListener('click', () => {
+    const v = parseInt(document.getElementById('custom-radius').value);
+    if (isNaN(v) || v < 50 || v > 50000) {
+      showStatus('50〜50000mの範囲で入力してください');
+      return;
+    }
+    currentRadius = v;
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    showStatus(`カスタム半径：${formatRadius(v)} に設定`);
+  });
+
+  // ========== 色パレット ==========
+  document.querySelectorAll('.color-swatch').forEach(sw => {
+    sw.addEventListener('click', () => {
+      document.querySelectorAll('.color-swatch').forEach(s => s.classList.remove('active'));
+      sw.classList.add('active');
+      currentColor = sw.dataset.color;
+    });
+  });
+
+  // ========== 住所検索（Nominatim, OpenStreetMap）==========
+  async function searchAddress(query) {
+    if (!query.trim()) return;
+    showStatus('検索中...');
+    try {
+      // 注：Accept-Language ヘッダーを使うとCORSプリフライトが走るため、
+      // URLクエリパラメータで言語指定（simple requestに保つ）
+      const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=jp&limit=1&accept-language=ja`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (data.length === 0) {
+        showStatus('見つかりませんでした。地名・駅名・住所を試してください');
+        return;
+      }
+      const { lat, lon, display_name } = data[0];
+      const lt = parseFloat(lat), lg = parseFloat(lon);
+      map.setView([lt, lg], 15);
+      const labelInput = document.getElementById('label-input');
+      if (!labelInput.value.trim()) labelInput.value = query;
+      addCircle(lt, lg);
+      showStatus(`「${display_name.split(',')[0]}」に移動しました`);
+    } catch (err) {
+      console.error('Search error:', err);
+      showStatus('検索エラー：file:// 環境では制限あり。Web公開版でお試しください', 4000);
+    }
+  }
+
+  document.getElementById('search-btn').addEventListener('click', () => {
+    searchAddress(document.getElementById('search-input').value);
+  });
+  document.getElementById('search-input').addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') searchAddress(document.getElementById('search-input').value);
+  });
+
+  // ========== 全削除（2段階クリック方式：confirmに依存しない） ==========
+  let clearArmed = false;
+  let clearArmedTimer = null;
+  const clearBtn = document.getElementById('clear-all');
+  const clearBtnOriginalText = clearBtn.textContent;
+
+  clearBtn.addEventListener('click', () => {
+    if (circles.length === 0) {
+      showStatus('削除する円がありません');
+      return;
+    }
+
+    if (!clearArmed) {
+      // 1回目：警告状態に
+      clearArmed = true;
+      clearBtn.textContent = `本当に削除？もう一度クリック（${circles.length}個）`;
+      clearBtn.style.background = 'var(--accent)';
+      clearBtn.style.color = 'white';
+      clearBtn.style.borderColor = 'var(--accent)';
+      showStatus('もう一度クリックで全削除（3秒で取消）', 3000);
+
+      clearArmedTimer = setTimeout(() => {
+        clearArmed = false;
+        clearBtn.textContent = clearBtnOriginalText;
+        clearBtn.style.background = '';
+        clearBtn.style.color = '';
+        clearBtn.style.borderColor = '';
+      }, 3000);
+      return;
+    }
+
+    // 2回目：実行
+    clearTimeout(clearArmedTimer);
+    const count = circles.length;
+    circles.forEach(c => { map.removeLayer(c.circle); map.removeLayer(c.marker); });
+    circles = [];
+    renderList();
+    clearArmed = false;
+    clearBtn.textContent = clearBtnOriginalText;
+    clearBtn.style.background = '';
+    clearBtn.style.color = '';
+    clearBtn.style.borderColor = '';
+    showStatus(`${count}個の円をすべて削除しました`);
+  });
+
+  // ========== パネルトグル ==========
+  document.getElementById('toggle-panel').addEventListener('click', () => {
+    document.getElementById('panel').classList.toggle('collapsed');
+    setTimeout(() => map.invalidateSize(), 320);
+  });
+
+  // ========== 初期化 ==========
+  renderList();
+  showStatus('地図上をクリックして円を配置できます');
+
+  // グローバル公開（onclick用）
+  window.removeCircle = removeCircle;
+  window.zoomToCircle = zoomToCircle;
+</script>
+</body>
+</html>
