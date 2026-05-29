@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>土地代だけで見ていませんか？住まいの総額ざっくり診断</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans JP', sans-serif; }
+    input, select { transition: all .18s ease; }
+    .card { border: 1px solid rgb(226 232 240); background: white; border-radius: 1.25rem; box-shadow: 0 1px 2px rgba(15,23,42,.04); }
+  </style>
+</head>
+<body class="bg-stone-50 text-slate-800 min-h-screen">
+
+  <header class="px-4 py-10 bg-gradient-to-br from-[#173b32] via-[#1f4d40] to-[#10251f] text-white">
+    <div class="max-w-5xl mx-auto text-center">
+      <p class="text-emerald-200 text-xs tracking-[.24em] font-extrabold mb-3">MAHOROBA LINE GIFT</p>
+      <h1 class="text-3xl sm:text-5xl font-extrabold leading-tight">土地代だけで<br class="sm:hidden">見ていませんか？</h1>
+      <p class="mt-4 text-lg sm:text-xl font-bold text-emerald-50">住まいの総額ざっくり診断</p>
+      <p class="mt-4 text-sm sm:text-base text-emerald-100 max-w-2xl mx-auto">購入タイプを選ぶだけで、物件価格以外に見ておきたい諸費用・追加費用・注意点をざっくり確認できます。</p>
+    </div>
+  </header>
+
+  <main class="max-w-5xl mx-auto px-4 py-6 sm:py-10">
+    <section class="card p-5 sm:p-7 mb-6">
+      <h2 class="text-xl font-extrabold mb-5">1. 購入タイプを選ぶ</h2>
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <label class="block sm:col-span-2">
+          <span class="text-sm font-bold text-slate-700">購入タイプ</span>
+          <select id="type" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <option value="land">土地のみ</option>
+            <option value="land_custom">土地＋注文住宅</option>
+            <option value="new_house">建売住宅</option>
+            <option value="used_house">中古戸建</option>
+            <option value="new_mansion">新築分譲マンション</option>
+            <option value="used_mansion">中古マンション</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">物件価格・土地価格</span>
+          <div class="relative mt-2">
+            <input id="price" data-format="currency" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="23,000,000">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+          </div>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">借入予定額</span>
+          <div class="relative mt-2">
+            <input id="loan" data-format="currency" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="24,000,000">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+          </div>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">借入期間</span>
+          <div class="relative mt-2">
+            <input id="loanYears" data-format="number" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-10 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="35">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">年</span>
+          </div>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">金利（年利）</span>
+          <div class="relative mt-2">
+            <input id="interestRate" data-format="decimal" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-10 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="0.7">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
+          </div>
+        </label>
+
+        <label class="block sm:col-span-2">
+          <span class="text-sm font-bold text-slate-700">ボーナス払い併用額 <span class="text-xs font-normal text-slate-500">（借入額のうちボーナス返済に回す元金）</span></span>
+          <div class="relative mt-2">
+            <input id="bonusLoan" data-format="currency" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="0">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+          </div>
+          <p class="mt-1 text-xs text-slate-500">※月々返済額・ボーナス加算額・返済総額は、金利が返済期間中ずっと変わらない前提の概算です。</p>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">自己資金</span>
+          <div class="relative mt-2">
+            <input id="cash" data-format="currency" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="1,000,000">
+            <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+          </div>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">仲介物件ですか？</span>
+          <select id="brokerage" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <option value="yes">はい</option>
+            <option value="unknown">わからない</option>
+            <option value="no">いいえ</option>
+          </select>
+        </label>
+
+        <label class="block landOnly">
+          <span class="text-sm font-bold text-slate-700">上下水道・造成などの不安</span>
+          <select id="landRisk" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <option value="low">あまりなさそう</option>
+            <option value="mid">少しありそう</option>
+            <option value="high">かなりありそう</option>
+          </select>
+        </label>
+
+        <label class="block landOnly">
+          <span class="text-sm font-bold text-slate-700">古家・解体の可能性</span>
+          <select id="oldHouse" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <option value="no">なし・不明</option>
+            <option value="yes">あり</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">リフォーム・追加工事予定</span>
+          <select id="renovation" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <option value="none">なし・少なめ</option>
+            <option value="some">少しあり</option>
+            <option value="large">しっかり見たい</option>
+          </select>
+        </label>
+
+        <label class="block">
+          <span class="text-sm font-bold text-slate-700">ローン利用</span>
+          <select id="loanUse" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+            <option value="yes">使う・使う予定</option>
+            <option value="unknown">未定</option>
+            <option value="no">使わない</option>
+          </select>
+        </label>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-4 gap-5 mb-6">
+      <div class="card p-5 bg-emerald-950 text-white lg:col-span-2">
+        <p class="text-emerald-200 text-xs font-extrabold tracking-widest">RESULT</p>
+        <h2 class="text-2xl font-extrabold mt-2 mb-5">総額目安</h2>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div class="rounded-xl bg-white/10 p-4 border border-white/10">
+            <p class="text-xs text-emerald-100 font-bold">最低限</p>
+            <p id="out-low" class="text-2xl font-extrabold text-right">0円</p>
+          </div>
+          <div class="rounded-xl bg-white/15 p-4 border border-white/10 ring-2 ring-emerald-300/40">
+            <p class="text-xs text-emerald-100 font-bold">標準目安</p>
+            <p id="out-mid" class="text-3xl font-extrabold text-right">0円</p>
+          </div>
+          <div class="rounded-xl bg-white/10 p-4 border border-white/10">
+            <p class="text-xs text-emerald-100 font-bold">余裕を見る</p>
+            <p id="out-high" class="text-2xl font-extrabold text-right">0円</p>
+          </div>
+        </div>
+        <div class="mt-5 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+          <div class="rounded-xl bg-white/10 p-4">
+            <p class="text-emerald-100 font-bold">ざっくり諸費用</p>
+            <p id="out-costRange" class="text-xl font-extrabold text-right">0円〜0円</p>
+          </div>
+          <div class="rounded-xl bg-white/10 p-4">
+            <p class="text-emerald-100 font-bold">追加費用・予備費</p>
+            <p id="out-extraRange" class="text-xl font-extrabold text-right">0円〜0円</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="card p-5 bg-slate-900 text-white border-slate-800">
+        <h2 class="text-xl font-extrabold mb-4">住宅ローン目安</h2>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between items-end gap-3"><span class="text-slate-300">月々返済額</span><span id="out-monthly" class="text-xl font-extrabold">0円</span></div>
+          <div id="bonusRow" class="flex justify-between items-end gap-3"><span class="text-slate-300">ボーナス加算</span><span id="out-bonus" class="text-xl font-extrabold">0円</span></div>
+          <div class="border-t border-white/10 pt-3 flex justify-between items-end gap-3"><span class="text-slate-300">返済額総額</span><span id="out-totalPayment" class="text-xl font-extrabold">0円</span></div>
+          <p class="text-xs text-slate-400 leading-relaxed">※元利均等返済の概算。金利変動・手数料・保証料・団信条件は反映していません。</p>
+        </div>
+      </div>
+
+      <div class="card p-5">
+        <h2 class="text-xl font-extrabold mb-4">自己資金チェック</h2>
+        <div class="space-y-3 text-sm">
+          <div class="flex justify-between"><span>自己資金</span><span id="out-cash" class="font-extrabold">0円</span></div>
+          <div class="flex justify-between"><span>標準総額−借入予定額</span><span id="out-neededCash" class="font-extrabold">0円</span></div>
+          <div id="cashMessage" class="rounded-xl p-4 font-bold"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+      <div class="card p-5">
+        <h2 class="text-xl font-extrabold mb-4">このタイプで注意したいこと</h2>
+        <ul id="points" class="space-y-2 text-sm text-slate-700 list-disc pl-5"></ul>
+      </div>
+
+      <div class="card p-5">
+        <h2 class="text-xl font-extrabold mb-4">費用の見え方</h2>
+        <div id="costItems" class="space-y-2 text-sm"></div>
+      </div>
+    </section>
+
+    <section class="card p-5 sm:p-7 mb-6 bg-amber-50 border-amber-200">
+      <h2 class="text-xl font-extrabold text-amber-950 mb-3">大切な注意書き</h2>
+      <p class="text-sm text-amber-950 leading-relaxed">この診断は、住まい購入時の総額感をつかむための簡易試算です。実際の費用は、物件の状態、登記内容、金融機関、固定資産税評価額、税制、管理状況、リフォーム・造成・水道・地盤改良の有無などにより大きく変わります。表示金額は概算であり、実際の見積・契約内容・司法書士見積・金融機関見積・自治体確認を優先してください。住宅ローン返済額は、入力した金利が返済期間中ずっと変わらない前提の目安です。</p>
+    </section>
+
+    <section class="card p-6 sm:p-8 text-center bg-white">
+      <p class="text-sm font-extrabold tracking-widest text-emerald-700">MAHOROBA CONSULTATION</p>
+      <h2 class="text-2xl sm:text-3xl font-extrabold mt-2">この土地・この住まい、本当に総額いくら？</h2>
+      <p class="mt-4 text-slate-600 leading-relaxed max-w-2xl mx-auto">土地や住まいの総額は、物件ごとに大きく変わります。水道・造成・古家・リフォーム・マンション管理費などが気になる場合は、個別に確認するのがおすすめです。</p>
+      <a href="https://neighborly-bed-c28.notion.site/2b737334a868477486d707804d261c5f?pvs=105" target="_blank" rel="noopener noreferrer" class="inline-flex mt-6 rounded-full bg-emerald-800 px-6 py-3 text-white font-extrabold shadow hover:bg-emerald-900">個別相談フォームへ進む</a>
+      <p class="text-xs text-slate-400 mt-3">※フォーム送信後、内容を確認して個別にご連絡します。</p>
+    </section>
+  </main>
+
+<script>
+const TYPE_DATA = {
+  land: {
+    label:'土地のみ',
+    costPct:[0.06,0.08,0.10],
+    extra:[300000,1200000,3000000],
+    points:['土地価格以外に、水道・造成・地盤・測量などの土地固有費用が変動します。','安く見える土地ほど、後から必要になる費用の確認が大切です。','不動産取得税は後日通知されることがあり、住宅用土地の軽減確認が必要です。'],
+    items:['仲介手数料','登記費用','固都税清算','ローン費用','不動産取得税','水道・造成・測量・地盤関連']
+  },
+  land_custom: {
+    label:'土地＋注文住宅',
+    costPct:[0.07,0.095,0.12],
+    extra:[1500000,3500000,6000000],
+    points:['土地代＋建物本体価格だけでは総額になりません。','外構・地盤改良・つなぎ融資・建物登記などを別枠で見ておきましょう。','建築会社の見積に含まれるもの／含まれないものの確認が重要です。'],
+    items:['土地購入諸費用','建物請負契約関連','つなぎ融資費用','建物登記','外構','地盤改良','火災保険']
+  },
+  new_house: {
+    label:'建売住宅',
+    costPct:[0.06,0.075,0.09],
+    extra:[300000,1000000,2000000],
+    points:['総額が見えやすい一方で、仲介手数料の有無に注意が必要です。','網戸・カーテン・照明・エアコン・外構追加で差が出ます。','不動産取得税や固定資産税の軽減確認も必要です。'],
+    items:['仲介手数料の有無','土地建物登記','ローン費用','固都税清算','オプション工事','火災保険']
+  },
+  used_house: {
+    label:'中古戸建',
+    costPct:[0.07,0.095,0.12],
+    extra:[1000000,3500000,8000000],
+    points:['購入時諸費用だけでなく、リフォーム・修繕費の見込みが重要です。','築年数・建物状態・雨漏り・シロアリ・設備交換を確認しましょう。','将来建替えや解体の可能性がある場合は、さらに予備費が必要です。'],
+    items:['仲介手数料','土地建物登記','ローン費用','不動産取得税','リフォーム','インスペクション','修繕予備費']
+  },
+  new_mansion: {
+    label:'新築分譲マンション',
+    costPct:[0.03,0.045,0.06],
+    extra:[300000,1200000,3000000],
+    points:['修繕積立基金・管理準備金など、マンション特有の初期費用があります。','カップボード等のオプション費用が増えやすいです。','住宅ローンとは別に、管理費・修繕積立金の月額負担を見ておきましょう。'],
+    items:['登記費用','ローン費用','修繕積立基金','管理準備金','オプション','火災保険']
+  },
+  used_mansion: {
+    label:'中古マンション',
+    costPct:[0.06,0.08,0.10],
+    extra:[1000000,3000000,6000000],
+    points:['仲介手数料に加え、リフォーム費用が大きく変動します。','管理費・修繕積立金・駐車場代を月々負担として確認しましょう。','長期修繕計画や積立金の増額リスクも重要です。'],
+    items:['仲介手数料','区分所有登記','ローン費用','固都税清算','管理費等清算','リフォーム','修繕積立金の確認']
+  }
+};
+
+function yen(n){ return Math.round(n).toLocaleString()+'円'; }
+function val(id){ return parseInt((document.getElementById(id).value||'').replace(/,/g,''),10)||0; }
+function floatVal(id){ return parseFloat((document.getElementById(id).value||'').replace(/,/g,''))||0; }
+function formatInput(el){
+  if(el.dataset.format === 'decimal'){
+    el.value = el.value.replace(/[^\d.]/g,'').replace(/(\..*)\./g,'$1');
+  } else {
+    const raw = el.value.replace(/[^\d]/g,'');
+    el.value = raw ? parseInt(raw,10).toLocaleString() : '';
+  }
+  calculate();
+}
+function brokerage(price){
+  if(price <= 0) return 0;
+  let base = price > 4000000 ? price*0.03+60000 : price > 2000000 ? price*0.04+20000 : price*0.05;
+  return Math.floor(base*1.1);
+}
+function calculate(){
+  const type = document.getElementById('type').value;
+  const data = TYPE_DATA[type];
+  const price = val('price');
+  const loan = val('loan');
+  const loanYears = val('loanYears');
+  const interestRate = floatVal('interestRate');
+  const bonusLoan = Math.min(val('bonusLoan'), loan);
+  const cash = val('cash');
+  const brokerageMode = document.getElementById('brokerage').value;
+  const loanUse = document.getElementById('loanUse').value;
+  const landRisk = document.getElementById('landRisk').value;
+  const oldHouse = document.getElementById('oldHouse').value;
+  const renovation = document.getElementById('renovation').value;
+
+  document.querySelectorAll('.landOnly').forEach(el => el.classList.toggle('hidden', !['land','land_custom'].includes(type)));
+
+  let costLow = price * data.costPct[0];
+  let costMid = price * data.costPct[1];
+  let costHigh = price * data.costPct[2];
+
+  if(brokerageMode === 'no'){
+    const b = brokerage(price);
+    costLow = Math.max(0, costLow-b); costMid = Math.max(0, costMid-b); costHigh = Math.max(0, costHigh-b);
+  } else if(brokerageMode === 'unknown') {
+    costHigh += brokerage(price)*0.25;
+  }
+  if(loanUse === 'no'){
+    costLow *= .75; costMid *= .8; costHigh *= .85;
+  }
+
+  let [extraLow, extraMid, extraHigh] = data.extra;
+  if(['land','land_custom'].includes(type)){
+    if(landRisk === 'mid'){ extraMid += 500000; extraHigh += 1000000; }
+    if(landRisk === 'high'){ extraLow += 1000000; extraMid += 2000000; extraHigh += 3500000; }
+    if(oldHouse === 'yes'){ extraLow += 1000000; extraMid += 2000000; extraHigh += 3500000; }
+  }
+  if(renovation === 'some'){ extraMid += 800000; extraHigh += 1800000; }
+  if(renovation === 'large'){ extraLow += 2000000; extraMid += 4000000; extraHigh += 8000000; }
+
+  const totalLow = price + costLow + extraLow;
+  const totalMid = price + costMid + extraMid;
+  const totalHigh = price + costHigh + extraHigh;
+
+  let monthlyPayment = 0;
+  let bonusPayment = 0;
+  let totalPayment = 0;
+  if(loanUse !== 'no' && loan > 0 && loanYears > 0){
+    const months = loanYears * 12;
+    const monthlyRate = interestRate / 100 / 12;
+    const monthlyPrincipal = Math.max(0, loan - bonusLoan);
+    if(monthlyPrincipal > 0){
+      monthlyPayment = monthlyRate > 0
+        ? monthlyPrincipal * monthlyRate * Math.pow(1 + monthlyRate, months) / (Math.pow(1 + monthlyRate, months) - 1)
+        : monthlyPrincipal / months;
+    }
+    if(bonusLoan > 0){
+      const bonusTimes = loanYears * 2;
+      const halfYearRate = interestRate / 100 / 2;
+      bonusPayment = halfYearRate > 0
+        ? bonusLoan * halfYearRate * Math.pow(1 + halfYearRate, bonusTimes) / (Math.pow(1 + halfYearRate, bonusTimes) - 1)
+        : bonusLoan / bonusTimes;
+    }
+    monthlyPayment = Math.floor(monthlyPayment);
+    bonusPayment = Math.floor(bonusPayment);
+    totalPayment = monthlyPayment * months + bonusPayment * loanYears * 2;
+  }
+
+  const neededCash = Math.max(0, totalMid - loan);
+
+  document.getElementById('out-low').innerText = yen(totalLow);
+  document.getElementById('out-mid').innerText = yen(totalMid);
+  document.getElementById('out-high').innerText = yen(totalHigh);
+  document.getElementById('out-costRange').innerText = yen(costLow)+'〜'+yen(costHigh);
+  document.getElementById('out-extraRange').innerText = yen(extraLow)+'〜'+yen(extraHigh);
+  document.getElementById('out-cash').innerText = yen(cash);
+  document.getElementById('out-neededCash').innerText = yen(neededCash);
+  document.getElementById('out-monthly').innerText = yen(monthlyPayment) + '/月';
+  document.getElementById('out-bonus').innerText = yen(bonusPayment) + '/回';
+  document.getElementById('out-totalPayment').innerText = yen(totalPayment);
+  document.getElementById('bonusRow').classList.toggle('hidden', bonusPayment <= 0);
+
+  const msg = document.getElementById('cashMessage');
+  if(cash >= neededCash){
+    msg.className = 'rounded-xl p-4 font-bold bg-emerald-50 text-emerald-900 border border-emerald-100';
+    msg.innerText = '標準目安では、自己資金に余裕がありそうです。とはいえ個別費用は必ず確認しましょう。';
+  } else {
+    msg.className = 'rounded-xl p-4 font-bold bg-amber-50 text-amber-900 border border-amber-100';
+    msg.innerText = '標準目安では、自己資金が不足する可能性があります。借入額・追加費用・予備費を確認しましょう。';
+  }
+
+  document.getElementById('points').innerHTML = data.points.map(p=>`<li>${p}</li>`).join('');
+  document.getElementById('costItems').innerHTML = data.items.map(i=>`<div class="flex items-center gap-2 rounded-xl bg-slate-50 border border-slate-100 p-3"><span class="inline-block w-2 h-2 rounded-full bg-emerald-700"></span><span class="font-bold text-slate-700">${i}</span></div>`).join('');
+}
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.num').forEach(el => el.addEventListener('input', () => formatInput(el)));
+  document.querySelectorAll('select').forEach(el => el.addEventListener('change', calculate));
+  calculate();
+});
+</script>
+</body>
+</html>

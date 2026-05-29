@@ -1,0 +1,595 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>土地購入 決済資金・諸費用シミュレーター Pro</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Noto Sans JP', sans-serif; }
+    input, select, textarea { transition: all .18s ease; }
+    details > summary { list-style: none; }
+    details > summary::-webkit-details-marker { display: none; }
+    .sticky-summary { position: sticky; top: 0; z-index: 30; }
+    @media (min-width: 1024px) { .sticky-summary { position: static; } }
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      .print-break { break-inside: avoid; }
+      .sticky { position: static !important; }
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 min-h-screen">
+
+  <header class="bg-gradient-to-br from-emerald-950 via-slate-900 to-slate-950 text-white px-4 py-8 sm:py-10">
+    <div class="max-w-7xl mx-auto">
+      <p class="text-emerald-200 font-bold tracking-widest text-xs mb-3">MAHOROBA PRACTICAL TOOL</p>
+      <h1 class="text-2xl sm:text-4xl font-extrabold tracking-tight">土地購入 決済資金・諸費用シミュレーター Pro</h1>
+      <p class="mt-3 text-slate-300 max-w-3xl">土地決済前の資金確認用。決済時必要資金と、後日発生見込み費用を分けて試算します。</p>
+    </div>
+  </header>
+
+  <div class="sticky-summary lg:hidden bg-white/95 backdrop-blur border-b border-slate-200 shadow-sm px-4 py-3">
+    <div class="max-w-7xl mx-auto grid grid-cols-3 gap-2 text-center">
+      <div class="rounded-xl bg-emerald-50 border border-emerald-100 p-2">
+        <p class="text-[10px] text-emerald-700 font-bold">決済時資金</p>
+        <p id="mobile-closing" class="text-sm font-extrabold text-emerald-950">0円</p>
+      </div>
+      <div class="rounded-xl bg-amber-50 border border-amber-100 p-2">
+        <p class="text-[10px] text-amber-700 font-bold">後日費用</p>
+        <p id="mobile-later" class="text-sm font-extrabold text-amber-950">0円</p>
+      </div>
+      <div class="rounded-xl bg-indigo-50 border border-indigo-100 p-2">
+        <p class="text-[10px] text-indigo-700 font-bold">自己資金</p>
+        <p id="mobile-cash" class="text-sm font-extrabold text-indigo-950">0円</p>
+      </div>
+    </div>
+  </div>
+
+  <main class="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+
+      <div class="lg:col-span-7 space-y-6">
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 print-break">
+          <div class="flex items-center justify-between gap-4 border-b border-slate-100 pb-4 mb-5">
+            <h2 class="text-lg sm:text-xl font-extrabold text-slate-800">1. 土地・売買情報</h2>
+            <span class="text-xs font-bold text-emerald-700 bg-emerald-50 px-3 py-1 rounded-full">土地購入用</span>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">売買価格</span>
+              <div class="relative mt-2">
+                <input id="price" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="23,000,000">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">住宅ローン借入額</span>
+              <div class="relative mt-2">
+                <input id="loan" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="24,200,000">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">評価額入力方法</span>
+              <select id="valuationMode" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="ratio">売買価格×割合で概算</option>
+                <option value="direct">固定資産税評価額を直接入力</option>
+              </select>
+            </label>
+
+            <label class="block" id="ratioBox">
+              <span class="text-sm font-bold text-slate-700">評価額割合</span>
+              <div class="relative mt-2">
+                <input id="ratio" data-format="decimal" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="55">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
+              </div>
+            </label>
+
+            <label class="block hidden" id="directValuationBox">
+              <span class="text-sm font-bold text-slate-700">土地固定資産税評価額</span>
+              <div class="relative mt-2">
+                <input id="landValuation" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="12,650,000">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">土地面積</span>
+              <div class="relative mt-2">
+                <input id="landArea" data-format="decimal" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="193.69">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">㎡</span>
+              </div>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">1月1日時点の土地状態</span>
+              <select id="landState" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="sarachi">更地・非住宅用地</option>
+                <option value="jutaku">住宅用地・古家あり等</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">都市計画税</span>
+              <select id="cityTax" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="yes">あり（市街化区域）</option>
+                <option value="no">なし</option>
+              </select>
+            </label>
+
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">仲介手数料</span>
+              <select id="brokerageMode" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none">
+                <option value="auto">法定上限目安で自動計算</option>
+                <option value="none">なし</option>
+                <option value="manual">手入力</option>
+              </select>
+            </label>
+
+            <label class="block hidden" id="brokerageManualBox">
+              <span class="text-sm font-bold text-slate-700">仲介手数料 手入力</span>
+              <div class="relative mt-2">
+                <input id="brokerageManual" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-emerald-500 outline-none" value="0">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 print-break">
+          <h2 class="text-lg sm:text-xl font-extrabold text-slate-800 border-b border-slate-100 pb-4 mb-5">2. 決済日・固都税清算</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">決済日</span>
+              <input id="settleDate" type="date" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none" value="2026-04-15">
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">起算日</span>
+              <select id="kisanMode" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none">
+                <option value="april">4/1起算</option>
+                <option value="jan">1/1起算</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">買主負担日数</span>
+              <div class="relative mt-2">
+                <input id="days" data-format="currency" type="text" class="num w-full rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-amber-500 outline-none" value="351">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">日</span>
+              </div>
+            </label>
+            <div class="rounded-xl bg-amber-50 border border-amber-100 p-4">
+              <p class="text-sm font-bold text-amber-900">年度日数</p>
+              <p id="out-fiscalDays" class="text-2xl font-extrabold text-amber-950">365日</p>
+              <p class="text-xs text-amber-700 mt-1">うるう年も自動判定します。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 print-break">
+          <h2 class="text-lg sm:text-xl font-extrabold text-slate-800 border-b border-slate-100 pb-4 mb-5">3. 登記・司法書士</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">土地所有権移転登記 税率</span>
+              <select id="transferRate" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="0.015">軽減 1.5%</option>
+                <option value="0.02">本則 2.0%</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">抵当権設定登記 税率</span>
+              <select id="mortgageRate" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none">
+                <option value="0.004">本則 0.4%</option>
+                <option value="0.001">住宅用家屋証明あり 0.1%</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">司法書士報酬</span>
+              <div class="relative mt-2">
+                <input id="judicialFee" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" value="100,000">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">登記その他実費</span>
+              <div class="relative mt-2">
+                <input id="registrationExtra" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none" value="0">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 print-break">
+          <h2 class="text-lg sm:text-xl font-extrabold text-slate-800 border-b border-slate-100 pb-4 mb-5">4. ローン・返済目安</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">借入期間</span>
+              <div class="relative mt-2">
+                <input id="loanYears" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-cyan-500 outline-none" value="35">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">年</span>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">金利 年利</span>
+              <div class="relative mt-2">
+                <input id="interestRate" data-format="decimal" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-cyan-500 outline-none" value="0.475">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">%</span>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">ボーナス返済元金</span>
+              <div class="relative mt-2">
+                <input id="bonusLoan" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-cyan-500 outline-none" value="0">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">ローン事務手数料</span>
+              <div class="relative mt-2">
+                <input id="loanFee" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-cyan-500 outline-none" value="55,000">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">ローン保証料</span>
+              <div class="relative mt-2">
+                <input id="guaranteeFee" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-cyan-500 outline-none" value="0">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">電子契約手数料・印紙代</span>
+              <div class="relative mt-2">
+                <input id="contractFee" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-cyan-500 outline-none" value="11,000">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+            <label class="block sm:col-span-2">
+              <span class="text-sm font-bold text-slate-700">つなぎ融資・土地先行融資 関連費用</span>
+              <div class="relative mt-2">
+                <input id="bridgeFee" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-cyan-500 outline-none" value="0">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 print-break">
+          <h2 class="text-lg sm:text-xl font-extrabold text-slate-800 border-b border-slate-100 pb-4 mb-5">5. 土地固有費用・その他</h2>
+          <div id="otherRows" class="space-y-3"></div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 print-break">
+          <h2 class="text-lg sm:text-xl font-extrabold text-slate-800 border-b border-slate-100 pb-4 mb-5">6. 後日発生見込み</h2>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">不動産取得税を試算</span>
+              <select id="acquisitionTaxMode" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-rose-500 outline-none">
+                <option value="yes">する</option>
+                <option value="no">しない</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">住宅建築予定・軽減見込み</span>
+              <select id="residentialRelief" class="mt-2 w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-rose-500 outline-none">
+                <option value="unknown">未確認</option>
+                <option value="likely">軽減見込みあり</option>
+                <option value="none">軽減なし想定</option>
+              </select>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">住宅床面積予定</span>
+              <div class="relative mt-2">
+                <input id="buildingFloorArea" data-format="decimal" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-rose-500 outline-none" value="100">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">㎡</span>
+              </div>
+            </label>
+            <label class="block">
+              <span class="text-sm font-bold text-slate-700">火災保険・地震保険等</span>
+              <div class="relative mt-2">
+                <input id="insuranceFee" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-rose-500 outline-none" value="0">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+            <label class="block sm:col-span-2">
+              <span class="text-sm font-bold text-slate-700">後日予備費・その他</span>
+              <div class="relative mt-2">
+                <input id="laterReserve" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-rose-500 outline-none" value="0">
+                <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+              </div>
+            </label>
+          </div>
+
+          <div class="mt-5 rounded-xl bg-rose-50 border border-rose-100 p-4 text-sm text-rose-900">
+            <p class="font-extrabold mb-1">注意</p>
+            <p>不動産取得税は決済時費用ではなく、取得後に通知される後日費用です。住宅用土地の軽減可否は、住宅の床面積・建築時期・土地取得時期等により変わります。最終金額は県税事務所の通知・確認を優先してください。</p>
+          </div>
+        </section>
+
+        <section class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 sm:p-7 print-break">
+          <h2 class="text-lg sm:text-xl font-extrabold text-slate-800 border-b border-slate-100 pb-4 mb-5">7. 案件メモ・未確認項目</h2>
+          <textarea id="memo" rows="5" class="w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 focus:bg-white focus:ring-2 focus:ring-slate-500 outline-none" placeholder="固定資産税評価額未確認／司法書士見積待ち／水道加入金確認／地盤改良未定 など"></textarea>
+        </section>
+
+      </div>
+
+      <aside class="lg:col-span-5">
+        <div class="sticky top-6 space-y-5">
+          <section class="bg-slate-950 text-white rounded-2xl shadow-xl p-5 sm:p-7 print-break">
+            <p class="text-slate-400 text-xs font-bold tracking-widest mb-2">RESULT</p>
+            <h2 class="text-2xl font-extrabold mb-5">計算結果</h2>
+
+            <div class="grid grid-cols-1 gap-3">
+              <div class="rounded-xl bg-emerald-500/15 border border-emerald-400/20 p-4">
+                <p class="text-emerald-200 text-sm font-bold">決済時必要資金</p>
+                <p id="out-closingTotal" class="text-4xl font-extrabold text-white text-right">0円</p>
+              </div>
+              <div class="rounded-xl bg-indigo-500/15 border border-indigo-400/20 p-4">
+                <p class="text-indigo-200 text-sm font-bold">売買価格＋決済時費用</p>
+                <p id="out-totalWithPrice" class="text-3xl font-extrabold text-white text-right">0円</p>
+              </div>
+              <div class="rounded-xl bg-amber-500/15 border border-amber-400/20 p-4">
+                <p class="text-amber-200 text-sm font-bold">自己資金目安</p>
+                <p id="out-cashNeeded" class="text-3xl font-extrabold text-white text-right">0円</p>
+              </div>
+              <div class="rounded-xl bg-rose-500/15 border border-rose-400/20 p-4">
+                <p class="text-rose-200 text-sm font-bold">後日発生見込み</p>
+                <p id="out-laterTotal" class="text-3xl font-extrabold text-white text-right">0円</p>
+              </div>
+            </div>
+
+            <div class="mt-6 rounded-xl bg-white/10 border border-white/10 p-4">
+              <h3 class="font-extrabold text-white mb-3">住宅ローン返済目安</h3>
+              <div class="flex justify-between text-sm mb-2"><span class="text-slate-300">月々返済</span><span id="out-monthly" class="font-extrabold text-white">0円/月</span></div>
+              <div class="flex justify-between text-sm"><span class="text-slate-300">ボーナス加算</span><span id="out-bonus" class="font-extrabold text-white">0円/回</span></div>
+            </div>
+
+            <details class="mt-5 rounded-xl bg-white/10 border border-white/10 p-4" open>
+              <summary class="flex justify-between items-center cursor-pointer font-extrabold">内訳 <span class="text-slate-400">▼</span></summary>
+              <div id="breakdown" class="mt-4 space-y-2 text-sm text-slate-200"></div>
+            </details>
+
+            <button onclick="window.print()" class="no-print mt-5 w-full rounded-xl bg-white text-slate-950 py-3 font-extrabold hover:bg-slate-100">印刷 / PDF保存</button>
+          </section>
+
+          <section class="bg-white rounded-2xl border border-slate-200 p-5 text-sm text-slate-600 print-break">
+            <h3 class="font-extrabold text-slate-800 mb-2">このツールの前提</h3>
+            <p>本シミュレーターは概算です。固定資産税評価額、登録免許税、不動産取得税、司法書士報酬、金融機関費用、各種工事費は、物件・登記内容・金融機関・自治体・税制改正により変動します。最終金額は、売買契約書、納税通知書、司法書士見積、金融機関見積、県税事務所等の確認を優先してください。</p>
+          </section>
+        </div>
+      </aside>
+    </div>
+  </main>
+
+<script>
+const OTHER_DEFAULTS = [
+  ['上下水道引込工事費', 0],
+  ['水道加入金・分担金', 0],
+  ['境界確定測量', 0],
+  ['分筆登記・地目変更等', 0],
+  ['農地転用・開発関係', 0],
+  ['解体費', 0],
+  ['造成・擁壁・外構予備費', 0],
+  ['地盤調査・地盤改良予備費', 0],
+  ['越境是正・承諾関係', 0],
+  ['その他予備費', 0],
+];
+
+function yen(n){ return (Math.round(n)||0).toLocaleString() + '円'; }
+function val(id){ return parseInt((document.getElementById(id)?.value || '').replace(/,/g,''),10) || 0; }
+function fval(id){ return parseFloat((document.getElementById(id)?.value || '').replace(/,/g,'')) || 0; }
+function floor100(n){ return Math.floor(n / 100) * 100; }
+function floor1000(n){ return Math.floor(n / 1000) * 1000; }
+
+function formatInput(el){
+  let raw = el.value.replace(/[^\d.]/g,'');
+  if(raw === '') { el.value=''; calculate(); return; }
+  if(el.dataset.format === 'currency') el.value = (parseInt(raw,10)||0).toLocaleString();
+  else el.value = raw;
+  calculate();
+}
+
+function buildOtherRows(){
+  const wrap = document.getElementById('otherRows');
+  wrap.innerHTML = '';
+  OTHER_DEFAULTS.forEach((row, i) => {
+    const div = document.createElement('div');
+    div.className = 'grid grid-cols-1 sm:grid-cols-12 gap-3';
+    div.innerHTML = `
+      <input id="otherName${i}" type="text" class="sm:col-span-7 rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 font-bold focus:bg-white focus:ring-2 focus:ring-fuchsia-500 outline-none" value="${row[0]}">
+      <div class="relative sm:col-span-5">
+        <input id="otherPrice${i}" data-format="currency" type="text" class="num w-full rounded-xl border border-slate-300 bg-slate-50 px-4 py-3 pr-12 text-right text-lg font-extrabold focus:bg-white focus:ring-2 focus:ring-fuchsia-500 outline-none" value="${row[1].toLocaleString()}">
+        <span class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 font-bold">円</span>
+      </div>`;
+    wrap.appendChild(div);
+  });
+}
+
+function updateDays(){
+  const dateStr = document.getElementById('settleDate').value;
+  if(!dateStr) return;
+  const d = new Date(dateStr + 'T00:00:00');
+  const mode = document.getElementById('kisanMode').value;
+  let start, end;
+  if(mode === 'april'){
+    const y = d.getMonth()+1 <= 3 ? d.getFullYear()-1 : d.getFullYear();
+    start = new Date(y, 3, 1);
+    end = new Date(y+1, 2, 31);
+  } else {
+    const y = d.getFullYear();
+    start = new Date(y, 0, 1);
+    end = new Date(y, 11, 31);
+  }
+  const dayMs = 1000*60*60*24;
+  const days = Math.max(0, Math.ceil((end - d)/dayMs)+1);
+  const fiscalDays = Math.ceil((end - start)/dayMs)+1;
+  document.getElementById('days').value = days.toLocaleString();
+  document.getElementById('out-fiscalDays').innerText = fiscalDays + '日';
+}
+
+function brokerage(price){
+  if(price <= 0) return 0;
+  // 800万円以下の低廉な空家等の特例は個別確認扱い。ここでは一般的な速算式。
+  let base = 0;
+  if(price > 4000000) base = price*0.03 + 60000;
+  else if(price > 2000000) base = price*0.04 + 20000;
+  else base = price*0.05;
+  return Math.floor(base*1.1);
+}
+
+function loanPayment(principal, annualRate, years, perYear){
+  if(principal <= 0 || years <= 0) return 0;
+  const n = years * perYear;
+  const r = annualRate/100/perYear;
+  if(r <= 0) return Math.floor(principal/n);
+  return Math.floor(principal * r * Math.pow(1+r,n) / (Math.pow(1+r,n)-1));
+}
+
+function calculate(){
+  const price = val('price');
+  const loan = val('loan');
+  const ratio = fval('ratio');
+  const valuationMode = document.getElementById('valuationMode').value;
+  const landVal = valuationMode === 'direct' ? val('landValuation') : Math.floor(price * ratio/100);
+  const landArea = fval('landArea');
+  const landState = document.getElementById('landState').value;
+  const hasCityTax = document.getElementById('cityTax').value === 'yes';
+
+  document.getElementById('ratioBox').classList.toggle('hidden', valuationMode !== 'ratio');
+  document.getElementById('directValuationBox').classList.toggle('hidden', valuationMode !== 'direct');
+  document.getElementById('brokerageManualBox').classList.toggle('hidden', document.getElementById('brokerageMode').value !== 'manual');
+
+  // 固都税
+  let baseKotei = landVal, baseCity = landVal;
+  if(landState === 'jutaku' && landArea > 0){
+    const small = Math.min(landArea,200);
+    const over = Math.max(landArea-200,0);
+    baseKotei = landVal * ((small/landArea)/6 + (over/landArea)/3);
+    baseCity = landVal * ((small/landArea)/3 + (over/landArea)*2/3);
+  }
+  const koteiTax = floor100(floor1000(baseKotei)*0.014);
+  const cityTax = hasCityTax ? floor100(floor1000(baseCity)*0.003) : 0;
+  const annualTax = koteiTax + cityTax;
+  const days = val('days');
+
+  const dateStr = document.getElementById('settleDate').value;
+  let fiscalDays = 365;
+  if(dateStr){
+    const d = new Date(dateStr + 'T00:00:00');
+    const mode = document.getElementById('kisanMode').value;
+    let start, end;
+    if(mode === 'april'){
+      const y = d.getMonth()+1 <= 3 ? d.getFullYear()-1 : d.getFullYear();
+      start = new Date(y, 3, 1); end = new Date(y+1, 2, 31);
+    } else {
+      const y = d.getFullYear();
+      start = new Date(y,0,1); end = new Date(y,11,31);
+    }
+    fiscalDays = Math.ceil((end-start)/(1000*60*60*24))+1;
+    document.getElementById('out-fiscalDays').innerText = fiscalDays + '日';
+  }
+  const taxSettlement = Math.floor(annualTax * days / fiscalDays);
+
+  // 登記
+  const transferTax = floor100(floor1000(landVal) * parseFloat(document.getElementById('transferRate').value));
+  const mortgageTax = floor100(floor1000(loan) * parseFloat(document.getElementById('mortgageRate').value));
+  const judicialFee = val('judicialFee');
+  const registrationExtra = val('registrationExtra');
+  const registrationTotal = transferTax + mortgageTax + judicialFee + registrationExtra;
+
+  // 仲介
+  const brokerageMode = document.getElementById('brokerageMode').value;
+  const brokerageFee = brokerageMode === 'none' ? 0 : brokerageMode === 'manual' ? val('brokerageManual') : brokerage(price);
+
+  // ローン
+  const loanFee = val('loanFee');
+  const guaranteeFee = val('guaranteeFee');
+  const contractFee = val('contractFee');
+  const bridgeFee = val('bridgeFee');
+  const loanCostTotal = loanFee + guaranteeFee + contractFee + bridgeFee;
+  const years = val('loanYears');
+  const rate = fval('interestRate');
+  const bonusLoan = Math.min(val('bonusLoan'), loan);
+  const monthly = loanPayment(Math.max(loan-bonusLoan,0), rate, years, 12);
+  const bonus = loanPayment(bonusLoan, rate, years, 2);
+
+  // その他
+  let otherTotal = 0;
+  let otherItems = [];
+  for(let i=0;i<OTHER_DEFAULTS.length;i++){
+    const name = document.getElementById('otherName'+i)?.value || 'その他';
+    const amount = val('otherPrice'+i);
+    if(amount > 0){ otherItems.push([name, amount]); otherTotal += amount; }
+  }
+
+  // 不動産取得税（目安）
+  let acqTaxBefore = 0, acqTaxAfter = 0;
+  if(document.getElementById('acquisitionTaxMode').value === 'yes'){
+    // 宅地評価土地の課税標準は登録価格の1/2想定。税率3%。住宅用土地軽減は概算表示。
+    const taxable = floor1000(landVal * 0.5);
+    acqTaxBefore = floor100(taxable * 0.03);
+    const relief = document.getElementById('residentialRelief').value;
+    if(relief === 'likely'){
+      const floorArea = fval('buildingFloorArea');
+      // 実務上は「45,000円」または「土地1㎡単価×住宅床面積×2×3%」の大きい方等の確認が必要。
+      // ここでは概算として、軽減後0円になり得る前提で最低0円まで控除。
+      const estimatedDeduction = Math.max(45000, Math.floor((landVal/Math.max(landArea,1)) * Math.min(floorArea*2, 200) * 0.5 * 0.03));
+      acqTaxAfter = Math.max(0, acqTaxBefore - estimatedDeduction);
+    } else {
+      acqTaxAfter = acqTaxBefore;
+    }
+  }
+  const insuranceFee = val('insuranceFee');
+  const laterReserve = val('laterReserve');
+  const laterTotal = acqTaxAfter + insuranceFee + laterReserve;
+
+  const closingTotal = taxSettlement + registrationTotal + brokerageFee + loanCostTotal + otherTotal;
+  const totalWithPrice = price + closingTotal;
+  const cashNeeded = Math.max(0, totalWithPrice - loan);
+
+  // 出力
+  document.getElementById('out-closingTotal').innerText = yen(closingTotal);
+  document.getElementById('out-totalWithPrice').innerText = yen(totalWithPrice);
+  document.getElementById('out-cashNeeded').innerText = yen(cashNeeded);
+  document.getElementById('out-laterTotal').innerText = yen(laterTotal);
+  document.getElementById('out-monthly').innerText = yen(monthly) + '/月';
+  document.getElementById('out-bonus').innerText = yen(bonus) + '/回';
+  document.getElementById('mobile-closing').innerText = yen(closingTotal);
+  document.getElementById('mobile-later').innerText = yen(laterTotal);
+  document.getElementById('mobile-cash').innerText = yen(cashNeeded);
+
+  const rows = [
+    ['土地固定資産税評価額', landVal],
+    ['固定資産税 年額', koteiTax],
+    ['都市計画税 年額', cityTax],
+    ['固都税清算金', taxSettlement],
+    ['所有権移転登記', transferTax],
+    ['抵当権設定登記', mortgageTax],
+    ['司法書士・登記実費', judicialFee + registrationExtra],
+    ['仲介手数料', brokerageFee],
+    ['ローン諸費用', loanCostTotal],
+    ['土地固有費用・その他', otherTotal],
+    ['不動産取得税 軽減前目安', acqTaxBefore],
+    ['不動産取得税 後日見込み', acqTaxAfter],
+  ];
+  const breakdown = document.getElementById('breakdown');
+  breakdown.innerHTML = rows.map(([k,v]) => `<div class="flex justify-between gap-4"><span>${k}</span><span class="font-bold">${yen(v)}</span></div>`).join('');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  buildOtherRows();
+  document.querySelectorAll('.num').forEach(el => el.addEventListener('input', () => formatInput(el)));
+  document.querySelectorAll('select, input[type="date"], textarea').forEach(el => el.addEventListener('change', () => { if(el.id==='settleDate' || el.id==='kisanMode') updateDays(); calculate(); }));
+  document.querySelectorAll('#otherRows input[type="text"]').forEach(el => el.addEventListener('input', calculate));
+  updateDays();
+  calculate();
+});
+</script>
+</body>
+</html>
