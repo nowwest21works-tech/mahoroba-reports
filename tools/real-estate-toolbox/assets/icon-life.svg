@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="交通・暮らし">
+  <rect width="640" height="420" rx="32" fill="#fffaf0"/>
+  <path d="M135 250 C200 150 285 320 352 205 C405 112 470 150 520 88 M168 304 H500" fill="none" stroke="#183c2f" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
+  <circle cx="505" cy="315" r="48" fill="#e4ebe4"/>
+  <path d="M484 315 h42 M505 294 v42" stroke="#183c2f" stroke-width="12" stroke-linecap="round"/>
+</svg>

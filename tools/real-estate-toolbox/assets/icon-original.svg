@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="まほろば">
+  <rect width="640" height="420" rx="32" fill="#fffaf0"/>
+  <path d="M320 76 L372 220 L525 220 L400 310 L445 456 L320 370 L195 456 L240 310 L115 220 L268 220 Z" fill="none" stroke="#b8874a" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
+  <circle cx="505" cy="315" r="48" fill="#e4ebe4"/>
+  <path d="M484 315 h42 M505 294 v42" stroke="#183c2f" stroke-width="12" stroke-linecap="round"/>
+</svg>

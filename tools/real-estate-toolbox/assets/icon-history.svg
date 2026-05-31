@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 420" role="img" aria-label="土地の履歴">
+  <rect width="640" height="420" rx="32" fill="#fffaf0"/>
+  <path d="M130 110 C220 70 300 150 395 108 C450 84 505 96 535 115 V320 C475 292 425 285 362 315 C270 358 205 280 130 320 Z" fill="none" stroke="#285846" stroke-width="26" stroke-linecap="round" stroke-linejoin="round" opacity=".88"/>
+  <circle cx="505" cy="315" r="48" fill="#e4ebe4"/>
+  <path d="M484 315 h42 M505 294 v42" stroke="#183c2f" stroke-width="12" stroke-linecap="round"/>
+</svg>
