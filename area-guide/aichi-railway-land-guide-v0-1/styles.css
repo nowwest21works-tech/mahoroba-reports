@@ -83,6 +83,17 @@ h1 {
   color: rgba(255, 255, 255, 0.86);
 }
 
+.preview-note {
+  max-width: 820px;
+  margin: 20px 0 0;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 0.9rem;
+}
+
 .header-metrics {
   display: flex;
   flex-wrap: wrap;

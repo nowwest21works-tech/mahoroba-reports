@@ -94,7 +94,7 @@
             <div class="station-grid">
               ${routeStations.length ? routeStations.map(renderStation).join("") : '<p class="empty">対象駅データがありません。</p>'}
             </div>
-            <p class="source-note">${sourceLabel(route.sourceUrl)}</p>
+            <p class="source-note">${sourceLabel(route.sourceUrl, "route")}</p>
           </div>
         </article>
       `;
@@ -120,7 +120,7 @@
           ${detail("要注意ポイント", listValue(station.cautionTags))}
         </dl>
         <p>${value(station.realEstateComment)}</p>
-        <p class="source-note">${sourceLabel(station.sourceUrl)}</p>
+        <p class="source-note">${sourceLabel(station.sourceUrl, "station")}</p>
       </article>
     `;
   }
@@ -149,9 +149,9 @@
     return index === -1 ? 999 : index;
   }
 
-  function sourceLabel(url) {
+  function sourceLabel(url, cardType) {
     if (!url || url.includes("re-port.net")) {
-      return "出典確認中";
+      return "主要出典：Notion DB / 詳細ソース確認中";
     }
 
     const officialDomains = [
@@ -160,8 +160,8 @@
       "kotsu.city.nagoya.jp"
     ];
 
-    if (officialDomains.some((domain) => url.includes(domain))) {
-      return "主要出典：公式サイト等 / 詳細確認中";
+    if (cardType === "station" && officialDomains.some((domain) => url.includes(domain))) {
+      return "主要出典：鉄道会社公式 / 地価・ハザード詳細確認中";
     }
 
     return `主要出典：${escapeHtml(url)}`;

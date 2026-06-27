@@ -13,7 +13,7 @@
     "cautionTags": ["ハザード", "要現地確認"],
     "passengerCountPerDay": 15000,
     "estimatedLandPriceManPerTsubo": 60,
-    "realEstateComment": "名駅直通25分の平坦地で利便性は高いが、天白川沿いは東海豪雨の浸水中心地。駅周辺広範囲に1〜3m級の浸水想定があり、水災補償と地盤改良費の確保が前提になりやすい。地価は桜通線内では抑えめ。町名差が大きく個別確認を。",
+    "realEstateComment": "名駅直通25分の平坦地で利便性は高いが、天白川沿いは過去に浸水被害が見られたエリア。駅周辺広範囲に1〜3m級の浸水想定があり、水災補償や地盤状況の確認が重要。地価は桜通線内では抑えめ。町名差が大きく個別確認を。",
     "sourceUrl": "https://www.kotsu.city.nagoya.jp/",
     "status": "進行中"
   },
@@ -301,7 +301,7 @@
     "cautionTags": ["ハザード", "価格上昇"],
     "passengerCountPerDay": 34000,
     "estimatedLandPriceManPerTsubo": 90,
-    "realEstateComment": "再開発で高層マンションが建つ春日井の玄関口。名駅13分のタイパが魅力だが、庄内川北側に位置し決壊時1〜3m級の洪水ハザード指定エリアがある。地価は市内でも高値圏で、水害は基礎高など建築でカバーする割り切りが要る。",
+    "realEstateComment": "再開発で高層マンションが建つ春日井の玄関口。名駅13分のタイパが魅力だが、庄内川北側に位置し決壊時1〜3m級の洪水ハザード指定エリアがある。地価は市内でも高値圏で、水害面は基礎高など建築計画での個別確認が重要。",
     "sourceUrl": "https://jr-central.co.jp/",
     "status": "進行中"
   },
@@ -373,7 +373,7 @@
     "cautionTags": ["ハザード", "価格上昇"],
     "passengerCountPerDay": 20000,
     "estimatedLandPriceManPerTsubo": 70,
-    "realEstateComment": "名駅10分とmozo直結で利便性が高い駅。一方で新川氾濫ハザードの中心に近く、東海豪雨では深い浸水を記録。建築時は高基礎・電気設備の上部配置などハザード対応が重要となる傾向。",
+    "realEstateComment": "名駅10分とmozo直結で利便性が高い駅。一方で新川氾濫ハザードの影響を受けやすい区域があり、東海豪雨では深い浸水が記録された地点もある。建築時は高基礎・電気設備の上部配置などハザード対応の個別確認が重要となる傾向。",
     "sourceUrl": "https://www.meitetsu.co.jp/",
     "status": "進行中"
   },
