@@ -81,6 +81,8 @@
       </div>
     `;
 
+    bindRouteImageFallbacks(routeSections);
+
     routeSections.querySelectorAll(".route-tab").forEach((button) => {
       button.addEventListener("click", () => {
         activeRouteName = button.dataset.routeName;
@@ -192,16 +194,46 @@
     const imagePath = route.imagePath ? escapeHtml(route.imagePath) : "";
 
     if (imagePath && route.imageStatus !== "placeholder") {
-      return `<img class="route-image" src="${imagePath}" alt="${alt}" loading="lazy">`;
+      return `
+        <figure class="route-image-frame">
+          <img class="route-image" src="${imagePath}" alt="${alt}" loading="lazy">
+          <figcaption class="route-image-caption">沿線イメージ</figcaption>
+          ${routeImagePlaceholder(theme, alt, route.imageStatus, true)}
+        </figure>
+      `;
     }
 
+    return routeImagePlaceholder(theme, alt, route.imageStatus, false);
+  }
+
+  function routeImagePlaceholder(theme, alt, status, hidden) {
     return `
-      <div class="route-image-placeholder" role="img" aria-label="${alt}" data-status="${escapeHtml(route.imageStatus || "placeholder")}">
+      <div class="route-image-placeholder${hidden ? " route-image-fallback" : ""}" role="img" aria-label="${alt}" data-status="${escapeHtml(status || "placeholder")}"${hidden ? " hidden" : ""}>
         <span class="image-kicker">沿線イメージ</span>
         <strong>${theme}</strong>
         <small>画像準備中</small>
       </div>
     `;
+  }
+
+  function bindRouteImageFallbacks(scope) {
+    scope.querySelectorAll(".route-image-frame").forEach((frame) => {
+      const image = frame.querySelector(".route-image");
+      const caption = frame.querySelector(".route-image-caption");
+      const fallback = frame.querySelector(".route-image-fallback");
+
+      if (!image || !fallback) {
+        return;
+      }
+
+      image.addEventListener("error", () => {
+        image.hidden = true;
+        if (caption) {
+          caption.hidden = true;
+        }
+        fallback.hidden = false;
+      }, { once: true });
+    });
   }
 
   function detail(label, text) {
