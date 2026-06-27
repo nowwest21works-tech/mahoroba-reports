@@ -72,6 +72,7 @@
 
       return `
         <article class="route-card">
+          ${routeImage(route)}
           <div class="route-card-header">
             <div class="route-title-row">
               <h3>${escapeHtml(route.routeName)}</h3>
@@ -81,6 +82,7 @@
               <span>${value(route.operator)}</span>
               <span>${value(route.routeType)}</span>
               <span>都心アクセス: ${value(route.cityAccess)}</span>
+              <span>名古屋駅方面アクセス: ${value(route.nagoyaStationAccess)}</span>
               <span>土地供給感: ${value(route.landSupply)}</span>
             </div>
           </div>
@@ -111,7 +113,7 @@
         <dl class="station-details">
           ${detail("駅タイプ", station.stationType)}
           ${detail("概算乗降者数", station.passengerCountPerDay ? `${number(station.passengerCountPerDay)}人/日` : "")}
-          ${detail("概算地価", station.estimatedLandPriceManPerTsubo ? `${number(station.estimatedLandPriceManPerTsubo)}万円/坪` : "")}
+          ${detail("概算坪単価レンジ", priceRange(station.estimatedLandPriceManPerTsubo))}
           ${detail("地形タイプ", listValue(station.terrainType))}
           ${detail("ハザード注意度", station.hazardLevel)}
           ${detail("土地探し難易度", station.landSearchDifficulty)}
@@ -134,6 +136,19 @@
     `;
   }
 
+  function routeImage(route) {
+    const theme = value(route.imageTheme || "沿線イメージ");
+    const alt = value(route.imageAlt || `${route.routeName}の沿線イメージ`);
+
+    return `
+      <div class="route-image-placeholder" role="img" aria-label="${alt}" data-status="${escapeHtml(route.imageStatus || "placeholder")}">
+        <span class="image-kicker">沿線イメージ</span>
+        <strong>${theme}</strong>
+        <small>画像準備中</small>
+      </div>
+    `;
+  }
+
   function detail(label, text) {
     return `
       <div>
@@ -151,7 +166,7 @@
 
   function sourceLabel(url, cardType) {
     if (!url || url.includes("re-port.net")) {
-      return "主要出典：Notion DB / 詳細ソース確認中";
+      return "参考情報：公開情報・社内調査メモをもとに作成 / 詳細出典確認中";
     }
 
     const officialDomains = [
@@ -161,10 +176,10 @@
     ];
 
     if (cardType === "station" && officialDomains.some((domain) => url.includes(domain))) {
-      return "主要出典：鉄道会社公式 / 地価・ハザード詳細確認中";
+      return "参考情報：鉄道会社公式情報・社内調査メモをもとに作成 / 地価・ハザードは詳細確認中";
     }
 
-    return `主要出典：${escapeHtml(url)}`;
+    return "参考情報：公式情報・公開情報をもとに作成";
   }
 
   function chips(items) {
@@ -178,6 +193,21 @@
 
   function number(input) {
     return new Intl.NumberFormat("ja-JP").format(input);
+  }
+
+  function priceRange(input) {
+    if (input === null || input === undefined || input === "") {
+      return "";
+    }
+
+    const price = Number(input);
+    if (!Number.isFinite(price)) {
+      return "";
+    }
+
+    const min = Math.max(0, price - 5);
+    const max = price + 5;
+    return `${number(min)}〜${number(max)}万円/坪目安`;
   }
 
   function value(input) {
