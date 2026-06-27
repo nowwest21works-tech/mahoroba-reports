@@ -176,9 +176,54 @@ h3 {
   border-bottom: 0;
 }
 
+.summary-hint {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+
 .route-sections {
   display: grid;
   gap: 24px;
+}
+
+.route-tabs {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 0 8px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.route-tab {
+  flex: 0 0 auto;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.route-tab[aria-selected="true"] {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: var(--white);
+}
+
+.route-tab:focus-visible {
+  outline: 3px solid rgba(95, 127, 104, 0.35);
+  outline-offset: 2px;
+}
+
+.route-panel {
+  min-width: 0;
 }
 
 .route-card {
@@ -187,6 +232,13 @@ h3 {
   background: var(--white);
   box-shadow: var(--shadow);
   overflow: hidden;
+}
+
+.route-image {
+  display: block;
+  width: 100%;
+  height: 132px;
+  object-fit: cover;
 }
 
 .route-image-placeholder {
@@ -325,6 +377,7 @@ h3 {
   font-size: 1.18rem;
 }
 
+.station-key-details,
 .station-details {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -332,20 +385,48 @@ h3 {
   margin: 0;
 }
 
+.station-key-details {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.station-key-details div,
 .station-details div {
   padding: 10px;
   border-radius: 8px;
   background: #f7f3ea;
 }
 
+.station-key-details dt,
 .station-details dt {
   color: var(--muted);
   font-size: 0.76rem;
 }
 
+.station-key-details dd,
 .station-details dd {
   margin: 2px 0 0;
   font-weight: 700;
+}
+
+.station-comment {
+  margin-top: 12px;
+}
+
+.station-more {
+  margin-top: 12px;
+  border-top: 1px solid var(--line);
+  padding-top: 10px;
+}
+
+.station-more summary {
+  color: var(--green-strong);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.station-more .station-details {
+  margin-top: 10px;
 }
 
 .source-note {
@@ -418,6 +499,19 @@ h3 {
   .route-image-placeholder {
     min-height: 108px;
     padding: 14px 16px;
+  }
+
+  .route-image {
+    height: 108px;
+  }
+
+  .route-tabs {
+    margin-right: -16px;
+    padding-right: 16px;
+  }
+
+  .station-key-details {
+    grid-template-columns: 1fr;
   }
 
   .station-details,

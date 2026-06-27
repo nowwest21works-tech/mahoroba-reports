@@ -3,6 +3,7 @@
   const routeSections = document.querySelector("#route-sections");
   const routeCount = document.querySelector("#route-count");
   const stationCount = document.querySelector("#station-count");
+  let activeRouteName = "地下鉄桜通線";
 
   const targetOrder = [
     "地下鉄桜通線",
@@ -65,42 +66,86 @@
       return;
     }
 
-    routeSections.innerHTML = routes.map((route) => {
-      const routeStations = stations
-        .filter((station) => station.routeDisplayName === route.routeName)
-        .sort((a, b) => stationIndex(route.routeName, a.stationName) - stationIndex(route.routeName, b.stationName));
+    if (!routes.some((route) => route.routeName === activeRouteName)) {
+      activeRouteName = routes[0].routeName;
+    }
 
-      return `
-        <article class="route-card">
-          ${routeImage(route)}
-          <div class="route-card-header">
-            <div class="route-title-row">
-              <h3>${escapeHtml(route.routeName)}</h3>
-              <span class="badge">${value(route.targetSection)}</span>
-            </div>
-            <div class="route-meta">
-              <span>${value(route.operator)}</span>
-              <span>${value(route.routeType)}</span>
-              <span>都心アクセス: ${value(route.cityAccess)}</span>
-              <span>名古屋駅方面アクセス: ${value(route.nagoyaStationAccess)}</span>
-              <span>土地供給感: ${value(route.landSupply)}</span>
-            </div>
+    const activeRoute = routes.find((route) => route.routeName === activeRouteName) || routes[0];
+
+    routeSections.innerHTML = `
+      <div class="route-tabs" role="tablist" aria-label="路線を選択">
+        ${routes.map((route) => routeTab(route)).join("")}
+      </div>
+      <div class="route-panel" role="tabpanel" aria-labelledby="${routeTabId(activeRoute.routeName)}">
+        ${routeCard(activeRoute, stations)}
+      </div>
+    `;
+
+    routeSections.querySelectorAll(".route-tab").forEach((button) => {
+      button.addEventListener("click", () => {
+        activeRouteName = button.dataset.routeName;
+        renderRoutes(routes, stations);
+      });
+    });
+  }
+
+  function routeTab(route) {
+    const selected = route.routeName === activeRouteName;
+
+    return `
+      <button
+        class="route-tab"
+        id="${routeTabId(route.routeName)}"
+        type="button"
+        role="tab"
+        aria-selected="${selected ? "true" : "false"}"
+        data-route-name="${escapeHtml(route.routeName)}"
+      >
+        ${escapeHtml(route.routeName)}
+      </button>
+    `;
+  }
+
+  function routeTabId(routeName) {
+    const index = Math.max(0, targetOrder.indexOf(routeName));
+    return `route-tab-${index}`;
+  }
+
+  function routeCard(route, stations) {
+    const routeStations = stations
+      .filter((station) => station.routeDisplayName === route.routeName)
+      .sort((a, b) => stationIndex(route.routeName, a.stationName) - stationIndex(route.routeName, b.stationName));
+
+    return `
+      <article class="route-card">
+        ${routeImage(route)}
+        <div class="route-card-header">
+          <div class="route-title-row">
+            <h3>${escapeHtml(route.routeName)}</h3>
+            <span class="badge">${value(route.targetSection)}</span>
           </div>
-          <div class="route-body">
-            <div class="route-copy-grid">
-              ${copyBlock("沿線サマリー", route.summary)}
-              ${copyBlock("不動産的見立て", route.realEstateView)}
-              ${copyBlock("向いている家族像", route.familyFit)}
-              ${copyBlock("注意点", route.cautions)}
-            </div>
-            <div class="station-grid">
-              ${routeStations.length ? routeStations.map(renderStation).join("") : '<p class="empty">対象駅データがありません。</p>'}
-            </div>
-            <p class="source-note">${sourceLabel(route.sourceUrl, "route")}</p>
+          <div class="route-meta">
+            <span>${value(route.operator)}</span>
+            <span>${value(route.routeType)}</span>
+            <span>都心アクセス: ${value(route.cityAccess)}</span>
+            <span>名古屋駅方面アクセス: ${value(route.nagoyaStationAccess)}</span>
+            <span>土地供給感: ${value(route.landSupply)}</span>
           </div>
-        </article>
-      `;
-    }).join("");
+        </div>
+        <div class="route-body">
+          <div class="route-copy-grid">
+            ${copyBlock("沿線サマリー", route.summary)}
+            ${copyBlock("不動産的見立て", route.realEstateView)}
+            ${copyBlock("向いている家族像", route.familyFit)}
+            ${copyBlock("注意点", route.cautions)}
+          </div>
+          <div class="station-grid">
+            ${routeStations.length ? routeStations.map(renderStation).join("") : '<p class="empty">対象駅データがありません。</p>'}
+          </div>
+          <p class="source-note">${sourceLabel(route.sourceUrl, "route")}</p>
+        </div>
+      </article>
+    `;
   }
 
   function renderStation(station) {
@@ -110,19 +155,24 @@
           <h4>${escapeHtml(station.stationName)}</h4>
           <span class="badge">${value(station.routeName)}</span>
         </div>
-        <dl class="station-details">
-          ${detail("駅タイプ", station.stationType)}
-          ${detail("概算乗降者数", station.passengerCountPerDay ? `${number(station.passengerCountPerDay)}人/日` : "")}
+        <dl class="station-key-details">
           ${detail("概算坪単価レンジ", priceRange(station.estimatedLandPriceManPerTsubo))}
-          ${detail("地形タイプ", listValue(station.terrainType))}
           ${detail("ハザード注意度", station.hazardLevel)}
           ${detail("土地探し難易度", station.landSearchDifficulty)}
-          ${detail("車生活相性", station.carLifestyleFit)}
-          ${detail("徒歩生活相性", station.walkLifestyleFit)}
-          ${detail("要注意ポイント", listValue(station.cautionTags))}
         </dl>
-        <p>${value(station.realEstateComment)}</p>
-        <p class="source-note">${sourceLabel(station.sourceUrl, "station")}</p>
+        <p class="station-comment">${value(station.realEstateComment)}</p>
+        <details class="station-more">
+          <summary>詳細を見る</summary>
+          <dl class="station-details">
+            ${detail("駅タイプ", station.stationType)}
+            ${detail("概算乗降者数", station.passengerCountPerDay ? `${number(station.passengerCountPerDay)}人/日` : "")}
+            ${detail("地形タイプ", listValue(station.terrainType))}
+            ${detail("車生活相性", station.carLifestyleFit)}
+            ${detail("徒歩生活相性", station.walkLifestyleFit)}
+            ${detail("要注意ポイント", listValue(station.cautionTags))}
+          </dl>
+          <p class="source-note">${sourceLabel(station.sourceUrl, "station")}</p>
+        </details>
       </article>
     `;
   }
@@ -139,6 +189,11 @@
   function routeImage(route) {
     const theme = value(route.imageTheme || "沿線イメージ");
     const alt = value(route.imageAlt || `${route.routeName}の沿線イメージ`);
+    const imagePath = route.imagePath ? escapeHtml(route.imagePath) : "";
+
+    if (imagePath && route.imageStatus !== "placeholder") {
+      return `<img class="route-image" src="${imagePath}" alt="${alt}" loading="lazy">`;
+    }
 
     return `
       <div class="route-image-placeholder" role="img" aria-label="${alt}" data-status="${escapeHtml(route.imageStatus || "placeholder")}">
