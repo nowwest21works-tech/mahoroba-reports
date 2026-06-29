@@ -187,6 +187,144 @@ h3 {
   gap: 24px;
 }
 
+.route-map-section {
+  padding-top: 34px;
+}
+
+.route-map-note {
+  max-width: 880px;
+  margin: -8px 0 18px;
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.route-map-shell {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.route-map-scroll {
+  overflow-x: auto;
+  padding: 18px;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.route-map-svg {
+  display: block;
+  width: 100%;
+  min-width: 980px;
+  height: auto;
+  background:
+    linear-gradient(90deg, rgba(222, 215, 202, 0.2) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(222, 215, 202, 0.16) 1px, transparent 1px),
+    #fffefa;
+  background-size: 56px 56px;
+}
+
+.route-map-route,
+.route-map-station {
+  cursor: pointer;
+  outline: none;
+}
+
+.route-map-line {
+  fill: none;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  transition: opacity 0.2s ease, stroke-width 0.2s ease;
+}
+
+.route-map-line-hit {
+  stroke: transparent;
+  stroke-width: 30;
+}
+
+.route-map-route-label,
+.route-map-station-label {
+  fill: var(--ink);
+  paint-order: stroke;
+  stroke: rgba(255, 253, 248, 0.92);
+  stroke-width: 5px;
+  stroke-linejoin: round;
+  user-select: none;
+}
+
+.route-map-route-label {
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.route-map-station-label {
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.route-map-station-dot {
+  fill: var(--white);
+  stroke: var(--navy);
+  stroke-width: 2;
+  transition: fill 0.2s ease, stroke 0.2s ease, stroke-width 0.2s ease;
+}
+
+.route-map-station-hit {
+  fill: transparent;
+}
+
+.route-map-route:hover .route-map-line:not(.route-map-line-hit),
+.route-map-route:focus-visible .route-map-line:not(.route-map-line-hit),
+.route-map-route.is-active-route .route-map-line:not(.route-map-line-hit) {
+  stroke-width: 11;
+  opacity: 1;
+}
+
+.route-map-route:focus-visible .route-map-route-label,
+.route-map-station:focus-visible .route-map-station-label {
+  outline: none;
+}
+
+.route-map-route:focus-visible .route-map-line:not(.route-map-line-hit),
+.route-map-station:focus-visible .route-map-station-dot {
+  filter: drop-shadow(0 0 5px rgba(95, 127, 104, 0.55));
+}
+
+.route-map-station:hover .route-map-station-dot,
+.route-map-station:focus-visible .route-map-station-dot {
+  fill: #f7f3ea;
+  stroke-width: 3;
+}
+
+.route-map-station.is-active-station .route-map-station-dot {
+  fill: var(--navy);
+  stroke: var(--navy);
+  stroke-width: 3;
+}
+
+.route-map-station.is-active-station .route-map-station-label {
+  font-weight: 700;
+}
+
+.station-card-highlight {
+  animation: station-highlight 2.2s ease;
+}
+
+@keyframes station-highlight {
+  0%,
+  100% {
+    border-color: var(--line);
+    box-shadow: none;
+  }
+
+  20%,
+  72% {
+    border-color: var(--green-strong);
+    box-shadow: 0 0 0 4px rgba(95, 127, 104, 0.18);
+  }
+}
+
 .route-tabs {
   display: flex;
   gap: 8px;
@@ -540,6 +678,19 @@ h3 {
   .route-tabs {
     margin-right: -16px;
     padding-right: 16px;
+  }
+
+  .route-map-note {
+    font-size: 0.86rem;
+  }
+
+  .route-map-scroll {
+    margin-right: -16px;
+    padding: 14px 16px 14px 14px;
+  }
+
+  .route-map-svg {
+    min-width: 900px;
   }
 
   .station-key-details {

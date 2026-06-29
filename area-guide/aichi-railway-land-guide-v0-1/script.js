@@ -1,9 +1,13 @@
 (function () {
   const routeSummary = document.querySelector("#route-summary");
+  const routeMap = document.querySelector("#route-map");
   const routeSections = document.querySelector("#route-sections");
   const routeCount = document.querySelector("#route-count");
   const stationCount = document.querySelector("#station-count");
   let activeRouteName = "地下鉄桜通線";
+  let selectedStationKey = "";
+  let cachedRoutes = [];
+  let cachedStations = [];
 
   const targetOrder = [
     "地下鉄桜通線",
@@ -27,13 +31,17 @@
 
   Promise.all([
     fetch("./data/routes.json").then((response) => response.json()),
-    fetch("./data/stations.json").then((response) => response.json())
+    fetch("./data/stations.json").then((response) => response.json()),
+    fetch("./data/route-map.json").then((response) => response.json())
   ])
-    .then(([routes, stations]) => {
+    .then(([routes, stations, routeMapData]) => {
       const sortedRoutes = sortRoutes(routes);
+      cachedRoutes = sortedRoutes;
+      cachedStations = stations;
       routeCount.textContent = sortedRoutes.length;
       stationCount.textContent = stations.length;
       renderSummary(sortedRoutes);
+      renderRouteMap(routeMapData);
       renderRoutes(sortedRoutes, stations);
     })
     .catch((error) => {
@@ -62,6 +70,128 @@
     `).join("");
   }
 
+  function renderRouteMap(mapData) {
+    if (!routeMap || !mapData) {
+      return;
+    }
+
+    const routeLookup = new Set(cachedRoutes.map((route) => route.routeName));
+    const stationLookup = new Set(cachedStations.map((station) => stationKey(station.routeDisplayName, station.stationName)));
+    const routes = (mapData.routes || []).filter((route) => routeLookup.has(route.routeName));
+    const stations = (mapData.stations || []).filter((station) => stationLookup.has(stationKey(station.routeDisplayName, station.stationName)));
+
+    routeMap.innerHTML = `
+      <div class="route-map-scroll" role="group" aria-label="クリック式の模式路線マップ">
+        <svg class="route-map-svg" viewBox="${escapeHtml(mapData.viewBox || "0 0 1120 660")}" role="img" aria-labelledby="route-map-svg-title route-map-svg-desc">
+          <title id="route-map-svg-title">7路線27駅の模式路線マップ</title>
+          <desc id="route-map-svg-desc">路線または駅を選ぶと該当する路線カードや駅カードへ移動します。実際の距離・方角・縮尺を表すものではありません。</desc>
+          <g class="route-map-routes">
+            ${routes.map(mapRoute).join("")}
+          </g>
+          <g class="route-map-stations">
+            ${stations.map(mapStation).join("")}
+          </g>
+        </svg>
+      </div>
+    `;
+
+    bindRouteMapActions();
+    updateRouteMapSelection();
+  }
+
+  function mapRoute(route) {
+    const points = Array.isArray(route.points) ? route.points : [];
+    const pathData = points.map((point, index) => `${index === 0 ? "M" : "L"} ${point[0]} ${point[1]}`).join(" ");
+    const label = route.label || {};
+    const color = escapeHtml(route.color || "#5f7f68");
+    const routeName = escapeHtml(route.routeName);
+
+    return `
+      <g class="route-map-route" data-map-route="${routeName}" tabindex="0" role="button" aria-label="${routeName}を表示">
+        <path class="route-map-line route-map-line-hit" d="${pathData}" />
+        <path class="route-map-line" d="${pathData}" stroke="${color}" />
+        <text class="route-map-route-label" x="${numberValue(label.x, 0)}" y="${numberValue(label.y, 0)}" fill="${color}">${routeName}</text>
+      </g>
+    `;
+  }
+
+  function mapStation(station) {
+    const key = stationKey(station.routeDisplayName, station.stationName);
+    const routeName = escapeHtml(station.routeDisplayName);
+    const stationName = escapeHtml(station.stationName);
+    const x = numberValue(station.x, 0);
+    const y = numberValue(station.y, 0);
+    const labelX = x + numberValue(station.labelDx, 0);
+    const labelY = y + numberValue(station.labelDy, -16);
+    const anchor = escapeHtml(station.anchor || "middle");
+
+    return `
+      <g class="route-map-station" data-map-route="${routeName}" data-map-station="${stationName}" data-map-key="${escapeHtml(key)}" tabindex="0" role="button" aria-label="${routeName} ${stationName}を表示">
+        <circle class="route-map-station-dot" cx="${x}" cy="${y}" r="8" />
+        <circle class="route-map-station-hit" cx="${x}" cy="${y}" r="18" />
+        <text class="route-map-station-label" x="${labelX}" y="${labelY}" text-anchor="${anchor}">${stationName}</text>
+      </g>
+    `;
+  }
+
+  function bindRouteMapActions() {
+    if (!routeMap) {
+      return;
+    }
+
+    routeMap.querySelectorAll("[data-map-route]").forEach((item) => {
+      item.addEventListener("click", () => {
+        selectRouteFromMap(item.dataset.mapRoute, item.dataset.mapStation || "");
+      });
+      item.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectRouteFromMap(item.dataset.mapRoute, item.dataset.mapStation || "");
+        }
+      });
+    });
+  }
+
+  function selectRouteFromMap(routeName, stationName) {
+    if (!routeName) {
+      return;
+    }
+
+    activeRouteName = routeName;
+    selectedStationKey = stationName ? stationKey(routeName, stationName) : "";
+    renderRoutes(cachedRoutes, cachedStations);
+    updateRouteMapSelection();
+
+    const target = stationName
+      ? document.getElementById(stationCardId(routeName, stationName))
+      : routeSections.querySelector(".route-panel");
+
+    if (target) {
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (stationName) {
+        target.classList.remove("station-card-highlight");
+        window.setTimeout(() => target.classList.add("station-card-highlight"), 20);
+        window.setTimeout(() => target.classList.remove("station-card-highlight"), 2200);
+      }
+    }
+  }
+
+  function updateRouteMapSelection() {
+    if (!routeMap) {
+      return;
+    }
+
+    routeMap.querySelectorAll("[data-map-route]").forEach((item) => {
+      const isActiveRoute = item.dataset.mapRoute === activeRouteName;
+      item.classList.toggle("is-active-route", isActiveRoute);
+      item.setAttribute("aria-pressed", isActiveRoute ? "true" : "false");
+    });
+
+    routeMap.querySelectorAll("[data-map-key]").forEach((item) => {
+      item.classList.toggle("is-active-station", Boolean(selectedStationKey) && item.dataset.mapKey === selectedStationKey);
+    });
+  }
+
   function renderRoutes(routes, stations) {
     if (!routes.length) {
       routeSections.innerHTML = '<p class="empty">表示できる路線データがありません。</p>';
@@ -88,7 +218,9 @@
     routeSections.querySelectorAll(".route-tab").forEach((button) => {
       button.addEventListener("click", () => {
         activeRouteName = button.dataset.routeName;
+        selectedStationKey = "";
         renderRoutes(routes, stations);
+        updateRouteMapSelection();
       });
     });
   }
@@ -153,8 +285,10 @@
   }
 
   function renderStation(station) {
+    const cardId = stationCardId(station.routeDisplayName, station.stationName);
+
     return `
-      <article class="station-card">
+      <article class="station-card" id="${cardId}" data-route-name="${escapeHtml(station.routeDisplayName)}" data-station-name="${escapeHtml(station.stationName)}">
         <div class="station-head">
           <h4>${escapeHtml(station.stationName)}</h4>
           <span class="badge">${value(station.routeName)}</span>
@@ -251,6 +385,19 @@
     const order = stationOrder[routeName] || [];
     const index = order.indexOf(stationName);
     return index === -1 ? 999 : index;
+  }
+
+  function stationKey(routeName, stationName) {
+    return `${routeName}::${stationName}`;
+  }
+
+  function stationCardId(routeName, stationName) {
+    return `station-${encodeURIComponent(routeName)}-${encodeURIComponent(stationName)}`.replaceAll("%", "");
+  }
+
+  function numberValue(input, fallback) {
+    const value = Number(input);
+    return Number.isFinite(value) ? value : fallback;
   }
 
   function sourceLabel(url, cardType) {
