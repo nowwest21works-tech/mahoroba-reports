@@ -14,6 +14,7 @@ Purpose: confirm whether the Aichi railway land guide preview is safe to publish
 - [ ] No customer-specific or confidential information is present.
 - [ ] Existing HTML/JSON changes are limited to the approved preview scope.
 - [ ] Displayed railway lines and stations match the intended public-source dataset.
+- [ ] The preview count is 7 routes / 27 stations after adding Meitetsu Tsushima Line.
 - [ ] Records without reliable source URLs are handled according to the agreed rule.
 - [ ] Hazard and notes wording does not overstate certainty.
 - [ ] Mobile display has been checked on a real or browser-emulated narrow viewport.
