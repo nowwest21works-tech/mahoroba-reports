@@ -182,6 +182,99 @@ h3 {
   font-size: 0.88rem;
 }
 
+.route-summary-cards {
+  display: none;
+}
+
+.route-summary-card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  padding: 16px;
+  background: var(--white);
+  box-shadow: var(--shadow);
+}
+
+.route-summary-card + .route-summary-card {
+  margin-top: 12px;
+}
+
+.route-summary-card-head {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+
+.route-summary-card-head h3 {
+  font-size: 1.08rem;
+}
+
+.route-summary-card-head span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.route-summary-card-details {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.route-summary-card-details div {
+  padding: 8px 9px;
+  border-radius: 8px;
+  background: #f7f3ea;
+}
+
+.route-summary-card-details dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+}
+
+.route-summary-card-details dd {
+  margin: 2px 0 0;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.route-summary-card p {
+  display: -webkit-box;
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.9rem;
+  line-height: 1.65;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.route-summary-card-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.route-summary-card-actions button,
+.map-station-popup button {
+  min-height: 38px;
+  border: 1px solid var(--navy);
+  border-radius: 8px;
+  background: var(--navy);
+  color: var(--white);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.route-summary-card-actions button + button {
+  background: var(--white);
+  color: var(--navy);
+}
+
 .route-sections {
   display: grid;
   gap: 24px;
@@ -244,6 +337,38 @@ h3 {
 
 .geographic-map-shell .leaflet-control-attribution {
   font-size: 0.72rem;
+}
+
+.nagoya-reference-label {
+  border: 1px solid rgba(16, 36, 71, 0.24);
+  border-radius: 8px;
+  background: rgba(255, 253, 248, 0.96);
+  color: var(--navy);
+  box-shadow: 0 8px 22px rgba(16, 36, 71, 0.14);
+  font-weight: 700;
+}
+
+.map-station-popup {
+  display: grid;
+  gap: 5px;
+  min-width: 180px;
+  color: var(--ink);
+  font-family: "Yu Gothic", "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+}
+
+.map-station-popup strong {
+  color: var(--navy);
+  font-size: 1rem;
+}
+
+.map-station-popup span {
+  color: var(--muted);
+  font-size: 0.84rem;
+}
+
+.map-station-popup button {
+  margin-top: 5px;
+  width: 100%;
 }
 
 .geo-map-legend {
@@ -817,5 +942,39 @@ h3 {
   .station-details,
   .guide-grid {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 720px) {
+  .table-wrap {
+    display: none;
+  }
+
+  .route-summary-cards {
+    display: block;
+  }
+
+  .summary-hint {
+    margin-top: 14px;
+  }
+}
+
+@media (max-width: 420px) {
+  .route-summary-card {
+    padding: 14px;
+  }
+
+  .route-summary-card-details {
+    grid-template-columns: 1fr;
+  }
+
+  .route-summary-card-actions button {
+    min-height: 42px;
+    padding: 0 8px;
+  }
+
+  .map-station-popup {
+    min-width: 160px;
+    max-width: 240px;
   }
 }
