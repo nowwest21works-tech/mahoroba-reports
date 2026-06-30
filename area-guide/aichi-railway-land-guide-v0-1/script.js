@@ -27,6 +27,8 @@
     longitude: 136.88175
   };
 
+  const hazardReviewText = "町名・区画ごとに自治体ハザードマップ等で個別確認";
+
   const targetOrder = [
     "地下鉄桜通線",
     "名鉄名古屋本線",
@@ -89,7 +91,7 @@
         <td>${value(route.landPriceBand)}</td>
         <td>${value(route.landSupply)}</td>
         <td>${chips(route.terrainTrend)}</td>
-        <td>${value(route.hazardTrend)}</td>
+        <td>${publicHazardValue(route)}</td>
         <td>${value(route.familyFit)}</td>
       </tr>
     `).join("");
@@ -110,7 +112,7 @@
           ${detail("価格帯", route.landPriceBand)}
           ${detail("地形", listValue(route.terrainTrend))}
           ${detail("土地供給", route.landSupply)}
-          ${detail("ハザード", route.hazardTrend)}
+          ${detail("ハザード", publicHazardText(route))}
         </dl>
         <p>${shortText(route.familyFit || route.summary, 68)}</p>
         <div class="route-summary-card-actions">
@@ -366,12 +368,12 @@
   }
 
   function stationPopup(station) {
-    const price = priceRange(station.estimatedLandPriceManPerTsubo) || "要確認";
+    const price = priceRange(station.estimatedLandPriceManPerTsubo) || "";
     return `
       <div class="map-station-popup">
         <strong>${escapeHtml(station.stationName)}駅</strong>
         <span>${escapeHtml(station.routeDisplayName)}</span>
-        <span>概算坪単価：${escapeHtml(price)}</span>
+        ${price ? `<span>概算坪単価：${escapeHtml(price)}</span>` : ""}
         <button type="button" data-popup-route="${escapeHtml(station.routeDisplayName)}" data-popup-station="${escapeHtml(station.stationName)}">詳しく見る</button>
       </div>
     `;
@@ -673,7 +675,7 @@
             ${copyBlock("沿線サマリー", route.summary)}
             ${copyBlock("不動産的見立て", route.realEstateView)}
             ${copyBlock("向いている家族像", route.familyFit)}
-            ${copyBlock("注意点", route.cautions)}
+            ${copyBlock("注意点", publicCautionCopy(route))}
           </div>
           <div class="station-grid">
             ${routeStations.length ? routeStations.map(renderStation).join("") : '<p class="empty">対象駅データがありません。</p>'}
@@ -694,16 +696,16 @@
           <span class="badge">${value(station.routeName)}</span>
         </div>
         <dl class="station-key-details">
-          ${detail("概算坪単価レンジ", priceRange(station.estimatedLandPriceManPerTsubo))}
-          ${detail("ハザード注意度", station.hazardLevel)}
+          ${optionalDetail("概算坪単価", priceRange(station.estimatedLandPriceManPerTsubo), Boolean(station.estimatedLandPriceManPerTsubo))}
+          ${detail("ハザード注意度", publicHazardText(station))}
           ${detail("土地探し難易度", station.landSearchDifficulty)}
         </dl>
-        <p class="station-comment">${value(station.realEstateComment)}</p>
+        <p class="station-comment">${value(publicStationComment(station))}</p>
         <details class="station-more">
           <summary>詳細を見る</summary>
           <dl class="station-details">
             ${detail("駅タイプ", station.stationType)}
-            ${detail("概算乗降者数", station.passengerCountPerDay ? `${number(station.passengerCountPerDay)}人/日` : "")}
+            ${optionalDetail("概算乗降者数", station.passengerCountPerDay ? `${number(station.passengerCountPerDay)}人/日` : "", stationHasPassengerEvidence(station))}
             ${detail("地形タイプ", listValue(station.terrainType))}
             ${detail("車生活相性", station.carLifestyleFit)}
             ${detail("徒歩生活相性", station.walkLifestyleFit)}
@@ -732,7 +734,7 @@
     if (imagePath && route.imageStatus !== "placeholder") {
       return `
         <figure class="route-image-frame">
-          <img class="route-image" src="${imagePath}" alt="${alt}" loading="lazy">
+          <img class="route-image" src="${imagePath}" alt="${alt}" loading="eager" fetchpriority="high">
           <figcaption class="route-image-caption">沿線イメージ</figcaption>
           ${routeImagePlaceholder(theme, alt, route.imageStatus, true)}
         </figure>
@@ -781,6 +783,14 @@
     `;
   }
 
+  function optionalDetail(label, text, shouldShow) {
+    if (!shouldShow || text === null || text === undefined || text === "") {
+      return "";
+    }
+
+    return detail(label, text);
+  }
+
   function stationIndex(routeName, stationName) {
     const order = stationOrder[routeName] || [];
     const index = order.indexOf(stationName);
@@ -802,7 +812,7 @@
 
   function sourceLabel(url, cardType) {
     if (!url || url.includes("re-port.net")) {
-      return "参考情報：公開情報・社内調査メモをもとに作成 / 詳細出典確認中";
+      return "参考情報：公開情報・社内調査メモをもとに作成。概算坪単価は参考レンジであり、実際の売出価格・成約価格・土地条件とは異なる場合があります。";
     }
 
     const officialDomains = [
@@ -812,7 +822,7 @@
     ];
 
     if (cardType === "station" && officialDomains.some((domain) => url.includes(domain))) {
-      return "参考情報：鉄道会社公式情報・社内調査メモをもとに作成 / 地価・ハザードは詳細確認中";
+      return "参考情報：鉄道会社公式情報・社内調査メモをもとに作成。概算坪単価は参考レンジであり、実際の売出価格・成約価格・土地条件とは異なる場合があります。";
     }
 
     return "参考情報：公式情報・公開情報をもとに作成";
@@ -825,6 +835,72 @@
 
   function listValue(items) {
     return Array.isArray(items) && items.length ? items.join(" / ") : "";
+  }
+
+  function htmlPublishState(item) {
+    const raw = item?.htmlPublishStatus ?? item?.htmlPublishable ?? item?.htmlPublication ?? item?.["HTML掲載可"] ?? "";
+    const normalized = String(raw).trim().toLowerCase();
+
+    if (["yes", "true", "1", "公開", "掲載可"].includes(normalized)) {
+      return "yes";
+    }
+    if (["no", "false", "0", "非公開", "掲載不可"].includes(normalized)) {
+      return "no";
+    }
+
+    return "unset";
+  }
+
+  function routeHasPriceEvidence(route) {
+    return hasAny(route, ["priceSourceUrl", "landPriceSourceUrl", "priceAsOf", "landPriceAsOf", "priceBasis", "landPriceBasis"]);
+  }
+
+  function stationHasPriceEvidence(station) {
+    return hasAny(station, ["priceSourceUrl", "landPriceSourceUrl", "priceAsOf", "landPriceAsOf", "priceBasis", "landPriceBasis"]);
+  }
+
+  function stationHasPassengerEvidence(station) {
+    return hasAny(station, ["passengerSourceUrl", "passengerCountSourceUrl", "passengerYear", "passengerCountYear", "passengerBasis"]);
+  }
+
+  function hasHazardEvidence(item) {
+    return hasAny(item, ["hazardSourceUrl", "hazardAsOf", "hazardBasis", "hazardMapUrl", "hazardSource"]);
+  }
+
+  function hasAny(item, keys) {
+    return keys.some((key) => {
+      const value = item?.[key];
+      return value !== null && value !== undefined && String(value).trim() !== "";
+    });
+  }
+
+  function publicHazardText(item) {
+    return hasHazardEvidence(item) ? item.hazardTrend || item.hazardLevel : hazardReviewText;
+  }
+
+  function publicHazardValue(item) {
+    return value(publicHazardText(item));
+  }
+
+  function publicCautionCopy(route) {
+    if (hasHazardEvidence(route)) {
+      return route.cautions;
+    }
+
+    return "地形、道路、河川や低地との関係は町名・区画で差が出るため、候補地ごとに自治体ハザードマップ、道路条件、排水条件、現地状況を確認してください。";
+  }
+
+  function publicStationComment(station) {
+    const comment = station.realEstateComment || "";
+    if (hasHazardEvidence(station) || !containsHazardAssertion(comment)) {
+      return comment;
+    }
+
+    return "駅周辺でも町名・区画により条件が変わります。土地検討時は、現地状況、道路条件、自治体ハザードマップ等を候補地ごとに確認してください。";
+  }
+
+  function containsHazardAssertion(text) {
+    return /ハザード|浸水|洪水|氾濫|内水|水害|土砂災害/.test(String(text || ""));
   }
 
   function shortText(input, maxLength) {
@@ -852,12 +928,12 @@
 
     const min = Math.max(0, price - 5);
     const max = price + 5;
-    return `${number(min)}〜${number(max)}万円/坪目安`;
+    return `${number(min)}〜${number(max)}万円／坪目安`;
   }
 
   function value(input) {
     if (input === null || input === undefined || input === "") {
-      return "要確認";
+      return "";
     }
 
     return escapeHtml(String(input));

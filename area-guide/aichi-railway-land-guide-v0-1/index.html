@@ -3,8 +3,20 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>名古屋・愛知 土地探し沿線ガイド v0.1</title>
-  <meta name="description" content="土地探しの前に、沿線の性格を読むためのまほろば不動産Previewガイドです。">
+  <title>名古屋・愛知 土地探し沿線ガイド | まほろば不動産</title>
+  <meta name="description" content="名古屋・愛知で土地を探す前に、沿線ごとの地形、生活圏、土地供給感、個別確認ポイントを整理する、まほろば不動産の公開β版ガイドです。">
+  <meta name="robots" content="index,follow">
+  <link rel="canonical" href="https://nowwest21works-tech.github.io/mahoroba-reports/area-guide/aichi-railway-land-guide-v0-1/">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="まほろば不動産">
+  <meta property="og:title" content="名古屋・愛知 土地探し沿線ガイド">
+  <meta property="og:description" content="沿線ごとの地形、生活圏、土地供給感、個別確認ポイントを整理する公開β版ガイドです。">
+  <meta property="og:url" content="https://nowwest21works-tech.github.io/mahoroba-reports/area-guide/aichi-railway-land-guide-v0-1/">
+  <meta property="og:image" content="https://nowwest21works-tech.github.io/mahoroba-reports/area-guide/aichi-railway-land-guide-v0-1/assets/images/sakuradori.webp">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="名古屋・愛知 土地探し沿線ガイド">
+  <meta name="twitter:description" content="沿線ごとの地形、生活圏、土地供給感、個別確認ポイントを整理する公開β版ガイドです。">
+  <meta name="twitter:image" content="https://nowwest21works-tech.github.io/mahoroba-reports/area-guide/aichi-railway-land-guide-v0-1/assets/images/sakuradori.webp">
   <link rel="icon" href="data:,">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="./styles.css">
@@ -12,8 +24,8 @@
 <body>
   <header class="site-header">
     <div class="header-inner">
-      <p class="eyebrow">まほろば不動産 公開Preview v0.1</p>
-      <h1>名古屋・愛知 土地探し沿線ガイド v0.1</h1>
+      <p class="eyebrow">まほろば不動産 公開β版</p>
+      <h1>名古屋・愛知 土地探し沿線ガイド</h1>
       <p class="subtitle">土地探しの前に、沿線の性格を読む</p>
       <p class="lead">
         駅距離や価格だけでなく、地形・ハザード・生活圏・土地供給感を比較するためのガイドです。
@@ -22,7 +34,7 @@
       <div class="header-metrics" aria-label="掲載件数">
         <span><strong id="route-count">7</strong>路線</span>
         <span><strong id="station-count">27</strong>駅</span>
-        <span>Preview</span>
+        <span>公開β版</span>
       </div>
     </div>
   </header>
@@ -117,17 +129,36 @@
         <h2 id="notes-title">免責・注記</h2>
       </div>
       <ul class="notes-list">
-        <li>掲載情報は公開情報および調査時点の情報に基づくPreviewです。</li>
-        <li>地価・乗降者数・ハザード情報は更新される可能性があります。</li>
-        <li>個別物件については現地調査、法令調査、ハザード確認が必要です。</li>
+        <li>掲載情報は公開情報および調査時点の情報に基づく公開β版です。内容は今後更新される可能性があります。</li>
+        <li>概算坪単価は公開情報や周辺相場をもとにした参考レンジです。実際の売出価格・成約価格・土地条件とは異なる場合があります。</li>
+        <li>乗降者数、ハザード等は、根拠・時点を確認しながら更新する方針です。</li>
+        <li>個別物件では、現地調査、法令調査、自治体ハザードマップ、道路・上下水・造成条件等の確認が必要です。</li>
         <li>地名由来・生活実感は諸説または要確認情報を含みます。</li>
-        <li>主要ソースURLは公開前に整備が必要です。空欄または公式サイト等のみの項目があります。</li>
+        <li>本ページは一般的な検討材料であり、特定物件の購入・売却・建築可否を保証するものではありません。</li>
       </ul>
+    </section>
+
+    <section class="section cta-section" aria-labelledby="cta-title">
+      <div class="cta-panel">
+        <div>
+          <p class="eyebrow">Consultation</p>
+          <h2 id="cta-title">土地探しについて、もう少し話してみる</h2>
+          <p>
+            路線や駅の特徴は、予算・通勤・土地の広さ・暮らし方によって見え方が変わります。
+            気になる沿線や駅があれば、LINEからお気軽にお知らせください。
+          </p>
+        </div>
+        <div class="cta-actions" aria-label="まほろば不動産への導線">
+          <a class="cta-button cta-button-primary" href="https://lin.ee/YXkNJum" target="_blank" rel="noopener noreferrer">まほろば公式LINEで相談する</a>
+          <a class="cta-button" href="https://www.mahoroba-office.co.jp/">まほろば公式サイトを見る</a>
+        </div>
+      </div>
     </section>
   </main>
 
   <footer class="site-footer">
-    <p>Mahoroba Real Estate Strategy Room / Preview v0.1</p>
+    <p>まほろば不動産 / 名古屋・愛知 土地探し沿線ガイド</p>
+    <p><a href="https://www.mahoroba-office.co.jp/">公式HP</a></p>
   </footer>
 
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>

@@ -849,7 +849,60 @@ h3 {
   margin-top: 8px;
 }
 
+.cta-section {
+  padding-top: 20px;
+}
+
+.cta-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 24px;
+  align-items: center;
+  padding: 28px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #eef3ed;
+}
+
+.cta-panel .eyebrow {
+  color: var(--green-strong);
+}
+
+.cta-panel p {
+  max-width: 680px;
+  margin: 10px 0 0;
+  color: var(--muted);
+}
+
+.cta-actions {
+  display: grid;
+  gap: 10px;
+  min-width: 220px;
+}
+
+.cta-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 8px 16px;
+  border: 1px solid var(--navy);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--navy);
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+}
+
+.cta-button-primary {
+  background: var(--navy);
+  color: var(--white);
+}
+
 .site-footer {
+  display: grid;
+  gap: 6px;
   padding: 28px 16px;
   background: var(--navy);
   color: rgba(255, 255, 255, 0.8);
@@ -858,6 +911,11 @@ h3 {
 
 .site-footer p {
   margin: 0;
+}
+
+.site-footer a {
+  color: var(--white);
+  font-weight: 700;
 }
 
 .empty {
@@ -942,6 +1000,15 @@ h3 {
   .station-details,
   .guide-grid {
     grid-template-columns: 1fr;
+  }
+
+  .cta-panel {
+    grid-template-columns: 1fr;
+    padding: 20px;
+  }
+
+  .cta-actions {
+    min-width: 0;
   }
 }
 
