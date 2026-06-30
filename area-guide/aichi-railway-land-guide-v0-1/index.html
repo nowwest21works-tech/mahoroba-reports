@@ -6,6 +6,7 @@
   <title>名古屋・愛知 土地探し沿線ガイド v0.1</title>
   <meta name="description" content="土地探しの前に、沿線の性格を読むためのまほろば不動産Previewガイドです。">
   <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -58,9 +59,18 @@
         <h2 id="route-map-title">路線マップから探す</h2>
       </div>
       <p class="route-map-note">
-        この図は土地探しの検討用に路線と駅の関係を整理した模式図です。実際の距離・方角・縮尺を正確に表すものではありません。
+        地図は駅座標をもとにした概略表示です。路線の線は駅間を結んだ検討用の補助線で、実際の線路形状を表すものではありません。
       </p>
-      <div id="route-map" class="route-map-shell" aria-live="polite"></div>
+      <div class="map-view-toggle" role="group" aria-label="地図表示を切り替え">
+        <button id="map-view-geographic" class="map-view-button" type="button" aria-pressed="true">地図で見る</button>
+        <button id="map-view-diagram" class="map-view-button" type="button" aria-pressed="false">路線図で見る</button>
+      </div>
+      <p id="route-map-fallback" class="map-fallback-message" hidden>
+        地図を読み込めなかったため、模式路線図を表示しています。
+      </p>
+      <div id="geographic-map" class="geographic-map-shell" aria-label="名古屋駅と対象駅の地理マップ"></div>
+      <div id="geo-map-legend" class="geo-map-legend" aria-label="地図の路線凡例"></div>
+      <div id="route-map" class="route-map-shell" aria-live="polite" hidden></div>
     </section>
 
     <section class="section" aria-labelledby="routes-title">
@@ -119,6 +129,7 @@
     <p>Mahoroba Real Estate Strategy Room / Preview v0.1</p>
   </footer>
 
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
   <script src="./script.js"></script>
 </body>
 </html>

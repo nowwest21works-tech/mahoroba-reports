@@ -198,6 +198,97 @@ h3 {
   font-size: 0.9rem;
 }
 
+.map-view-toggle {
+  display: inline-flex;
+  gap: 6px;
+  margin: 0 0 14px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+}
+
+.map-view-button {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.map-view-button[aria-pressed="true"] {
+  background: var(--navy);
+  color: var(--white);
+}
+
+.map-fallback-message {
+  margin: 0 0 12px;
+  color: var(--accent);
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.geographic-map-shell {
+  min-height: 520px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  overflow: hidden;
+  background: #eef1ee;
+  box-shadow: var(--shadow);
+}
+
+.geographic-map-shell .leaflet-control-attribution {
+  font-size: 0.72rem;
+}
+
+.geo-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 12px 0 0;
+}
+
+.geo-map-legend-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--white);
+  color: var(--ink);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.geo-map-legend-button.is-active-route,
+.geo-map-legend-button[aria-pressed="true"] {
+  border-color: var(--navy);
+  box-shadow: 0 0 0 2px rgba(36, 51, 66, 0.12);
+}
+
+.geo-map-legend-swatch {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 1px solid rgba(36, 51, 66, 0.28);
+  flex: 0 0 auto;
+}
+
+.route-map-shell[hidden],
+.geographic-map-shell[hidden],
+.geo-map-legend[hidden] {
+  display: none;
+}
+
 .route-map-shell {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -682,6 +773,32 @@ h3 {
 
   .route-map-note {
     font-size: 0.86rem;
+  }
+
+  .map-view-toggle {
+    display: flex;
+    width: 100%;
+  }
+
+  .map-view-button {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0 10px;
+  }
+
+  .geographic-map-shell {
+    min-height: 420px;
+  }
+
+  .geo-map-legend {
+    gap: 6px;
+  }
+
+  .geo-map-legend-button {
+    flex: 1 1 140px;
+    justify-content: center;
+    min-width: 0;
+    padding: 0 10px;
   }
 
   .route-map-scroll {

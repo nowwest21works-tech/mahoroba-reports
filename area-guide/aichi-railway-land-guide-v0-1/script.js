@@ -1,6 +1,11 @@
 (function () {
   const routeSummary = document.querySelector("#route-summary");
+  const geographicMap = document.querySelector("#geographic-map");
+  const geoMapLegend = document.querySelector("#geo-map-legend");
   const routeMap = document.querySelector("#route-map");
+  const routeMapFallback = document.querySelector("#route-map-fallback");
+  const geographicViewButton = document.querySelector("#map-view-geographic");
+  const diagramViewButton = document.querySelector("#map-view-diagram");
   const routeSections = document.querySelector("#route-sections");
   const routeCount = document.querySelector("#route-count");
   const stationCount = document.querySelector("#station-count");
@@ -8,6 +13,17 @@
   let selectedStationKey = "";
   let cachedRoutes = [];
   let cachedStations = [];
+  let activeMapView = "geographic";
+  let leafletMap = null;
+  let geographicMapReady = false;
+  let geographicMarkers = [];
+  let geographicLines = [];
+
+  const nagoyaStationReference = {
+    stationName: "名古屋",
+    latitude: 35.171033,
+    longitude: 136.88175
+  };
 
   const targetOrder = [
     "地下鉄桜通線",
@@ -43,6 +59,12 @@
       renderSummary(sortedRoutes);
       renderRouteMap(routeMapData);
       renderRoutes(sortedRoutes, stations);
+      bindMapViewControls();
+      geographicMapReady = renderGeographicMap(routeMapData);
+      setMapView(geographicMapReady ? "geographic" : "diagram");
+      if (!geographicMapReady && routeMapFallback) {
+        routeMapFallback.hidden = false;
+      }
     })
     .catch((error) => {
       console.error(error);
@@ -97,6 +119,278 @@
 
     bindRouteMapActions();
     updateRouteMapSelection();
+  }
+
+  function renderGeographicMap(mapData) {
+    if (!geographicMap || !window.L) {
+      return false;
+    }
+
+    const stationsWithCoordinates = cachedStations.filter((station) => {
+      return Number.isFinite(station.latitude) && Number.isFinite(station.longitude);
+    });
+
+    if (stationsWithCoordinates.length !== cachedStations.length) {
+      return false;
+    }
+
+    geographicMap.innerHTML = "";
+    geoMapLegend.innerHTML = "";
+    geographicMarkers = [];
+    geographicLines = [];
+
+    leafletMap = window.L.map(geographicMap, {
+      scrollWheelZoom: true,
+      tap: true
+    });
+
+    window.L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 19,
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(leafletMap);
+
+    const routeColors = new Map((mapData.routes || []).map((route) => [route.routeName, route.color || "#5f7f68"]));
+    const allLatLngs = [[nagoyaStationReference.latitude, nagoyaStationReference.longitude]];
+
+    const nagoyaMarker = window.L.circleMarker([nagoyaStationReference.latitude, nagoyaStationReference.longitude], {
+      radius: 8,
+      color: "#243342",
+      fillColor: "#243342",
+      fillOpacity: 0.9,
+      weight: 2
+    })
+      .bindPopup("<strong>名古屋駅</strong><br>基準点")
+      .addTo(leafletMap);
+
+    const nagoyaElement = nagoyaMarker.getElement();
+    if (nagoyaElement) {
+      nagoyaElement.dataset.mapReference = "nagoya";
+      nagoyaElement.setAttribute("tabindex", "0");
+      nagoyaElement.setAttribute("role", "img");
+      nagoyaElement.setAttribute("aria-label", "名古屋駅 基準点");
+    }
+
+    cachedRoutes.forEach((route) => {
+      const routeStations = stationsWithCoordinates
+        .filter((station) => station.routeDisplayName === route.routeName)
+        .sort((a, b) => stationIndex(route.routeName, a.stationName) - stationIndex(route.routeName, b.stationName));
+      const color = routeColors.get(route.routeName) || "#5f7f68";
+      const latLngs = routeStations.map((station) => [station.latitude, station.longitude]);
+
+      allLatLngs.push(...latLngs);
+
+      if (latLngs.length > 1) {
+        const line = window.L.polyline(latLngs, {
+          color,
+          weight: route.routeName === activeRouteName ? 6 : 4,
+          opacity: route.routeName === activeRouteName ? 0.95 : 0.62
+        })
+          .bindPopup(`<strong>${escapeHtml(route.routeName)}</strong><br>駅間を結んだ概略線`)
+          .addTo(leafletMap);
+
+        line.on("click", () => selectRouteFromMap(route.routeName, ""));
+        const lineElement = line.getElement();
+        if (lineElement) {
+          lineElement.dataset.mapRouteLine = route.routeName;
+          lineElement.setAttribute("tabindex", "0");
+          lineElement.setAttribute("role", "button");
+          lineElement.setAttribute("aria-label", `${route.routeName}を表示`);
+          lineElement.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              selectRouteFromMap(route.routeName, "");
+            }
+          });
+        }
+        geographicLines.push({ routeName: route.routeName, line, color });
+      }
+
+      routeStations.forEach((station) => {
+        const marker = window.L.circleMarker([station.latitude, station.longitude], {
+          radius: station.routeDisplayName === activeRouteName ? 8 : 7,
+          color: "#243342",
+          fillColor: color,
+          fillOpacity: station.routeDisplayName === activeRouteName ? 0.95 : 0.78,
+          weight: stationKey(station.routeDisplayName, station.stationName) === selectedStationKey ? 4 : 2
+        })
+          .bindPopup(`<strong>${escapeHtml(station.stationName)}</strong><br>${escapeHtml(station.routeDisplayName)}`)
+          .addTo(leafletMap);
+
+        marker.on("click", () => {
+          selectRouteFromMap(station.routeDisplayName, station.stationName);
+          marker.openPopup();
+        });
+        const markerElement = marker.getElement();
+        if (markerElement) {
+          markerElement.dataset.mapRoute = station.routeDisplayName;
+          markerElement.dataset.mapStation = station.stationName;
+          markerElement.dataset.mapKey = stationKey(station.routeDisplayName, station.stationName);
+          markerElement.setAttribute("tabindex", "0");
+          markerElement.setAttribute("role", "button");
+          markerElement.setAttribute("aria-label", `${station.routeDisplayName} ${station.stationName}を表示`);
+          markerElement.addEventListener("keydown", (event) => {
+            if (event.key === "Enter" || event.key === " ") {
+              event.preventDefault();
+              selectRouteFromMap(station.routeDisplayName, station.stationName);
+              marker.openPopup();
+            }
+          });
+        }
+        geographicMarkers.push({
+          routeName: station.routeDisplayName,
+          stationName: station.stationName,
+          stationKey: stationKey(station.routeDisplayName, station.stationName),
+          marker,
+          color
+        });
+      });
+    });
+
+    renderGeographicLegend(routeColors);
+    leafletMap.fitBounds(allLatLngs, { padding: [28, 28] });
+    decorateGeographicMapElements();
+    updateGeographicMapSelection();
+    return true;
+  }
+
+  function decorateGeographicMapElements() {
+    const nagoyaElement = geographicMap?.querySelector(".leaflet-interactive");
+    if (nagoyaElement) {
+      nagoyaElement.dataset.mapReference = "nagoya";
+      nagoyaElement.setAttribute("tabindex", "0");
+      nagoyaElement.setAttribute("role", "img");
+      nagoyaElement.setAttribute("aria-label", "名古屋駅 基準点");
+    }
+
+    geographicLines.forEach(({ routeName, line }) => {
+      const element = line.getElement();
+      if (!element || element.dataset.decorated === "true") {
+        return;
+      }
+
+      element.dataset.decorated = "true";
+      element.dataset.mapRouteLine = routeName;
+      element.setAttribute("tabindex", "0");
+      element.setAttribute("role", "button");
+      element.setAttribute("aria-label", `${routeName}を表示`);
+      element.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectRouteFromMap(routeName, "");
+        }
+      });
+    });
+
+    geographicMarkers.forEach(({ routeName, stationName, stationKey: key, marker }) => {
+      const element = marker.getElement();
+      if (!element || element.dataset.decorated === "true") {
+        return;
+      }
+
+      element.dataset.decorated = "true";
+      element.dataset.mapRoute = routeName;
+      element.dataset.mapStation = stationName;
+      element.dataset.mapKey = key;
+      element.setAttribute("tabindex", "0");
+      element.setAttribute("role", "button");
+      element.setAttribute("aria-label", `${routeName} ${stationName}を表示`);
+      element.addEventListener("keydown", (event) => {
+        if (event.key === "Enter" || event.key === " ") {
+          event.preventDefault();
+          selectRouteFromMap(routeName, stationName);
+          marker.openPopup();
+        }
+      });
+    });
+  }
+
+  function renderGeographicLegend(routeColors) {
+    if (!geoMapLegend) {
+      return;
+    }
+
+    geoMapLegend.innerHTML = cachedRoutes.map((route) => {
+      const color = escapeHtml(routeColors.get(route.routeName) || "#5f7f68");
+      const selected = route.routeName === activeRouteName;
+      return `
+        <button class="geo-map-legend-button" type="button" data-map-route="${escapeHtml(route.routeName)}" aria-pressed="${selected ? "true" : "false"}">
+          <span class="geo-map-legend-swatch" style="background:${color}"></span>
+          <span>${escapeHtml(route.routeName)}</span>
+        </button>
+      `;
+    }).join("");
+
+    geoMapLegend.querySelectorAll("[data-map-route]").forEach((button) => {
+      button.addEventListener("click", () => {
+        selectRouteFromMap(button.dataset.mapRoute, "");
+      });
+    });
+  }
+
+  function bindMapViewControls() {
+    geographicViewButton?.addEventListener("click", () => {
+      if (geographicMapReady) {
+        setMapView("geographic");
+      }
+    });
+
+    diagramViewButton?.addEventListener("click", () => {
+      setMapView("diagram");
+    });
+  }
+
+  function setMapView(viewName) {
+    activeMapView = viewName;
+    const showGeographic = viewName === "geographic" && geographicMapReady;
+
+    if (geographicMap) {
+      geographicMap.hidden = !showGeographic;
+    }
+    if (geoMapLegend) {
+      geoMapLegend.hidden = !showGeographic;
+    }
+    if (routeMap) {
+      routeMap.hidden = showGeographic;
+    }
+    geographicViewButton?.setAttribute("aria-pressed", showGeographic ? "true" : "false");
+    diagramViewButton?.setAttribute("aria-pressed", showGeographic ? "false" : "true");
+
+    if (showGeographic && leafletMap) {
+      window.setTimeout(() => leafletMap.invalidateSize(), 0);
+    }
+  }
+
+  function updateGeographicMapSelection() {
+    if (!leafletMap) {
+      return;
+    }
+
+    geographicLines.forEach(({ routeName, line, color }) => {
+      const isActiveRoute = routeName === activeRouteName;
+      line.setStyle({
+        color,
+        weight: isActiveRoute ? 6 : 4,
+        opacity: isActiveRoute ? 0.95 : 0.62
+      });
+    });
+
+    geographicMarkers.forEach(({ routeName, stationKey: key, marker, color }) => {
+      const isActiveRoute = routeName === activeRouteName;
+      const isActiveStation = Boolean(selectedStationKey) && key === selectedStationKey;
+      marker.setStyle({
+        radius: isActiveStation ? 9 : isActiveRoute ? 8 : 7,
+        color: isActiveStation ? "#111827" : "#243342",
+        fillColor: color,
+        fillOpacity: isActiveRoute || isActiveStation ? 0.95 : 0.72,
+        weight: isActiveStation ? 4 : 2
+      });
+    });
+
+    geoMapLegend?.querySelectorAll("[data-map-route]").forEach((button) => {
+      const isActiveRoute = button.dataset.mapRoute === activeRouteName;
+      button.classList.toggle("is-active-route", isActiveRoute);
+      button.setAttribute("aria-pressed", isActiveRoute ? "true" : "false");
+    });
   }
 
   function mapRoute(route) {
@@ -161,6 +455,7 @@
     selectedStationKey = stationName ? stationKey(routeName, stationName) : "";
     renderRoutes(cachedRoutes, cachedStations);
     updateRouteMapSelection();
+    updateGeographicMapSelection();
 
     const target = stationName
       ? document.getElementById(stationCardId(routeName, stationName))
@@ -221,6 +516,7 @@
         selectedStationKey = "";
         renderRoutes(routes, stations);
         updateRouteMapSelection();
+        updateGeographicMapSelection();
       });
     });
   }

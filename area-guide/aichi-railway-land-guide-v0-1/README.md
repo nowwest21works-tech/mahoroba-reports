@@ -71,3 +71,11 @@ python -m http.server 8000
 ```text
 http://localhost:8000/area-guide/aichi-railway-land-guide-v0-1/
 ```
+
+## 座標・地理マップメモ
+
+- `stations.json` の `latitude` / `longitude` は Notion「愛知県駅DB」を正本として同期する。
+- 座標出典は国土数値情報 N02 鉄道データ 2025年度版。対象駅は駅形状 `LineString` の代表点として扱う。
+- Leaflet 地図の路線線分は駅座標を順番に結んだ概略線であり、実際の線路形状ではない。
+- 名古屋駅の基準点は N02 2025年度版の名古屋駅レコード群から算出した代表点を使う。
+- OpenStreetMap タイルを表示するため、地図表示にはネットワーク接続が必要。読み込み不可の場合は既存の SVG 模式路線図を fallback とする。
