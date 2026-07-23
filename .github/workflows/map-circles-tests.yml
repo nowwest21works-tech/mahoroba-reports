@@ -1,0 +1,62 @@
+name: map-circles characterization tests
+
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "map-circles/**"
+      - "tests/map-circles/**"
+      - "playwright.config.js"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/map-circles-tests.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "map-circles/**"
+      - "tests/map-circles/**"
+      - "playwright.config.js"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/map-circles-tests.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Playwright Chromium
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version: "lts/*"
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Chromium
+        run: npx playwright install chromium --with-deps
+
+      - name: Run map-circles characterization tests
+        run: npm run test:map-circles
+
+      - name: Upload Playwright failure artifacts
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v5
+        with:
+          name: map-circles-playwright-${{ github.run_id }}
+          path: |
+            playwright-report/map-circles/
+            test-results/map-circles/
+          if-no-files-found: warn
+          retention-days: 7

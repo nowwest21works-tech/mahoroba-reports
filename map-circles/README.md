@@ -123,10 +123,13 @@ Journeyは、1世帯が持つ1つの目的・案件進行単位です。v0.3 Pil
 
 ## Test
 
-```powershell
-npm.cmd install
-npx.cmd playwright install chromium
-npm.cmd run test:map-circles
+```text
+npm ci
+npx playwright install chromium
+npm run test:map-circles
 ```
 
 testは`/mahoroba-reports/map-circles/`をローカル配信し、外部通信をmockしたChromiumで実行します。
+
+Windows PowerShellでコマンド解決に失敗する場合は、`npm`と`npx`をそれぞれ`npm.cmd`と`npx.cmd`に読み替えてください。
+Pull Requestの作成・更新時とmainへのpush時は、対象ファイルに変更があればGitHub Actionsでも同じtestを実行します。CIはrepositoryの読取権限だけを使用し、secretsや実顧客データを使用しません。失敗時のPlaywright artifactにも架空fixtureとtest結果だけを含めます。
