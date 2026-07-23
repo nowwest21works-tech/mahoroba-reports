@@ -1,0 +1,123 @@
+/* ========== サイドパネル ========== */
+#panel {
+  width: 360px;
+  height: 100vh;
+  background: var(--panel);
+  border-right: 1px solid var(--line);
+  overflow-y: auto;
+  flex-shrink: 0;
+  transition: margin-left 0.3s ease;
+}
+#panel.collapsed { margin-left: -360px; }
+
+.panel-header {
+  padding: 20px 24px 16px;
+  border-bottom: 1px solid var(--line);
+  background: linear-gradient(to bottom, #fafaf7, #f5f1eb);
+}
+.panel-header h1 {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  margin-bottom: 4px;
+}
+.panel-header h1 .accent { color: var(--accent); }
+.panel-header .subtitle {
+  font-size: 11px;
+  color: var(--ink-soft);
+  letter-spacing: 0.15em;
+}
+
+.section { padding: 18px 24px; border-bottom: 1px solid var(--line); }
+.section h2 {
+  font-family: 'Shippori Mincho', serif;
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: var(--ink-soft);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.section h2::before {
+  content: ''; display: inline-block;
+  width: 16px; height: 1px; background: var(--accent);
+}
+
+
+/* ========== マップ ========== */
+#map { flex: 1; height: 100vh; }
+.leaflet-container { font-family: 'Noto Sans JP', sans-serif; background: #e8e4dc; }
+
+/* カスタムマーカーラベル */
+.circle-label {
+  background: var(--ink); color: var(--panel);
+  padding: 3px 8px; border-radius: 2px;
+  font-size: 11px; font-weight: 500;
+  white-space: nowrap;
+  border: none;
+  letter-spacing: 0.05em;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+.circle-label::before { display: none; }
+
+/* トグルボタン */
+#toggle-panel {
+  position: absolute; top: 16px; left: 16px;
+  z-index: 1000;
+  width: 40px; height: 40px;
+  background: var(--panel); border: 1px solid var(--line);
+  border-radius: 2px; cursor: pointer;
+  display: none; align-items: center; justify-content: center;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  font-size: 18px; color: var(--ink);
+  padding: 0;
+}
+#toggle-panel:hover { background: var(--ink); color: var(--panel); }
+#panel.collapsed ~ #map-wrap #toggle-panel { display: flex; }
+
+/* ステータス */
+#status {
+  position: absolute; bottom: 16px; left: 50%;
+  transform: translateX(-50%); z-index: 1000;
+  background: var(--ink); color: var(--panel);
+  padding: 8px 16px; border-radius: 2px;
+  font-size: 12px; letter-spacing: 0.05em;
+  opacity: 0; transition: opacity 0.3s;
+  pointer-events: none;
+}
+#status.show { opacity: 1; }
+
+/* スクロールバー */
+#panel::-webkit-scrollbar { width: 6px; }
+#panel::-webkit-scrollbar-track { background: var(--bg); }
+#panel::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+
+/* モバイル */
+@media (max-width: 768px) {
+  body { flex-direction: column; }
+  #panel { width: 100%; height: 50vh; border-right: none; border-bottom: 1px solid var(--line); }
+  #panel.collapsed { margin-left: 0; margin-top: -50vh; }
+  #map { height: 50vh; }
+  #panel.collapsed ~ #map-wrap { height: 100vh; }
+  #panel.collapsed ~ #map-wrap #map { height: 100vh; }
+}
+
+.map-wrap { flex: 1; position: relative; }
+
+.footer-note {
+  padding: 14px 24px; font-size: 10px; color: var(--ink-soft);
+  text-align: center; letter-spacing: 0.1em;
+  font-family: 'Shippori Mincho', serif;
+}
+
+details summary {
+  cursor: pointer; padding: 8px 24px;
+  font-size: 11px; color: var(--ink-soft);
+  letter-spacing: 0.15em;
+  border-bottom: 1px solid var(--line);
+  user-select: none;
+}
+details summary:hover { color: var(--accent); }
+details[open] summary { color: var(--ink); }
