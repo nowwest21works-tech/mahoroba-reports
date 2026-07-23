@@ -1,0 +1,13 @@
+{
+  "name": "mahoroba-reports-map-circles-tests",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test:map-circles": "playwright test --config=playwright.config.js",
+    "test:map-circles:report": "playwright show-report playwright-report/map-circles"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "leaflet": "1.9.4"
+  }
+}
