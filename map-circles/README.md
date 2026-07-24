@@ -23,6 +23,7 @@ map-circles/
    ├─ ui.js
    ├─ geocoder.js
    ├─ hazards.js
+   ├─ geometry-editor.js
    └─ app.js
 ```
 
@@ -33,25 +34,27 @@ map-circles/
 | `styles/layout.css` | パネル、地図、status、PC／スマホの寸法と配置 |
 | `styles/components.css` | 入力、preset、円一覧、ボタン、ハザードUIの見た目 |
 | `js/config.js` | 初期半径・色とブラウザメモリ上の円状態 |
-| `js/domain.js` | `household`、`journey`、`mapProject`、Circle Featureの生成と検証 |
+| `js/domain.js` | `household`、`journey`、`mapProject`、4種のcanonical Featureの生成と検証 |
 | `js/memory-store.js` | 3 entityの参照整合性を保つブラウザメモリ上のCRUD |
-| `js/geojson-adapter.js` | Leaflet非依存のcircle recordとCircle Featureの相互変換 |
-| `js/map.js` | Leaflet地図、zoom control、OSM base tileの初期化 |
-| `js/circles.js` | private Store runtime、円の追加・zoom・個別削除・全削除とtransaction同期 |
+| `js/geojson-adapter.js` | Leaflet非依存のshape recordとcanonical Featureの相互変換 |
+| `js/map.js` | Leaflet地図、Geoman opt-in、zoom control、OSM base tileの初期化 |
+| `js/circles.js` | private Store／layer registry、円UI互換、全shapeのtransaction同期 |
 | `js/ui.js` | status、円一覧、半径preset、色選択 |
 | `js/geocoder.js` | Nominatim検索の成功・0件・error処理 |
 | `js/hazards.js` | 4種のハザードlayer、ON／OFF、透明度 |
-| `js/app.js` | map click、パネル、初期表示のevent接続 |
+| `js/geometry-editor.js` | Geoman toolbar、描画・編集・移動・削除eventの接続 |
+| `js/app.js` | Geoman mode競合を防ぐmap click、パネル、初期表示のevent接続 |
 
 ## 読み込み順
 
-CSSは `tokens.css` → `layout.css` → `components.css` の順です。
+CSSはLeaflet → Leaflet-Geoman → `tokens.css` → `layout.css` → `components.css` の順です。
 
-JavaScriptはLeafletの後に、次のclassic scriptをすべて`defer`付きで読み込みます。
+JavaScriptはLeaflet → Leaflet-Geomanの後に、次のclassic scriptをすべて`defer`付きで読み込みます。
 
 ```text
 config.js → domain.js → memory-store.js → geojson-adapter.js
-→ map.js → circles.js → ui.js → geocoder.js → hazards.js → app.js
+→ map.js → circles.js → ui.js → geocoder.js → hazards.js
+→ geometry-editor.js → app.js
 ```
 
 `domain.js`、`memory-store.js`、`geojson-adapter.js`はruntimeで読み込みます。Node.jsではCommonJS、ブラウザのclassic scriptではそれぞれ`MapCirclesDomain`、`MapCirclesMemoryStore`、`MapCirclesGeoJsonAdapter`という単一namespaceを公開します。
@@ -64,7 +67,8 @@ ES Modules、bundler、React、Vue、Vite、TypeScriptは導入していませ�
 
 - OpenStreetMapを背景としたLeaflet地図
 - 地図クリックとNominatim検索成功による円追加
-- 円の追加・個別削除・全削除とCircle Featureの同期
+- Leaflet-Geoman toolbarによるMarker、Circle、Line、Polygonの描画・編集・移動・削除
+- 円の追加・個別削除・全削除とcanonical Featureの同期
 - 6種類の半径preset、50m〜50,000mのカスタム半径、6色、任意ラベル
 - 円へのzoom、個別削除、3秒で解除される2段階の全削除
 - 洪水、土砂災害、高潮、津波ハザードと透明度変更
@@ -78,11 +82,12 @@ ES Modules、bundler、React、Vue、Vite、TypeScriptは導入していませ�
 | --- | --- |
 | Web font | `fonts.googleapis.com`、`fonts.gstatic.com` |
 | Leaflet CSS／JavaScript | `cdnjs.cloudflare.com` |
+| Leaflet-Geoman CSS／JavaScript | `unpkg.com` |
 | 背景地図 | `tile.openstreetmap.org` |
 | 地名検索 | `nominatim.openstreetmap.org` |
 | ハザードタイル | `disaportaldata.gsi.go.jp` |
 
-Playwright testではすべてローカルmockし、ライブAPIや外部タイルへ通信しません。CDN依存や外部URLは本PRで変更していません。
+Leaflet-Geoman Freeは`2.20.0`へ固定しています。Playwright testではCDN requestをinterceptし、`node_modules`内の同じversionを返すため、ライブAPI、CDN、外部タイルへ通信しません。
 
 ## GitHub Pages互換性
 
@@ -193,7 +198,7 @@ MapProjectは、1つのJourneyに属する地図作業単位です。
 }
 ```
 
-`featureCollection`は、空または有効なCircle Featureを0件以上保持します。Feature IDはMapProject内で一意です。DomainとStoreにはLeaflet、DOM、通信処理を持たせません。
+`featureCollection`は、空または有効なCircle、Marker、Line、Polygon Featureを0件以上保持します。Feature IDはMapProject内で一意です。DomainとStoreにはLeaflet、DOM、通信処理を持たせません。
 
 ### Memory Store
 
@@ -236,14 +241,39 @@ runtime起動時に匿名の`HH-001` Household、`land_purchase` Journey、MapPr
 
 testからはread-onlyの`MapCirclesAppState`で現在のMapProjectとdeep clone済みsnapshotを確認できます。Storeのcreate／update／delete APIは公開しません。
 
+## G6 Leaflet-Geoman編集MVP
+
+Leaflet-Geoman Free `2.20.0`をopt-inで使用します。地図右上のtoolbarで、Marker、Circle、Line、Polygonの描画、編集、全体移動、削除ができます。利用するのはFree版のdraw／edit／drag／removeだけです。CircleMarker、Rectangle、Text、Cut、RotateやPro機能は無効です。
+
+canonical Featureは次の4種類です。
+
+| kind | geometry | properties |
+| --- | --- | --- |
+| `circle` | `Point` | `radiusMeters`、`color`、`label` |
+| `marker` | `Point` | `label` |
+| `line` | `LineString` | `color`、`label` |
+| `polygon` | `Polygon` | `color`、`label` |
+
+全Featureは`type: "Feature"`、UUIDの`id`、`schemaVersion: 1`を持ち、unknown fieldと重複IDを拒否します。Lineは2座標以上、Polygonは閉じた外周ring 1つかつ4座標以上です。holes、MultiPolygon、MultiLineString、GeometryCollectionは対象外です。自己交差はDomainでは判定せず、Geomanへ`allowSelfIntersection: false`を設定します。
+
+Circleは従来どおりPointと`radiusMeters`で表します。Leafletの座標順は`[lat, lng]`、GeoJSONは`[lng, lat]`です。AdapterはMarker、Circle、Line、Polygonをpure shape recordと相互変換し、既存Circle APIも維持します。
+
+Geomanは`L.PM.initialize({ optIn: true })`とopt-in設定で初期化します。canonical layerだけを`pmIgnore: false`にし、OSM／ハザードtile、円label marker、helper／内部layerは`pmIgnore: true`またはGeoman管理外にします。既存の地図クリック円とNominatim円も編集対象ですが、Geoman mode中のmap clickはlegacy円を追加しません。
+
+private registryはFeature IDとcanonical Leaflet layerを対応付けます。`circles[]`と円一覧は後方互換のためCircleだけを保持し、Marker／Line／Polygonの一覧UIは追加しません。Store、registry、runtime ID、書込み関数はglobalへ公開せず、`MapCirclesAppState`は`getCurrentMapProject`と`getSnapshot`だけを公開します。
+
+create／edit／drag／removeは、事前validation、Leaflet／registry／円UIへの仮反映、最後のStore更新、成功確定の順です。失敗時はLeaflet geometry、registry、`circles[]`、label marker、一覧DOM、counterを復元し、snapshotと`updatedAt`を進めません。全削除は従来仕様どおりCircleだけを対象とします。
+
+配置データは非永続Memory Storeだけに保持します。reloadで全Featureが消え、viewport／hazardはStoreへ同期しません。保存、import／export、undo／redoは未実装です。実顧客の氏名、正確な住所、非公開勤務先などは入力しないでください。GitHub Pagesの公開元、path、設定は変更しません。
+
 ## 未実装・次Gate以降
 
 次は未実装です。
 
 - viewport、hazard ON／OFF、hazard opacityのStore同期
-- Marker、LineString、Polygon、MultiPolygon、GeometryCollection
+- CircleMarker、Rectangle、Text、holes、MultiPolygon、MultiLineString、GeometryCollection
 - IndexedDB、localStorage、保存、import／export、undo／redo
-- Leaflet-Geoman、Turf.js
+- Turf.jsの直接利用、面積／距離計算
 - Nominatim入力制限UI、既知のアクセシビリティ改善
 - CDN自己配信、bundler、framework移行
 
@@ -252,7 +282,8 @@ testからはread-onlyの`MapCirclesAppState`で現在のMapProjectとdeep clone
 - スマホは操作パネルと地図が50:50です。
 - 通常操作から全画面地図へ切り替えにくい状態です。
 - 色swatch、touch target、入力label、slider名、`aria-live`に既知の不足があります。
-- 配置後に円の中心、半径、色、ラベルを再編集できません。
+- toolbar以外にMarker／Line／Polygonの一覧UIはありません。
+- Geoman編集ではgeometryを変更できますが、既存Featureの色やラベルを編集する専用UIはありません。
 
 本PRではこれらを修正していません。
 
@@ -265,8 +296,8 @@ npm run test:map-circles:domain
 npm run test:map-circles
 ```
 
-Windows PowerShellでは必要に応じて`npm.cmd`と`npx.cmd`を使用します。domain testは、3 entityとCircle Featureの検証、Adapter round-trip、PII／unknown field拒否、参照整合性、restrict delete、deep clone、更新不変条件、Node／ブラウザnamespaceを検証します。
+Windows PowerShellでは必要に応じて`npm.cmd`と`npx.cmd`を使用します。domain testは、3 entity、Mixed FeatureCollection、4種のcanonical Feature、Adapter round-trip、PII／unknown field拒否、参照整合性、restrict delete、deep clone、更新不変条件、Node／ブラウザnamespaceを検証します。
 
-`test:map-circles`はdomain testに続けてPlaywrightを実行します。PlaywrightはFeatureCollection同期、reload消失、製品asset manifest、Pages相対パス、外部通信mock、PC／スマホ寸法、主要操作、PII guardを検証します。
+`test:map-circles`はdomain testに続けてPlaywrightを実行します。PlaywrightはGeoman dependency／toolbar、4種shapeのcreate／edit／drag／remove、transaction rollback、FeatureCollection同期、reload消失、製品asset manifest、Pages相対パス、外部通信mock、PC／スマホ寸法、主要操作、PII guardを検証します。
 
 Pull Request更新時とmainへのpush時はGitHub Actionsでも同じtestを実行します。CIはrepositoryの読取権限だけを使用し、secretsや実顧客データを使用しません。

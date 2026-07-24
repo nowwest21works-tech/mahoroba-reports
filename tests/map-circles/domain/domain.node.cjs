@@ -10,6 +10,9 @@ const HOUSEHOLD_ID = '00000000-0000-4000-8000-000000000001';
 const JOURNEY_ID = '00000000-0000-4000-8000-000000000002';
 const MAP_PROJECT_ID = '00000000-0000-4000-8000-000000000003';
 const FEATURE_ID = '00000000-0000-4000-8000-000000000101';
+const FEATURE_ID_2 = '00000000-0000-4000-8000-000000000102';
+const FEATURE_ID_3 = '00000000-0000-4000-8000-000000000103';
+const FEATURE_ID_4 = '00000000-0000-4000-8000-000000000104';
 const NOW = '2026-07-24T00:00:00.000Z';
 
 function dependencies(id) {
@@ -45,6 +48,53 @@ function circleFeature(overrides = {}) {
     properties: {
       ...feature.properties,
       ...(overrides.properties || {}),
+    },
+  };
+}
+
+function mapFeature(kind, id) {
+  if (kind === 'circle') return { ...circleFeature(), id };
+  if (kind === 'marker') {
+    return {
+      type: 'Feature',
+      id,
+      geometry: { type: 'Point', coordinates: [136.8815, 35.1709] },
+      properties: { schemaVersion: 1, kind, label: '地点1' },
+    };
+  }
+  if (kind === 'line') {
+    return {
+      type: 'Feature',
+      id,
+      geometry: {
+        type: 'LineString',
+        coordinates: [[136.8815, 35.1709], [136.8915, 35.1809]],
+      },
+      properties: {
+        schemaVersion: 1,
+        kind,
+        color: '#c8443a',
+        label: '線1',
+      },
+    };
+  }
+  return {
+    type: 'Feature',
+    id,
+    geometry: {
+      type: 'Polygon',
+      coordinates: [[
+        [136.8815, 35.1709],
+        [136.8915, 35.1709],
+        [136.8915, 35.1809],
+        [136.8815, 35.1709],
+      ]],
+    },
+    properties: {
+      schemaVersion: 1,
+      kind,
+      color: '#c8443a',
+      label: '範囲1',
     },
   };
 }
@@ -286,6 +336,135 @@ test('MapProjectはduplicate Circle Feature IDを拒否する', () => {
       },
     }, dependencies(MAP_PROJECT_ID)),
     /MapProject\.featureCollection\.features\[1\]\.id: duplicate ID/,
+  );
+});
+
+test('Mixed FeatureCollectionでCircle、Marker、Line、Polygonを保持する', () => {
+  const featureCollection = {
+    type: 'FeatureCollection',
+    features: [
+      mapFeature('circle', FEATURE_ID),
+      mapFeature('marker', FEATURE_ID_2),
+      mapFeature('line', FEATURE_ID_3),
+      mapFeature('polygon', FEATURE_ID_4),
+    ],
+  };
+  const original = structuredClone(featureCollection);
+  assert.equal(domain.validateFeatureCollection(featureCollection), true);
+  assert.deepEqual(featureCollection, original);
+  assert.deepEqual(JSON.parse(JSON.stringify(featureCollection)), featureCollection);
+});
+
+test('MarkerはPointとlabelだけを許可する', () => {
+  assert.equal(domain.validateMapFeature(mapFeature('marker', FEATURE_ID)), true);
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...mapFeature('marker', FEATURE_ID),
+      properties: {
+        ...mapFeature('marker', FEATURE_ID).properties,
+        color: '#c8443a',
+      },
+    }),
+    /MapFeature\.feature\.properties\.color/,
+  );
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...mapFeature('marker', FEATURE_ID),
+      geometry: { type: 'Point', coordinates: [181, 35] },
+    }),
+    /MapFeature\.feature\.geometry\.coordinates/,
+  );
+});
+
+test('LineStringは2点以上の正しい座標だけを許可する', () => {
+  assert.equal(domain.validateMapFeature(mapFeature('line', FEATURE_ID)), true);
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...mapFeature('line', FEATURE_ID),
+      geometry: { type: 'LineString', coordinates: [[136.8815, 35.1709]] },
+    }),
+    /at least 2 positions/,
+  );
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...mapFeature('line', FEATURE_ID),
+      geometry: {
+        type: 'LineString',
+        coordinates: [[136.8815, 35.1709, 1], [136.8915, 35.1809]],
+      },
+    }),
+    /must contain exactly \[lng, lat\]/,
+  );
+});
+
+test('Polygonは閉じた単一outer ringだけを許可する', () => {
+  assert.equal(domain.validateMapFeature(mapFeature('polygon', FEATURE_ID)), true);
+  const polygon = mapFeature('polygon', FEATURE_ID);
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...polygon,
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [136.8815, 35.1709],
+          [136.8915, 35.1709],
+          [136.8915, 35.1809],
+        ]],
+      },
+    }),
+    /at least 4 positions/,
+  );
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...polygon,
+      geometry: {
+        type: 'Polygon',
+        coordinates: [[
+          [136.8815, 35.1709],
+          [136.8915, 35.1709],
+          [136.8915, 35.1809],
+          [136.8816, 35.1709],
+        ]],
+      },
+    }),
+    /must be closed/,
+  );
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...polygon,
+      geometry: {
+        type: 'Polygon',
+        coordinates: [
+          polygon.geometry.coordinates[0],
+          polygon.geometry.coordinates[0],
+        ],
+      },
+    }),
+    /exactly 1 outer ring/,
+  );
+});
+
+test('geometryとkindの不一致、MultiPolygon、unknown fieldを拒否する', () => {
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...mapFeature('line', FEATURE_ID),
+      geometry: { type: 'Point', coordinates: [136.8815, 35.1709] },
+    }),
+    /must be LineString for line/,
+  );
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...mapFeature('polygon', FEATURE_ID),
+      geometry: { type: 'MultiPolygon', coordinates: [] },
+    }),
+    /must be Polygon for polygon/,
+  );
+  assert.throws(
+    () => domain.validateMapFeature({
+      ...mapFeature('marker', FEATURE_ID),
+      extra: true,
+    }),
+    /MapFeature\.feature\.extra/,
   );
 });
 

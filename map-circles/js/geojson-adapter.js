@@ -68,12 +68,12 @@
     return value.idGenerator || defaultIdGenerator;
   }
 
-  function resolveFeatureId(record, idGenerator) {
+  function resolveFeatureId(record, idGenerator, entity = 'CircleFeature') {
     if (Object.prototype.hasOwnProperty.call(record, 'featureId')) {
       return record.featureId;
     }
     try {
-      return idGenerator('CircleFeature');
+      return idGenerator(entity);
     } catch (error) {
       fail('featureId', `generation failed: ${error.message}`);
     }
@@ -115,6 +115,97 @@
     return feature;
   }
 
+  function assertAllowedRecordFields(record, fields) {
+    for (const field of Object.keys(record)) {
+      if (!fields.includes(field)) fail(field, 'is not allowed');
+    }
+  }
+
+  function assertRequiredRecordFields(record, fields) {
+    for (const field of fields) {
+      if (!Object.prototype.hasOwnProperty.call(record, field)) {
+        fail(field, 'is required');
+      }
+    }
+  }
+
+  function positionsToCoordinates(positions, field) {
+    if (!Array.isArray(positions)) fail(field, 'must be an array');
+    return positions.map((position, index) => {
+      if (!Array.isArray(position) || position.length !== 2) {
+        fail(`${field}[${index}]`, 'must contain exactly [lat, lng]');
+      }
+      return [position[1], position[0]];
+    });
+  }
+
+  function coordinatesToPositions(coordinates) {
+    return coordinates.map((position) => [position[1], position[0]]);
+  }
+
+  function shapeRecordToFeature(record, options) {
+    assertPlainObject('record', record);
+    const kind = record.kind;
+    if (!['circle', 'marker', 'line', 'polygon'].includes(kind)) {
+      fail('kind', 'must be circle, marker, line, or polygon');
+    }
+    if (kind === 'circle') {
+      assertAllowedRecordFields(
+        record,
+        ['kind', 'featureId', 'center', 'radius', 'color', 'label'],
+      );
+      assertRequiredRecordFields(record, ['kind', 'center', 'radius', 'color', 'label']);
+      const circleRecord = cloneData(record);
+      delete circleRecord.kind;
+      return circleRecordToFeature(circleRecord, options);
+    }
+
+    const fields = kind === 'marker'
+      ? ['kind', 'featureId', 'center', 'label']
+      : kind === 'line'
+        ? ['kind', 'featureId', 'points', 'color', 'label']
+        : ['kind', 'featureId', 'rings', 'color', 'label'];
+    assertAllowedRecordFields(record, fields);
+    assertRequiredRecordFields(
+      record,
+      fields.filter((field) => field !== 'featureId'),
+    );
+
+    const idGenerator = resolveIdGenerator(options);
+    let geometry;
+    if (kind === 'marker') {
+      const coordinates = positionsToCoordinates([record.center], 'center')[0];
+      geometry = { type: 'Point', coordinates };
+    } else if (kind === 'line') {
+      geometry = {
+        type: 'LineString',
+        coordinates: positionsToCoordinates(record.points, 'points'),
+      };
+    } else {
+      if (!Array.isArray(record.rings)) fail('rings', 'must be an array');
+      geometry = {
+        type: 'Polygon',
+        coordinates: record.rings.map((ring, index) =>
+          positionsToCoordinates(ring, `rings[${index}]`)),
+      };
+    }
+
+    const properties = {
+      schemaVersion: domain.SCHEMA_VERSION,
+      kind,
+      ...(kind === 'marker' ? {} : { color: record.color }),
+      label: record.label,
+    };
+    const feature = {
+      type: 'Feature',
+      id: resolveFeatureId(record, idGenerator, `${kind}Feature`),
+      geometry,
+      properties,
+    };
+    domain.validateMapFeature(feature);
+    return feature;
+  }
+
   function featureToCircleRecord(feature) {
     domain.validateCircleFeature(feature);
     return {
@@ -124,6 +215,44 @@
         feature.geometry.coordinates[0],
       ],
       radius: feature.properties.radiusMeters,
+      color: feature.properties.color,
+      label: feature.properties.label,
+    };
+  }
+
+  function featureToShapeRecord(feature) {
+    domain.validateMapFeature(feature);
+    const { kind } = feature.properties;
+    if (kind === 'circle') {
+      return {
+        kind,
+        ...featureToCircleRecord(feature),
+      };
+    }
+    if (kind === 'marker') {
+      return {
+        kind,
+        featureId: feature.id,
+        center: [
+          feature.geometry.coordinates[1],
+          feature.geometry.coordinates[0],
+        ],
+        label: feature.properties.label,
+      };
+    }
+    if (kind === 'line') {
+      return {
+        kind,
+        featureId: feature.id,
+        points: coordinatesToPositions(feature.geometry.coordinates),
+        color: feature.properties.color,
+        label: feature.properties.label,
+      };
+    }
+    return {
+      kind,
+      featureId: feature.id,
+      rings: feature.geometry.coordinates.map(coordinatesToPositions),
       color: feature.properties.color,
       label: feature.properties.label,
     };
@@ -146,8 +275,29 @@
     return featureCollection.features.map(featureToCircleRecord);
   }
 
+  function shapeRecordsToFeatureCollection(records, options) {
+    if (!Array.isArray(records)) {
+      fail('records', 'must be an array');
+    }
+    const featureCollection = {
+      type: 'FeatureCollection',
+      features: records.map((record) => shapeRecordToFeature(record, options)),
+    };
+    domain.validateFeatureCollection(featureCollection);
+    return featureCollection;
+  }
+
+  function featureCollectionToShapeRecords(featureCollection) {
+    domain.validateFeatureCollection(featureCollection);
+    return featureCollection.features.map(featureToShapeRecord);
+  }
+
   function validateCircleFeature(feature) {
     return domain.validateCircleFeature(cloneData(feature));
+  }
+
+  function validateMapFeature(feature) {
+    return domain.validateMapFeature(cloneData(feature));
   }
 
   return Object.freeze({
@@ -155,7 +305,12 @@
     circleRecordToFeature,
     circleRecordsToFeatureCollection,
     featureCollectionToCircleRecords,
+    featureCollectionToShapeRecords,
     featureToCircleRecord,
+    featureToShapeRecord,
+    shapeRecordToFeature,
+    shapeRecordsToFeatureCollection,
     validateCircleFeature,
+    validateMapFeature,
   });
 });
