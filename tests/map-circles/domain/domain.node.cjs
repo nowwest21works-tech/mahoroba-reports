@@ -9,12 +9,43 @@ const domain = require('../../../map-circles/js/domain.js');
 const HOUSEHOLD_ID = '00000000-0000-4000-8000-000000000001';
 const JOURNEY_ID = '00000000-0000-4000-8000-000000000002';
 const MAP_PROJECT_ID = '00000000-0000-4000-8000-000000000003';
+const FEATURE_ID = '00000000-0000-4000-8000-000000000101';
 const NOW = '2026-07-24T00:00:00.000Z';
 
 function dependencies(id) {
   return {
     idGenerator: () => id,
     clock: () => NOW,
+  };
+}
+
+function circleFeature(overrides = {}) {
+  const feature = {
+    type: 'Feature',
+    id: FEATURE_ID,
+    geometry: {
+      type: 'Point',
+      coordinates: [136.8815, 35.1709],
+    },
+    properties: {
+      schemaVersion: 1,
+      kind: 'circle',
+      radiusMeters: 800,
+      color: '#c8443a',
+      label: '地点1',
+    },
+  };
+  return {
+    ...feature,
+    ...overrides,
+    geometry: {
+      ...feature.geometry,
+      ...(overrides.geometry || {}),
+    },
+    properties: {
+      ...feature.properties,
+      ...(overrides.properties || {}),
+    },
   };
 }
 
@@ -166,6 +197,23 @@ test('MapProjectを初期viewport、4種ハザード、空FeatureCollectionで�
   assert.equal(domain.validateMapProject(mapProject), true);
 });
 
+test('MapProjectは有効なCircle Featureを保持し入力を変更しない', () => {
+  const featureCollection = {
+    type: 'FeatureCollection',
+    features: [circleFeature()],
+  };
+  const original = structuredClone(featureCollection);
+  const mapProject = domain.createMapProject({
+    journeyId: JOURNEY_ID,
+    displayLabel: '条件整理マップ1',
+    featureCollection,
+  }, dependencies(MAP_PROJECT_ID));
+
+  assert.deepEqual(mapProject.featureCollection, featureCollection);
+  assert.deepEqual(featureCollection, original);
+  assert.equal(domain.validateMapProject(mapProject), true);
+});
+
 test('MapProjectはopacity範囲外を拒否する', () => {
   for (const opacity of [-0.1, 1.1, '0.6']) {
     assert.throws(
@@ -205,26 +253,40 @@ test('MapProjectはlat／lng／zoomの不正値を拒否する', () => {
   }
 });
 
-test('MapProjectは不正または非空のFeatureCollectionを拒否する', () => {
+test('MapProjectは不正FeatureCollectionと無効なFeatureを拒否する', () => {
   const invalidCollections = [
     { type: 'Feature', features: [] },
     { type: 'FeatureCollection', features: {} },
-    { type: 'FeatureCollection', features: [{ type: 'Feature' }] },
+    { type: 'FeatureCollection', features: [circleFeature({
+      geometry: { type: 'Polygon' },
+    })] },
     { type: 'FeatureCollection', features: [], extra: true },
   ];
 
-  for (const [index, featureCollection] of invalidCollections.entries()) {
+  for (const featureCollection of invalidCollections) {
     assert.throws(
       () => domain.createMapProject({
         journeyId: JOURNEY_ID,
         displayLabel: '条件整理マップ1',
         featureCollection,
       }, dependencies(MAP_PROJECT_ID)),
-      index === invalidCollections.length - 1
-        ? /MapProject\.extra/
-        : /MapProject\.featureCollection/,
+      /MapProject\.featureCollection/,
     );
   }
+});
+
+test('MapProjectはduplicate Circle Feature IDを拒否する', () => {
+  assert.throws(
+    () => domain.createMapProject({
+      journeyId: JOURNEY_ID,
+      displayLabel: '条件整理マップ1',
+      featureCollection: {
+        type: 'FeatureCollection',
+        features: [circleFeature(), circleFeature()],
+      },
+    }, dependencies(MAP_PROJECT_ID)),
+    /MapProject\.featureCollection\.features\[1\]\.id: duplicate ID/,
+  );
 });
 
 test('Browser classic scriptは単一MapCirclesDomain namespaceを公開する', () => {

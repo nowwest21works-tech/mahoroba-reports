@@ -11,6 +11,7 @@ const HOUSEHOLD_ID = '00000000-0000-4000-8000-000000000011';
 const HOUSEHOLD_ID_2 = '00000000-0000-4000-8000-000000000012';
 const JOURNEY_ID = '00000000-0000-4000-8000-000000000021';
 const MAP_PROJECT_ID = '00000000-0000-4000-8000-000000000031';
+const FEATURE_ID = '00000000-0000-4000-8000-000000000101';
 const CREATED_AT = '2026-07-24T00:00:00.000Z';
 const UPDATED_AT = '2026-07-24T00:01:00.000Z';
 
@@ -40,6 +41,36 @@ function seedStore(store) {
     displayLabel: '条件整理マップ1',
   });
   return { household, journey, mapProject };
+}
+
+function circleFeature(overrides = {}) {
+  const feature = {
+    type: 'Feature',
+    id: FEATURE_ID,
+    geometry: {
+      type: 'Point',
+      coordinates: [136.8815, 35.1709],
+    },
+    properties: {
+      schemaVersion: 1,
+      kind: 'circle',
+      radiusMeters: 800,
+      color: '#c8443a',
+      label: '地点1',
+    },
+  };
+  return {
+    ...feature,
+    ...overrides,
+    geometry: {
+      ...feature.geometry,
+      ...(overrides.geometry || {}),
+    },
+    properties: {
+      ...feature.properties,
+      ...(overrides.properties || {}),
+    },
+  };
 }
 
 test('Household CRUDを実行し、updatedAtを更新する', () => {
@@ -174,6 +205,42 @@ test('Storeへの入力と返却値をdeep cloneする', () => {
 
   assert.equal(secondRead.viewport.center.lat, 35.1709);
   assert.equal(secondRead.hazardLayers.opacity, 0.6);
+});
+
+test('MapProjectを有効なCircle FeatureCollectionで更新しdeep cloneする', () => {
+  const store = createStore();
+  const { mapProject } = seedStore(store);
+  const featureCollection = {
+    type: 'FeatureCollection',
+    features: [circleFeature()],
+  };
+  const updated = store.updateMapProject(mapProject.id, { featureCollection });
+
+  featureCollection.features[0].geometry.coordinates[0] = 0;
+  updated.featureCollection.features[0].properties.label = '変更済み';
+  const stored = store.getMapProject(mapProject.id);
+  assert.equal(stored.featureCollection.features[0].geometry.coordinates[0], 136.8815);
+  assert.equal(stored.featureCollection.features[0].properties.label, '地点1');
+});
+
+test('MapProjectの無効なCircle FeatureCollection更新を拒否する', () => {
+  const store = createStore();
+  const { mapProject } = seedStore(store);
+  assert.throws(
+    () => store.updateMapProject(mapProject.id, {
+      featureCollection: {
+        type: 'FeatureCollection',
+        features: [circleFeature({
+          properties: { radiusMeters: 50001 },
+        })],
+      },
+    }),
+    /MapProject\.featureCollection\.features\[0\]\.properties\.radiusMeters/,
+  );
+  assert.deepEqual(
+    store.getMapProject(mapProject.id).featureCollection,
+    { type: 'FeatureCollection', features: [] },
+  );
 });
 
 test('snapshotはrelation全体のdeep cloneを返す', () => {

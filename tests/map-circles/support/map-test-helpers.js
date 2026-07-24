@@ -119,9 +119,17 @@ async function getMapState(page) {
     circles: circles.map((item) => ({
       center: item.center,
       color: item.color,
+      featureId: item.featureId,
       label: item.label,
       radius: item.radius,
     })),
+  }));
+}
+
+async function getAppState(page) {
+  return page.evaluate(() => ({
+    mapProject: MapCirclesAppState.getCurrentMapProject(),
+    snapshot: MapCirclesAppState.getSnapshot(),
   }));
 }
 
@@ -133,6 +141,7 @@ module.exports = {
   APP_PATH,
   clickMap,
   fixturePath,
+  getAppState,
   getMapState,
   installNetworkSandbox,
   openMap,
