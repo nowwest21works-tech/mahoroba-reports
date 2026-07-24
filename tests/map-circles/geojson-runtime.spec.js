@@ -92,6 +92,15 @@ test.describe('GeoJSON runtime同期', () => {
     await page.locator('#search-input').fill('架空中央駅');
     await page.locator('#search-btn').click();
 
+    await expect.poll(
+      async () => (await getMapState(page)).circles.length,
+    ).toBe(1);
+    await expect.poll(
+      async () => (
+        await getAppState(page)
+      ).mapProject.featureCollection.features.length,
+    ).toBe(1);
+
     const mapState = await getMapState(page);
     const feature = (await getAppState(page)).mapProject.featureCollection.features[0];
     expect(mapState.circles).toHaveLength(1);
