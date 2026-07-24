@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test:map-circles": "playwright test --config=playwright.config.js",
+    "test:map-circles": "npm run test:map-circles:domain && playwright test --config=playwright.config.js",
+    "test:map-circles:domain": "node --test tests/map-circles/domain/*.node.cjs",
     "test:map-circles:report": "playwright show-report playwright-report/map-circles"
   },
   "devDependencies": {
