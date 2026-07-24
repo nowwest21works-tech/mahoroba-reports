@@ -1,4 +1,4 @@
-// ========== 円と非永続Storeのprivate runtime ==========
+// ========== 図形と非永続Storeのprivate runtime ==========
 const {
   addCircle,
   removeCircle,
@@ -19,6 +19,9 @@ const {
     displayLabel: '条件整理マップ1',
   });
   const mapProjectId = mapProject.id;
+  const layerRegistry = new Map();
+  const featureIdByLayer = new WeakMap();
+  let geometryEditorLifecycle = null;
 
   function getCurrentMapProject() {
     return store.getMapProject(mapProjectId);
@@ -40,15 +43,76 @@ const {
     getSnapshot: () => store.snapshot(),
   });
 
-  function assertCircleFeatureAlignment(circleRecords, featureCollection) {
-    const featureIds = new Set(
-      featureCollection.features.map((feature) => feature.id),
+  function createCircleLabelIcon(label, radius, color) {
+    return L.divIcon({
+      className: '',
+      html: `<div class="circle-label" style="background:${color}">${escapeHtml(label)} · ${formatRadius(radius)}</div>`,
+      iconSize: [null, null],
+      iconAnchor: [0, 0],
+    });
+  }
+
+  function createCircleLabelLayer(record) {
+    return L.marker(record.center, {
+      icon: createCircleLabelIcon(record.label, record.radius, record.color),
+      interactive: false,
+      pmIgnore: true,
+    });
+  }
+
+  function registerFeature(feature, layer, labelLayer = null) {
+    if (layerRegistry.has(feature.id)) {
+      throw new Error(`Feature layer already registered: ${feature.id}`);
+    }
+    layer.options.pmIgnore = false;
+    layerRegistry.set(feature.id, {
+      kind: feature.properties.kind,
+      layer,
+      labelLayer,
+    });
+    featureIdByLayer.set(layer, feature.id);
+    if (!geometryEditorLifecycle) {
+      throw new Error('Geometry editor lifecycle is unavailable');
+    }
+    geometryEditorLifecycle.bindLayer(layer);
+  }
+
+  function unregisterFeature(featureId) {
+    const entry = layerRegistry.get(featureId);
+    if (!entry) return null;
+    layerRegistry.delete(featureId);
+    featureIdByLayer.delete(entry.layer);
+    return entry;
+  }
+
+  function restoreRegistryEntry(featureId, entry) {
+    layerRegistry.set(featureId, entry);
+    featureIdByLayer.set(entry.layer, featureId);
+    if (!geometryEditorLifecycle) {
+      throw new Error('Geometry editor lifecycle is unavailable');
+    }
+    geometryEditorLifecycle.bindLayer(entry.layer);
+  }
+
+  function assertRuntimeAlignment(featureCollection) {
+    const featureIds = new Set(featureCollection.features.map((feature) => feature.id));
+    if (
+      featureIds.size !== layerRegistry.size
+      || [...featureIds].some((featureId) => !layerRegistry.has(featureId))
+    ) {
+      throw new Error('Layer registry and FeatureCollection state are inconsistent');
+    }
+
+    const circleIds = new Set(
+      featureCollection.features
+        .filter((feature) => feature.properties.kind === 'circle')
+        .map((feature) => feature.id),
     );
     if (
-      featureIds.size !== circleRecords.length
-      || circleRecords.some((record) => !featureIds.has(record.featureId))
+      circleIds.size !== circles.length
+      || circles.some((record) => !circleIds.has(record.featureId))
     ) {
-      throw new Error('Circle and FeatureCollection state are inconsistent');
+      throw new Error('Circle list and FeatureCollection state are inconsistent');
     }
   }
 
@@ -64,6 +128,180 @@ const {
     document.getElementById('circle-list').innerHTML = snapshot.listHtml;
   }
 
+  function cloneCircleRecords() {
+    return circles.map((record) => ({
+      ...record,
+      center: [...record.center],
+    }));
+  }
+
+  function findFeature(featureId, featureCollection = getCurrentSnapshotProject().featureCollection) {
+    return featureCollection.features.find((feature) => feature.id === featureId);
+  }
+
+  function createNextFeatureCollection(previousProject, feature) {
+    const nextFeatureCollection = {
+      type: 'FeatureCollection',
+      features: [...previousProject.featureCollection.features, feature],
+    };
+    MapCirclesDomain.validateFeatureCollection(nextFeatureCollection);
+    return nextFeatureCollection;
+  }
+
+  function replaceFeature(previousProject, feature) {
+    const nextFeatureCollection = {
+      type: 'FeatureCollection',
+      features: previousProject.featureCollection.features.map((current) =>
+        current.id === feature.id ? feature : current),
+    };
+    MapCirclesDomain.validateFeatureCollection(nextFeatureCollection);
+    return nextFeatureCollection;
+  }
+
+  function commitCreatedFeature(feature, layer) {
+    MapCirclesDomain.validateMapFeature(feature);
+    const previousProject = getCurrentSnapshotProject();
+    assertRuntimeAlignment(previousProject.featureCollection);
+    const nextFeatureCollection = createNextFeatureCollection(previousProject, feature);
+    const previousCircles = cloneCircleRecords();
+    const previousListDom = captureCircleListDom();
+    const previousNextId = nextId;
+    let labelLayer = null;
+
+    try {
+      if (!map.hasLayer(layer)) layer.addTo(map);
+      if (feature.properties.kind === 'circle') {
+        const shapeRecord = MapCirclesGeoJsonAdapter.featureToCircleRecord(feature);
+        labelLayer = createCircleLabelLayer(shapeRecord).addTo(map);
+        circles.push({
+          id: previousNextId,
+          ...shapeRecord,
+          marker: labelLayer,
+          circle: layer,
+        });
+        renderList();
+      }
+      registerFeature(feature, layer, labelLayer);
+      updateCurrentFeatureCollection(nextFeatureCollection);
+    } catch (error) {
+      circles = previousCircles;
+      unregisterFeature(feature.id);
+      if (labelLayer && map.hasLayer(labelLayer)) map.removeLayer(labelLayer);
+      if (map.hasLayer(layer)) map.removeLayer(layer);
+      restoreCircleListDom(previousListDom);
+      nextId = previousNextId;
+      throw error;
+    }
+
+    if (feature.properties.kind === 'circle') nextId = previousNextId + 1;
+    return layerRegistry.get(feature.id);
+  }
+
+  function commitEditedFeature(featureId, feature) {
+    MapCirclesDomain.validateMapFeature(feature);
+    if (feature.id !== featureId) {
+      throw new Error('Feature ID cannot change during edit');
+    }
+    const previousProject = getCurrentSnapshotProject();
+    assertRuntimeAlignment(previousProject.featureCollection);
+    const previousFeature = findFeature(featureId, previousProject.featureCollection);
+    const entry = layerRegistry.get(featureId);
+    if (!previousFeature || !entry) throw new Error('Edited feature is not registered');
+    if (previousFeature.properties.kind !== feature.properties.kind) {
+      throw new Error('Feature kind cannot change during edit');
+    }
+
+    const nextFeatureCollection = replaceFeature(previousProject, feature);
+    const previousCircles = cloneCircleRecords();
+    const previousListDom = captureCircleListDom();
+
+    try {
+      if (feature.properties.kind === 'circle') {
+        const shapeRecord = MapCirclesGeoJsonAdapter.featureToCircleRecord(feature);
+        const index = circles.findIndex((record) => record.featureId === featureId);
+        if (index === -1 || !entry.labelLayer) {
+          throw new Error('Edited circle state is incomplete');
+        }
+        circles[index] = {
+          ...circles[index],
+          ...shapeRecord,
+        };
+        entry.labelLayer.setLatLng(shapeRecord.center);
+        entry.labelLayer.setIcon(
+          createCircleLabelIcon(
+            shapeRecord.label,
+            shapeRecord.radius,
+            shapeRecord.color,
+          ),
+        );
+        renderList();
+      }
+      updateCurrentFeatureCollection(nextFeatureCollection);
+    } catch (error) {
+      circles = previousCircles;
+      const previousCircle = previousCircles.find(
+        (record) => record.featureId === featureId,
+      );
+      if (previousCircle && entry.labelLayer) {
+        entry.labelLayer.setLatLng(previousCircle.center);
+        entry.labelLayer.setIcon(
+          createCircleLabelIcon(
+            previousCircle.label,
+            previousCircle.radius,
+            previousCircle.color,
+          ),
+        );
+      }
+      restoreCircleListDom(previousListDom);
+      throw error;
+    }
+
+    return feature;
+  }
+
+  function commitRemovedFeature(featureId, removedLayer) {
+    const previousProject = getCurrentSnapshotProject();
+    const previousFeature = findFeature(featureId, previousProject.featureCollection);
+    const entry = layerRegistry.get(featureId);
+    const previousCircles = cloneCircleRecords();
+    const previousListDom = captureCircleListDom();
+    const previousNextId = nextId;
+
+    try {
+      assertRuntimeAlignment(previousProject.featureCollection);
+      if (!previousFeature || !entry || entry.layer !== removedLayer) {
+        throw new Error('Removed feature is not registered');
+      }
+      const nextFeatureCollection = {
+        type: 'FeatureCollection',
+        features: previousProject.featureCollection.features.filter(
+          (feature) => feature.id !== featureId,
+        ),
+      };
+      MapCirclesDomain.validateFeatureCollection(nextFeatureCollection);
+      if (map.hasLayer(removedLayer)) map.removeLayer(removedLayer);
+      unregisterFeature(featureId);
+      if (entry.kind === 'circle') {
+        circles = circles.filter((record) => record.featureId !== featureId);
+        if (entry.labelLayer && map.hasLayer(entry.labelLayer)) {
+          map.removeLayer(entry.labelLayer);
+        }
+        renderList();
+      }
+      updateCurrentFeatureCollection(nextFeatureCollection);
+    } catch (error) {
+      circles = previousCircles;
+      if (entry) restoreRegistryEntry(featureId, entry);
+      if (!map.hasLayer(removedLayer)) removedLayer.addTo(map);
+      if (entry && entry.labelLayer && !map.hasLayer(entry.labelLayer)) {
+        entry.labelLayer.addTo(map);
+      }
+      restoreCircleListDom(previousListDom);
+      nextId = previousNextId;
+      throw error;
+    }
+  }
+
   function addCircle(
     lat,
     lng,
@@ -71,137 +309,76 @@ const {
     color = currentColor,
     label = '',
   ) {
-    const id = nextId;
     const userLabel =
       label
       || document.getElementById('label-input').value.trim()
-      || `地点${id}`;
+      || `地点${nextId}`;
     const feature = MapCirclesGeoJsonAdapter.circleRecordToFeature({
       center: [lat, lng],
       radius,
       color,
       label: userLabel,
     });
-    const previousProject = getCurrentSnapshotProject();
-    assertCircleFeatureAlignment(circles, previousProject.featureCollection);
-    const nextFeatureCollection = {
-      type: 'FeatureCollection',
-      features: [...previousProject.featureCollection.features, feature],
-    };
-    MapCirclesDomain.validateFeatureCollection(nextFeatureCollection);
-
     const circle = L.circle([lat, lng], {
-      radius: radius,
-      color: color,
+      radius,
+      color,
       fillColor: color,
       fillOpacity: 0.15,
       weight: 2,
-      opacity: 0.7
+      opacity: 0.7,
+      pmIgnore: false,
     });
 
-    const marker = L.marker([lat, lng], {
-      icon: L.divIcon({
-        className: '',
-        html: `<div class="circle-label" style="background:${color}">${escapeHtml(userLabel)} · ${formatRadius(radius)}</div>`,
-        iconSize: [null, null],
-        iconAnchor: [0, 0]
-      })
-    });
-
-    const previousCircles = circles.slice();
-    const previousListDom = captureCircleListDom();
-    const previousNextId = nextId;
-
-    try {
-      circle.addTo(map);
-      marker.addTo(map);
-      circles.push({
-        id,
-        featureId: feature.id,
-        marker,
-        circle,
-        center: [lat, lng],
-        radius,
-        color,
-        label: userLabel,
-      });
-      renderList();
-      updateCurrentFeatureCollection(nextFeatureCollection);
-    } catch (error) {
-      circles = previousCircles;
-      if (map.hasLayer(marker)) map.removeLayer(marker);
-      if (map.hasLayer(circle)) map.removeLayer(circle);
-      restoreCircleListDom(previousListDom);
-      nextId = previousNextId;
-      throw error;
-    }
-
-    nextId = previousNextId + 1;
+    commitCreatedFeature(feature, circle);
     showStatus(`「${userLabel}」を配置しました（${formatRadius(radius)}）`);
-
-    // 入力リセット
     document.getElementById('label-input').value = '';
     return circles[circles.length - 1];
   }
 
   function removeCircle(id) {
-    const idx = circles.findIndex(c => c.id === id);
-    if (idx === -1) return;
-    const previousCircles = circles.slice();
+    const target = circles.find((record) => record.id === id);
+    if (!target) return;
+    commitRemovedFeature(target.featureId, target.circle);
+  }
+
+  function clearAllCircles() {
     const previousProject = getCurrentSnapshotProject();
+    assertRuntimeAlignment(previousProject.featureCollection);
+    const previousCircles = cloneCircleRecords();
     const previousListDom = captureCircleListDom();
     const previousNextId = nextId;
-    const target = circles[idx];
-    assertCircleFeatureAlignment(circles, previousProject.featureCollection);
+    const circleEntries = previousCircles.map((record) => ({
+      featureId: record.featureId,
+      entry: layerRegistry.get(record.featureId),
+    }));
     const nextFeatureCollection = {
       type: 'FeatureCollection',
       features: previousProject.featureCollection.features.filter(
-        (feature) => feature.id !== target.featureId,
+        (feature) => feature.properties.kind !== 'circle',
       ),
     };
     MapCirclesDomain.validateFeatureCollection(nextFeatureCollection);
 
     try {
-      map.removeLayer(target.circle);
-      map.removeLayer(target.marker);
-      circles.splice(idx, 1);
-      renderList();
-      updateCurrentFeatureCollection(nextFeatureCollection);
-    } catch (error) {
-      circles = previousCircles;
-      if (!map.hasLayer(target.circle)) target.circle.addTo(map);
-      if (!map.hasLayer(target.marker)) target.marker.addTo(map);
-      restoreCircleListDom(previousListDom);
-      nextId = previousNextId;
-      throw error;
-    }
-  }
-
-  function clearAllCircles() {
-    const previousCircles = circles.slice();
-    const previousProject = getCurrentSnapshotProject();
-    const previousListDom = captureCircleListDom();
-    const previousNextId = nextId;
-    assertCircleFeatureAlignment(circles, previousProject.featureCollection);
-    const nextFeatureCollection = {
-      type: 'FeatureCollection',
-      features: [],
-    };
-    MapCirclesDomain.validateFeatureCollection(nextFeatureCollection);
-
-    try {
-      circles.forEach((item) => {
-        map.removeLayer(item.circle);
-        map.removeLayer(item.marker);
+      circleEntries.forEach(({ featureId, entry }) => {
+        unregisterFeature(featureId);
+        if (entry && map.hasLayer(entry.layer)) map.removeLayer(entry.layer);
+        if (entry && entry.labelLayer && map.hasLayer(entry.labelLayer)) {
+          map.removeLayer(entry.labelLayer);
+        }
       });
       circles = [];
       renderList();
       updateCurrentFeatureCollection(nextFeatureCollection);
     } catch (error) {
       circles = previousCircles;
-      circles.forEach((item) => {
-        if (!map.hasLayer(item.circle)) item.circle.addTo(map);
-        if (!map.hasLayer(item.marker)) item.marker.addTo(map);
+      circleEntries.forEach(({ featureId, entry }) => {
+        if (!entry) return;
+        restoreRegistryEntry(featureId, entry);
+        if (!map.hasLayer(entry.layer)) entry.layer.addTo(map);
+        if (entry.labelLayer && !map.hasLayer(entry.labelLayer)) {
+          entry.labelLayer.addTo(map);
+        }
       });
       restoreCircleListDom(previousListDom);
       nextId = previousNextId;
@@ -214,6 +391,27 @@ const {
     if (!circleRecord) return;
     map.fitBounds(circleRecord.circle.getBounds(), { padding: [40, 40] });
   }
+
+  document.addEventListener('mapcircles:geometry-editor-ready', (event) => {
+    if (!event.detail || typeof event.detail.initialize !== 'function') {
+      throw new Error('Geometry editor initializer is unavailable');
+    }
+    geometryEditorLifecycle = event.detail.initialize(Object.freeze({
+      commitCreatedFeature,
+      commitEditedFeature,
+      commitRemovedFeature,
+      featureIdForLayer: (layer) => featureIdByLayer.get(layer),
+      getCurrentFeature: (featureId) => findFeature(featureId),
+      getEntry: (featureId) => layerRegistry.get(featureId),
+      isRegisteredLayer: (layer) => featureIdByLayer.has(layer),
+    }));
+    if (
+      !geometryEditorLifecycle
+      || typeof geometryEditorLifecycle.bindLayer !== 'function'
+    ) {
+      throw new Error('Geometry editor lifecycle is invalid');
+    }
+  }, { once: true });
 
   let clearArmed = false;
   let clearArmedTimer = null;

@@ -8,6 +8,8 @@ const adapter = require('../../../map-circles/js/geojson-adapter.js');
 
 const FEATURE_ID = '00000000-0000-4000-8000-000000000101';
 const FEATURE_ID_2 = '00000000-0000-4000-8000-000000000102';
+const FEATURE_ID_3 = '00000000-0000-4000-8000-000000000103';
+const FEATURE_ID_4 = '00000000-0000-4000-8000-000000000104';
 
 function circleRecord(overrides = {}) {
   return {
@@ -181,6 +183,119 @@ test('duplicate Feature IDを拒否する', () => {
   );
 });
 
+test('Marker、Line、Polygonを座標順序変換してround-tripする', () => {
+  const records = [
+    {
+      kind: 'marker',
+      featureId: FEATURE_ID,
+      center: [35.1709, 136.8815],
+      label: '地点1',
+    },
+    {
+      kind: 'line',
+      featureId: FEATURE_ID_2,
+      points: [[35.1709, 136.8815], [35.1809, 136.8915]],
+      color: '#c8443a',
+      label: '線1',
+    },
+    {
+      kind: 'polygon',
+      featureId: FEATURE_ID_3,
+      rings: [[
+        [35.1709, 136.8815],
+        [35.1709, 136.8915],
+        [35.1809, 136.8915],
+        [35.1709, 136.8815],
+      ]],
+      color: '#c8443a',
+      label: '範囲1',
+    },
+  ];
+  const original = structuredClone(records);
+
+  for (const record of records) {
+    const feature = adapter.shapeRecordToFeature(record);
+    assert.equal(adapter.validateMapFeature(feature), true);
+    assert.deepEqual(adapter.featureToShapeRecord(feature), record);
+  }
+  assert.deepEqual(records, original);
+  assert.deepEqual(
+    adapter.shapeRecordToFeature(records[1]).geometry.coordinates,
+    [[136.8815, 35.1709], [136.8915, 35.1809]],
+  );
+});
+
+test('Mixed shape recordsとFeatureCollectionをdeep cloneして往復する', () => {
+  const records = [
+    {
+      kind: 'circle',
+      featureId: FEATURE_ID,
+      center: [35.1709, 136.8815],
+      radius: 800,
+      color: '#c8443a',
+      label: '地点1',
+    },
+    {
+      kind: 'marker',
+      featureId: FEATURE_ID_2,
+      center: [35.18, 136.89],
+      label: '地点2',
+    },
+    {
+      kind: 'line',
+      featureId: FEATURE_ID_3,
+      points: [[35.17, 136.88], [35.18, 136.89]],
+      color: '#3a8c5f',
+      label: '線1',
+    },
+    {
+      kind: 'polygon',
+      featureId: FEATURE_ID_4,
+      rings: [[
+        [35.17, 136.88],
+        [35.17, 136.89],
+        [35.18, 136.89],
+        [35.17, 136.88],
+      ]],
+      color: '#7a4e9c',
+      label: '範囲1',
+    },
+  ];
+  const featureCollection = adapter.shapeRecordsToFeatureCollection(records);
+  const restored = adapter.featureCollectionToShapeRecords(featureCollection);
+
+  assert.deepEqual(restored, records);
+  restored[1].center[0] = 0;
+  assert.equal(featureCollection.features[1].geometry.coordinates[1], 35.18);
+});
+
+test('shape APIはID generatorを差し替え、invalid／unknown fieldを拒否する', () => {
+  const marker = {
+    kind: 'marker',
+    center: [35.1709, 136.8815],
+    label: '地点1',
+  };
+  assert.equal(
+    adapter.shapeRecordToFeature(marker, {
+      idGenerator: () => FEATURE_ID,
+    }).id,
+    FEATURE_ID,
+  );
+  assert.throws(
+    () => adapter.shapeRecordToFeature({ ...marker, extra: true }),
+    /CircleRecord\.extra/,
+  );
+  assert.throws(
+    () => adapter.shapeRecordToFeature({
+      kind: 'line',
+      points: [[35.1709, 136.8815]],
+      color: '#c8443a',
+      label: '線1',
+    }, { idGenerator: () => FEATURE_ID }),
+    /MapFeature\.feature\.geometry\.coordinates/,
+  );
+});
+
 test('Browser classic scriptは単一namespaceと既定UUID生成を提供する', () => {
   const domainSource = fs.readFileSync(
     path.resolve(__dirname, '../../../map-circles/js/domain.js'),
@@ -210,4 +325,6 @@ test('Browser classic scriptは単一namespaceと既定UUID生成を提供する
   assert.equal(typeof context.MapCirclesGeoJsonAdapter, 'object');
   assert.equal(context.circleRecordToFeature, undefined);
   assert.equal(typeof adapter.circleRecordToFeature, 'function');
+  assert.equal(typeof context.MapCirclesGeoJsonAdapter.shapeRecordToFeature, 'function');
+  assert.equal(typeof adapter.shapeRecordToFeature, 'function');
 });

@@ -1,5 +1,13 @@
 // ========== マップクリック ==========
 map.on('click', (e) => {
+  if (
+    map.pm.globalDrawModeEnabled()
+    || map.pm.globalEditModeEnabled()
+    || map.pm.globalDragModeEnabled()
+    || map.pm.globalRemovalModeEnabled()
+  ) {
+    return;
+  }
   addCircle(e.latlng.lat, e.latlng.lng);
 });
 

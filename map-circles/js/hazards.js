@@ -33,7 +33,8 @@ function toggleHazard(key, enabled) {
         attribution: cfg.attribution,
         maxZoom: cfg.maxZoom,
         minZoom: cfg.minZoom,
-        opacity: hazardOpacity
+        opacity: hazardOpacity,
+        pmIgnore: true,
       });
     }
     hazardLayers[key].addTo(map);
