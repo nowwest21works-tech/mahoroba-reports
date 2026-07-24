@@ -6,8 +6,9 @@
     line: 1,
     polygon: 1,
   };
+  const boundLayers = new WeakSet();
   const editSnapshots = new WeakMap();
-  const skipNextUpdate = new WeakSet();
+  const dragSnapshots = new WeakMap();
   let runtime = null;
 
   const shapeNames = {
@@ -161,19 +162,28 @@
     }
   }
 
-  function captureEditSnapshot(layer) {
+  function captureLayerSnapshot(layer, snapshots) {
     const featureId = runtime.featureIdForLayer(layer);
-    if (!featureId) return;
+    if (!featureId) {
+      snapshots.delete(layer);
+      return;
+    }
     const feature = runtime.getCurrentFeature(featureId);
-    if (feature) editSnapshots.set(layer, feature);
+    if (feature) snapshots.set(layer, feature);
   }
 
-  function commitLayerEdit(layer) {
+  function commitLayerEdit(layer, snapshots) {
     const featureId = runtime.featureIdForLayer(layer);
-    if (!featureId) return;
+    if (!featureId) {
+      snapshots.delete(layer);
+      return;
+    }
     const previousFeature =
-      editSnapshots.get(layer) || runtime.getCurrentFeature(featureId);
-    if (!previousFeature) return;
+      snapshots.get(layer) || runtime.getCurrentFeature(featureId);
+    if (!previousFeature) {
+      snapshots.delete(layer);
+      return;
+    }
 
     try {
       const feature = createFeatureFromLayer(
@@ -182,13 +192,40 @@
         previousFeature,
       );
       runtime.commitEditedFeature(featureId, feature);
-      editSnapshots.set(layer, feature);
       showStatus(`「${feature.properties.label}」を更新しました`);
     } catch (error) {
       restoreLayerGeometry(layer, previousFeature);
-      editSnapshots.set(layer, previousFeature);
       showStatus(`編集を元に戻しました: ${error.message}`, 4000);
+    } finally {
+      snapshots.delete(layer);
     }
+  }
+
+  function bindCanonicalLayer(layer) {
+    if (boundLayers.has(layer)) return;
+
+    layer.on('pm:enable', () => {
+      captureLayerSnapshot(layer, editSnapshots);
+    });
+    layer.on('pm:update', () => {
+      if (!runtime.isRegisteredLayer(layer)) {
+        editSnapshots.delete(layer);
+        return;
+      }
+      commitLayerEdit(layer, editSnapshots);
+    });
+    layer.on('pm:dragstart', () => {
+      captureLayerSnapshot(layer, dragSnapshots);
+    });
+    layer.on('pm:dragend', () => {
+      if (!runtime.isRegisteredLayer(layer)) {
+        dragSnapshots.delete(layer);
+        return;
+      }
+      commitLayerEdit(layer, dragSnapshots);
+    });
+
+    boundLayers.add(layer);
   }
 
   function handleRemove(event) {
@@ -249,22 +286,11 @@
       });
     });
     map.on('pm:create', handleCreate);
-    map.on('pm:enable', (event) => captureEditSnapshot(event.layer));
-    map.on('pm:dragstart', (event) => captureEditSnapshot(event.layer));
-    map.on('pm:dragend', (event) => {
-      if (!runtime.isRegisteredLayer(event.layer)) return;
-      commitLayerEdit(event.layer);
-      skipNextUpdate.add(event.layer);
-    });
-    map.on('pm:update', (event) => {
-      if (!runtime.isRegisteredLayer(event.layer)) return;
-      if (skipNextUpdate.has(event.layer)) {
-        skipNextUpdate.delete(event.layer);
-        return;
-      }
-      commitLayerEdit(event.layer);
-    });
     map.on('pm:remove', handleRemove);
+
+    return Object.freeze({
+      bindLayer: bindCanonicalLayer,
+    });
   }
 
   document.dispatchEvent(new CustomEvent('mapcircles:geometry-editor-ready', {

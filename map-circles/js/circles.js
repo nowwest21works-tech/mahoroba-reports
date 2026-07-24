@@ -21,6 +21,7 @@ const {
   const mapProjectId = mapProject.id;
   const layerRegistry = new Map();
   const featureIdByLayer = new WeakMap();
+  let geometryEditorLifecycle = null;
 
   function getCurrentMapProject() {
     return store.getMapProject(mapProjectId);
@@ -70,6 +71,10 @@ const {
       labelLayer,
     });
     featureIdByLayer.set(layer, feature.id);
+    if (!geometryEditorLifecycle) {
+      throw new Error('Geometry editor lifecycle is unavailable');
+    }
+    geometryEditorLifecycle.bindLayer(layer);
   }
 
   function unregisterFeature(featureId) {
@@ -83,6 +88,10 @@ const {
   function restoreRegistryEntry(featureId, entry) {
     layerRegistry.set(featureId, entry);
     featureIdByLayer.set(entry.layer, featureId);
+    if (!geometryEditorLifecycle) {
+      throw new Error('Geometry editor lifecycle is unavailable');
+    }
+    geometryEditorLifecycle.bindLayer(entry.layer);
   }
 
   function assertRuntimeAlignment(featureCollection) {
@@ -387,7 +396,7 @@ const {
     if (!event.detail || typeof event.detail.initialize !== 'function') {
       throw new Error('Geometry editor initializer is unavailable');
     }
-    event.detail.initialize(Object.freeze({
+    geometryEditorLifecycle = event.detail.initialize(Object.freeze({
       commitCreatedFeature,
       commitEditedFeature,
       commitRemovedFeature,
@@ -396,6 +405,12 @@ const {
       getEntry: (featureId) => layerRegistry.get(featureId),
       isRegisteredLayer: (layer) => featureIdByLayer.has(layer),
     }));
+    if (
+      !geometryEditorLifecycle
+      || typeof geometryEditorLifecycle.bindLayer !== 'function'
+    ) {
+      throw new Error('Geometry editor lifecycle is invalid');
+    }
   }, { once: true });
 
   let clearArmed = false;

@@ -104,7 +104,11 @@ async function getEditorState(page) {
 async function editShape(page, kind, geometry, eventName = 'pm:update') {
   await page.evaluate(({ kind, geometry, eventName }) => {
     const layer = window.__geomanTestLayers[kind];
-    map.fire(eventName === 'pm:dragend' ? 'pm:dragstart' : 'pm:enable', { layer });
+    const shape = layer.pm.getShape();
+    layer.fire(
+      eventName === 'pm:dragend' ? 'pm:dragstart' : 'pm:enable',
+      { layer, shape },
+    );
     if (kind === 'marker') {
       layer.setLatLng(geometry.center);
     } else if (kind === 'circle') {
@@ -113,8 +117,7 @@ async function editShape(page, kind, geometry, eventName = 'pm:update') {
     } else {
       layer.setLatLngs(geometry.points);
     }
-    map.fire(eventName, { layer });
-    if (eventName === 'pm:dragend') map.fire('pm:update', { layer });
+    layer.fire(eventName, { layer, shape });
   }, { kind, geometry, eventName });
 }
 
@@ -249,6 +252,26 @@ test.describe('Leaflet-Geoman dependencyとtoolbar', () => {
       label: '地点1',
     });
     expect((await getMapState(page)).circles).toEqual([]);
+
+    const editedFeature = await page.evaluate(() => {
+      let markerLayer = null;
+      map.eachLayer((layer) => {
+        if (
+          layer instanceof L.Marker
+          && layer.options.pmIgnore === false
+        ) {
+          markerLayer = layer;
+        }
+      });
+      const shape = markerLayer.pm ? markerLayer.pm.getShape() : 'Marker';
+      markerLayer.fire('pm:enable', { layer: markerLayer, shape });
+      markerLayer.setLatLng([35.175, 136.885]);
+      markerLayer.fire('pm:update', { layer: markerLayer, shape });
+      return MapCirclesAppState.getCurrentMapProject()
+        .featureCollection.features[0];
+    });
+    expect(editedFeature.id).toBe(feature.id);
+    expect(editedFeature.geometry.coordinates).toEqual([136.885, 35.175]);
   });
 });
 
@@ -359,6 +382,90 @@ test.describe('Geoman create／edit／drag／remove同期', () => {
       .geometry.coordinates[0][0]).toEqual([136.883, 35.172]);
   });
 
+  test('MapへEdit／Drag eventを発火してもcommitせずlayer eventだけで同期する', async ({
+    page,
+  }) => {
+    await openMap(page);
+    await createShape(page, 'circle');
+    const initial = await getAppState(page);
+
+    const afterMapEdit = await page.evaluate(() => {
+      const layer = window.__geomanTestLayers.circle;
+      const shape = layer.pm.getShape();
+      layer.fire('pm:enable', { layer, shape });
+      layer.setLatLng([35.18, 136.89]);
+      layer.setRadius(1100);
+      map.fire('pm:update', { layer, shape });
+      return MapCirclesAppState.getCurrentMapProject();
+    });
+    expect(afterMapEdit).toEqual(initial.mapProject);
+
+    await page.evaluate(() => {
+      const layer = window.__geomanTestLayers.circle;
+      layer.fire('pm:update', { layer, shape: layer.pm.getShape() });
+    });
+    const afterLayerEdit = await getAppState(page);
+    expect(afterLayerEdit.mapProject.featureCollection.features[0]
+      .geometry.coordinates).toEqual([136.89, 35.18]);
+    expect(afterLayerEdit.mapProject.featureCollection.features[0]
+      .properties.radiusMeters).toBe(1100);
+
+    await page.waitForTimeout(5);
+    const afterMapDrag = await page.evaluate(() => {
+      const layer = window.__geomanTestLayers.circle;
+      const shape = layer.pm.getShape();
+      layer.fire('pm:dragstart', { layer, shape });
+      layer.setLatLng([35.19, 136.9]);
+      map.fire('pm:dragend', { layer, shape });
+      return MapCirclesAppState.getCurrentMapProject();
+    });
+    expect(afterMapDrag).toEqual(afterLayerEdit.mapProject);
+
+    await page.evaluate(() => {
+      const layer = window.__geomanTestLayers.circle;
+      layer.fire('pm:dragend', { layer, shape: layer.pm.getShape() });
+    });
+    const afterLayerDrag = await getEditorState(page);
+    expect(afterLayerDrag.mapProject.featureCollection.features[0]
+      .geometry.coordinates).toEqual([136.9, 35.19]);
+    expect(afterLayerDrag.circles[0].center).toEqual([35.19, 136.9]);
+    expect(afterLayerDrag.labels[0]).toContain('1.1km');
+    expect(afterLayerDrag.listDom.listHtml).toContain('1.1km');
+  });
+
+  test('同じCircleでDrag後のEditもスキップせず連続commitする', async ({ page }) => {
+    await openMap(page);
+    const created = await createShape(page, 'circle');
+    const before = await getAppState(page);
+    await page.waitForTimeout(5);
+
+    await editShape(page, 'circle', {
+      center: [35.18, 136.89],
+      radius: 900,
+    }, 'pm:dragend');
+    const afterDrag = await getAppState(page);
+    expect(afterDrag.mapProject.updatedAt).not.toBe(before.mapProject.updatedAt);
+    await page.waitForTimeout(5);
+
+    await editShape(page, 'circle', {
+      center: [35.19, 136.9],
+      radius: 1300,
+    });
+    const afterEdit = await getEditorState(page);
+    const finalFeature = afterEdit.mapProject.featureCollection.features[0];
+    expect(finalFeature.id).toBe(created.id);
+    expect(finalFeature.geometry.coordinates).toEqual([136.9, 35.19]);
+    expect(finalFeature.properties.radiusMeters).toBe(1300);
+    expect(afterEdit.mapProject.updatedAt).not.toBe(afterDrag.mapProject.updatedAt);
+    expect(afterEdit.circles[0]).toMatchObject({
+      featureId: created.id,
+      center: [35.19, 136.9],
+      radius: 1300,
+    });
+    expect(afterEdit.labels[0]).toContain('1.3km');
+    expect(afterEdit.listDom.listHtml).toContain('1.3km');
+  });
+
   test('Geoman removeで各kindとCircle補助表示を削除する', async ({ page }) => {
     await openMap(page);
     for (const kind of ['marker', 'circle', 'line', 'polygon']) {
@@ -445,6 +552,27 @@ test.describe('Geoman transaction rollback', () => {
     await editShape(page, 'line', {
       points: [[35.19, 136.9]],
     });
+    const after = await getEditorState(page);
+
+    expect(after).toEqual(before);
+    expect(after.mapProject.updatedAt).toBe(before.mapProject.updatedAt);
+  });
+
+  test('Circle drag中のsynthetic failureで全状態を復元する', async ({ page }) => {
+    await openMap(page);
+    await createShape(page, 'circle');
+    const before = await getEditorState(page);
+    await page.evaluate(() => {
+      const original = window.renderList;
+      window.renderList = () => {
+        window.renderList = original;
+        throw new Error('synthetic geoman drag failure');
+      };
+    });
+    await editShape(page, 'circle', {
+      center: [35.2, 136.91],
+      radius: 1700,
+    }, 'pm:dragend');
     const after = await getEditorState(page);
 
     expect(after).toEqual(before);
