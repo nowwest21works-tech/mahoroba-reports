@@ -35,6 +35,32 @@ test('Householdをneutral displayCodeと差し替え可能なID／clockで生成
   assert.deepEqual(JSON.parse(JSON.stringify(household)), household);
 });
 
+test('日時はcanonical UTC ISO-8601形式だけを許可する', () => {
+  const household = domain.createHousehold(
+    { displayCode: 'HH-001' },
+    dependencies(HOUSEHOLD_ID),
+  );
+  assert.equal(domain.validateHousehold(household), true);
+
+  const invalidTimestamps = [
+    '2026-07-24',
+    '2026-07-24T00:00:00Z',
+    '2026-07-24T09:00:00.000+09:00',
+    'July 24, 2026',
+    '2026-02-30T00:00:00.000Z',
+  ];
+
+  for (const createdAt of invalidTimestamps) {
+    assert.throws(
+      () => domain.validateHousehold({ ...household, createdAt }),
+      (error) => error.entity === 'Household'
+        && error.field === 'createdAt'
+        && error.message.includes('Household.createdAt')
+        && error.message.includes('canonical UTC ISO-8601 timestamp'),
+    );
+  }
+});
+
 test('HouseholdはPII fieldとunknown fieldを明示的に拒否する', () => {
   const forbiddenFields = [
     'name',

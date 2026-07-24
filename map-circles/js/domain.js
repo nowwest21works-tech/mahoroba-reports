@@ -23,6 +23,8 @@
     tsunami: false,
     opacity: 0.6,
   });
+  const ISO_TIMESTAMP_PATTERN =
+    /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
   const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   class ValidationError extends Error {
@@ -75,8 +77,13 @@
   }
 
   function assertIsoTimestamp(entity, field, value) {
-    if (typeof value !== 'string' || Number.isNaN(Date.parse(value))) {
-      fail(entity, field, 'must be an ISO-8601 timestamp');
+    if (
+      typeof value !== 'string'
+      || !ISO_TIMESTAMP_PATTERN.test(value)
+      || Number.isNaN(Date.parse(value))
+      || new Date(value).toISOString() !== value
+    ) {
+      fail(entity, field, 'must be a canonical UTC ISO-8601 timestamp');
     }
   }
 
