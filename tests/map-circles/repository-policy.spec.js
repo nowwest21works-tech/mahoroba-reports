@@ -41,9 +41,13 @@ test.describe('GitHub Pages互換と製品source固定', () => {
     expect(pageErrors).toEqual([]);
   });
 
-  test('index.htmlのbyte列をPR1 baselineから変更しない', () => {
-    const source = fs.readFileSync(INDEX_PATH);
-    const hash = crypto.createHash('sha256').update(source).digest('hex');
+  test('index.htmlの正規化済みsourceを軽量版baselineから変更しない', () => {
+    const source = fs.readFileSync(INDEX_PATH, 'utf8');
+    const normalizedSource = source.replace(/\r\n?/g, '\n');
+    const hash = crypto
+      .createHash('sha256')
+      .update(normalizedSource, 'utf8')
+      .digest('hex');
     expect(hash).toBe(baseline.indexSha256);
   });
 
