@@ -20,7 +20,9 @@ map-circles/
    ├─ ui.js
    ├─ geocoder.js
    ├─ hazards.js
-   └─ app.js
+   ├─ app.js
+   ├─ domain.js
+   └─ memory-store.js
 ```
 
 | ファイル | 責務 |
@@ -36,6 +38,8 @@ map-circles/
 | `js/geocoder.js` | Nominatim検索の成功・0件・error処理 |
 | `js/hazards.js` | 4種のハザードlayer、ON／OFF、透明度 |
 | `js/app.js` | map click、全削除、パネル、初期化、inline handler公開 |
+| `js/domain.js` | `household`、`journey`、`mapProject`の生成と検証 |
+| `js/memory-store.js` | 3 entityの参照整合性を保つブラウザメモリ上のCRUD |
 
 ## 読み込み順
 
@@ -46,6 +50,8 @@ JavaScriptはLeafletの後に、次のclassic scriptをすべて`defer`付きで
 ```text
 config.js → map.js → circles.js → ui.js → geocoder.js → hazards.js → app.js
 ```
+
+`domain.js`と`memory-store.js`は将来のUI接続に備えた独立assetです。現行UIの`index.html`からは読み込まず、上記の実行順や既存挙動を変更しません。Node.jsではCommonJS、ブラウザのclassic scriptではそれぞれ`MapCirclesDomain`、`MapCirclesMemoryStore`という単一namespaceを公開します。
 
 ES Modules、bundler、React、Vue、Vite、TypeScriptは導入していません。
 
@@ -84,6 +90,8 @@ Playwright testではすべてローカルmockし、ライブAPIや外部タイ�
 
 製品assetは`./styles/...`と`./js/...`の相対パスで読み込みます。repository名を欠く`/map-circles/...`のようなroot絶対パスは使用しません。ローカルtest serverも同じPages配下pathで配信します。
 
+本工程ではGitHub Pagesの公開元branch、公開path、設定を変更しません。
+
 ## 顧客データとNominatimの禁止事項
 
 検索してよい対象：
@@ -108,7 +116,9 @@ Playwright testではすべてローカルmockし、ライブAPIや外部タイ�
 - fixtureとtest入力は「架空中央駅」「架空市」など完全な架空データだけを使用します。
 - PII guardは製品HTML／CSS／JavaScriptとtest source／fixtureを検査します。
 
-## 将来の管理関係
+## PR3データモデル
+
+工程PR3では、UIや保存機能へ接続しない純粋データモデルとMemory Storeを実装しました。
 
 ```text
 household 1 ── n journey 1 ── n mapProject
@@ -118,6 +128,7 @@ household 1 ── n journey 1 ── n mapProject
 
 ```js
 {
+  schemaVersion: 1,
   id: "UUID",
   displayCode: "HH-001",
   createdAt,
@@ -125,7 +136,7 @@ household 1 ── n journey 1 ── n mapProject
 }
 ```
 
-氏名、住所、勤務先フィールドは持たせません。
+氏名、住所、勤務先、電話番号、メールアドレスのフィールドは持たせません。`displayCode`は個人を直接識別しない`HH-001`形式だけを許可します。これは公開repository、test artifact、将来の保存先へPIIが混入する経路をデータモデル側でも閉じるためです。
 
 ### Journey
 
@@ -135,6 +146,7 @@ v0.3 Pilotでは`land_purchase`のみを対象とします。
 
 ```js
 {
+  schemaVersion: 1,
   id: "UUID",
   householdId: "UUID",
   serviceType: "land_purchase",
@@ -145,15 +157,59 @@ v0.3 Pilotでは`land_purchase`のみを対象とします。
 }
 ```
 
-細かい営業フェーズ分類は今回追加しません。上記データモデルの実装は工程上のPR3以降で予定しており、本PRでは記録のみです。
+細かい営業フェーズ分類は今回追加しません。必要になった場合はPR3以降の別工程で、事業判断を経て追加します。
+
+### MapProject
+
+MapProjectは、1つのJourneyに属する地図作業単位です。
+
+```js
+{
+  schemaVersion: 1,
+  id: "UUID",
+  journeyId: "UUID",
+  displayLabel: "条件整理マップ1",
+  viewport: {
+    center: { lat: 35.1709, lng: 136.8815 },
+    zoom: 14
+  },
+  hazardLayers: {
+    flood: false,
+    landslide: false,
+    hightide: false,
+    tsunami: false,
+    opacity: 0.6
+  },
+  featureCollection: {
+    type: "FeatureCollection",
+    features: []
+  },
+  createdAt,
+  updatedAt
+}
+```
+
+現工程では空の`FeatureCollection`だけを許可します。GeoJSONのFeatureを画面上の円へ変換するadapterは次工程以降で実装し、今回のモデルやStoreにはLeaflet、DOM、通信処理を持たせません。
+
+### Memory Store
+
+`createMemoryStore()`は各entityのcreate／get／list／update／removeと、全体の`snapshot()`を提供します。
+
+- `Journey.householdId`と`MapProject.journeyId`の参照先が存在する場合だけ作成します。
+- 子entityが残る親entityの削除はrestrictし、暗黙のcascade deleteはしません。
+- `id`、`createdAt`、親IDは更新できず、更新時は`updatedAt`だけをStoreが更新します。
+- 入出力をdeep cloneし、呼び出し元から内部状態を変更できないようにします。
+- IndexedDB、localStorage、file、networkは使用せず、reloadやタブ終了で全データが消えます。
+- 現行UIとは未接続であり、画面、文言、操作、公開挙動に変化はありません。
 
 ## 未実装・次Gate以降
 
 次は未実装です。
 
-- `household`、`journey`、`mapProject`の実装と永続化
+- domain／Memory Storeと現行UIを接続するadapter
+- `mapProject.featureCollection`と既存の円状態を相互変換するGeoJSON adapter
 - IndexedDB、localStorage、保存、import／export、undo／redo
-- GeoJSON、Leaflet-Geoman、Turf.js
+- Leaflet-Geoman、Turf.js
 - Nominatim入力制限UI、既知のアクセシビリティ改善
 - CDN自己配信、bundler、framework移行
 
@@ -171,9 +227,12 @@ v0.3 Pilotでは`land_purchase`のみを対象とします。
 ```text
 npm ci
 npx playwright install chromium
+npm run test:map-circles:domain
 npm run test:map-circles
 ```
 
-Windows PowerShellでは必要に応じて`npm.cmd`と`npx.cmd`を使用します。テストは製品asset manifest、Pages相対パス、外部通信mock、PC／スマホ寸法、主要操作、PII guardを検証します。
+Windows PowerShellでは必要に応じて`npm.cmd`と`npx.cmd`を使用します。domain testは、3 entityの生成・検証、PII／unknown field拒否、参照整合性、restrict delete、deep clone、更新不変条件、Node／ブラウザnamespaceを検証します。
+
+`test:map-circles`はdomain testに続けて既存Playwright 32件を実行します。Playwrightは製品asset manifest、Pages相対パス、外部通信mock、PC／スマホ寸法、主要操作、PII guardを検証します。
 
 Pull Request更新時とmainへのpush時はGitHub Actionsでも同じtestを実行します。CIはrepositoryの読取権限だけを使用し、secretsや実顧客データを使用しません。
