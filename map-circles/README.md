@@ -37,11 +37,11 @@ map-circles/
 | `js/memory-store.js` | 3 entityの参照整合性を保つブラウザメモリ上のCRUD |
 | `js/geojson-adapter.js` | Leaflet非依存のcircle recordとCircle Featureの相互変換 |
 | `js/map.js` | Leaflet地図、zoom control、OSM base tileの初期化 |
-| `js/circles.js` | 円とlabel markerの追加、zoom、個別削除 |
+| `js/circles.js` | private Store runtime、円の追加・zoom・個別削除・全削除とtransaction同期 |
 | `js/ui.js` | status、円一覧、半径preset、色選択 |
 | `js/geocoder.js` | Nominatim検索の成功・0件・error処理 |
 | `js/hazards.js` | 4種のハザードlayer、ON／OFF、透明度 |
-| `js/app.js` | 非永続Store初期化、map click、全削除、パネル、read-only状態公開 |
+| `js/app.js` | map click、パネル、初期表示のevent接続 |
 
 ## 読み込み順
 
@@ -230,9 +230,9 @@ MapProjectは、1つのJourneyに属する地図作業単位です。
 
 Leafletの座標順は`[lat, lng]`、GeoJSONは`[lng, lat]`です。`geojson-adapter.js`が順序を明示的に入れ替え、pure object同士を相互変換します。Leaflet layer、DOM node、network処理はAdapterへ渡しません。
 
-現在の`circles[]`はLeafletのcircle／markerを管理する描画状態として残し、各recordが対応する`featureId`を保持します。追加・個別削除・全削除では、Memory StoreのFeatureCollectionとLeaflet／`circles[]`を同じ処理内で更新します。validationや後段処理に失敗した場合は直前のFeatureCollectionと描画状態へ戻します。
+現在の`circles[]`はLeafletのcircle／markerを管理する描画状態として残し、各recordが対応する`featureId`を保持します。追加・個別削除・全削除では、Leaflet／`circles[]`／円一覧を更新した後、最後にMemory StoreのFeatureCollectionを更新します。Store更新までに失敗した場合は描画状態と一覧を復元し、Store全体と`updatedAt`は更新前のまま維持します。
 
-runtime起動時に匿名の`HH-001` Household、`land_purchase` Journey、MapProjectをブラウザメモリ内だけに作成します。氏名、住所、勤務先などの実顧客情報は使用しません。Storeは非永続で、reloadやタブ終了時に円とFeatureCollectionは消えます。
+runtime起動時に匿名の`HH-001` Household、`land_purchase` Journey、MapProjectをprivate closure内のブラウザメモリだけに作成します。Store instance、runtime ID、FeatureCollection更新関数はglobalへ公開しません。氏名、住所、勤務先などの実顧客情報は使用しません。Storeは非永続で、reloadやタブ終了時に円とFeatureCollectionは消えます。
 
 testからはread-onlyの`MapCirclesAppState`で現在のMapProjectとdeep clone済みsnapshotを確認できます。Storeのcreate／update／delete APIは公開しません。
 

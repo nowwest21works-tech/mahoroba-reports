@@ -1,82 +1,6 @@
-// ========== 非永続データモデル初期化 ==========
-const mapCirclesStore = MapCirclesMemoryStore.createMemoryStore();
-const runtimeHousehold = mapCirclesStore.createHousehold({
-  displayCode: 'HH-001',
-});
-const runtimeJourney = mapCirclesStore.createJourney({
-  householdId: runtimeHousehold.id,
-  serviceType: 'land_purchase',
-  displayLabel: '検討1',
-  status: 'active',
-});
-const runtimeMapProject = mapCirclesStore.createMapProject({
-  journeyId: runtimeJourney.id,
-  displayLabel: '条件整理マップ1',
-});
-const currentMapProjectId = runtimeMapProject.id;
-
-function getCurrentMapProject() {
-  return mapCirclesStore.getMapProject(currentMapProjectId);
-}
-
-function updateCurrentFeatureCollection(featureCollection) {
-  return mapCirclesStore.updateMapProject(currentMapProjectId, {
-    featureCollection,
-  });
-}
-
-globalThis.MapCirclesAppState = Object.freeze({
-  getCurrentMapProject,
-  getSnapshot: () => mapCirclesStore.snapshot(),
-});
-
 // ========== マップクリック ==========
 map.on('click', (e) => {
   addCircle(e.latlng.lat, e.latlng.lng);
-});
-
-
-// ========== 全削除（2段階クリック方式：confirmに依存しない） ==========
-let clearArmed = false;
-let clearArmedTimer = null;
-const clearBtn = document.getElementById('clear-all');
-const clearBtnOriginalText = clearBtn.textContent;
-
-clearBtn.addEventListener('click', () => {
-  if (circles.length === 0) {
-    showStatus('削除する円がありません');
-    return;
-  }
-
-  if (!clearArmed) {
-    // 1回目：警告状態に
-    clearArmed = true;
-    clearBtn.textContent = `本当に削除？もう一度クリック（${circles.length}個）`;
-    clearBtn.style.background = 'var(--accent)';
-    clearBtn.style.color = 'white';
-    clearBtn.style.borderColor = 'var(--accent)';
-    showStatus('もう一度クリックで全削除（3秒で取消）', 3000);
-
-    clearArmedTimer = setTimeout(() => {
-      clearArmed = false;
-      clearBtn.textContent = clearBtnOriginalText;
-      clearBtn.style.background = '';
-      clearBtn.style.color = '';
-      clearBtn.style.borderColor = '';
-    }, 3000);
-    return;
-  }
-
-  // 2回目：実行
-  clearTimeout(clearArmedTimer);
-  const count = circles.length;
-  clearAllCircles();
-  clearArmed = false;
-  clearBtn.textContent = clearBtnOriginalText;
-  clearBtn.style.background = '';
-  clearBtn.style.color = '';
-  clearBtn.style.borderColor = '';
-  showStatus(`${count}個の円をすべて削除しました`);
 });
 
 // ========== パネルトグル ==========
@@ -88,7 +12,3 @@ document.getElementById('toggle-panel').addEventListener('click', () => {
 // ========== 初期化 ==========
 renderList();
 showStatus('地図上をクリックして円を配置できます');
-
-// グローバル公開（onclick用）
-window.removeCircle = removeCircle;
-window.zoomToCircle = zoomToCircle;

@@ -15,6 +15,30 @@ const nominatimSuccess = fs.readFileSync(
 const UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+async function getTransactionState(page) {
+  return page.evaluate(() => ({
+    snapshot: MapCirclesAppState.getSnapshot(),
+    mapProject: MapCirclesAppState.getCurrentMapProject(),
+    circles: circles.map((item) => ({
+      id: item.id,
+      featureId: item.featureId,
+      center: item.center,
+      radius: item.radius,
+      color: item.color,
+      label: item.label,
+    })),
+    leafletLayers: {
+      circles: circles.filter((item) => map.hasLayer(item.circle)).length,
+      markers: circles.filter((item) => map.hasLayer(item.marker)).length,
+    },
+    listDom: {
+      badgeText: document.getElementById('count-badge').textContent,
+      listHtml: document.getElementById('circle-list').innerHTML,
+    },
+    nextId,
+  }));
+}
+
 test.describe('GeoJSON runtime同期', () => {
   test('初期状態は匿名relation各1件と空FeatureCollectionを持つ', async ({ page }) => {
     await openMap(page);
@@ -45,10 +69,54 @@ test.describe('GeoJSON runtime同期', () => {
       await page.evaluate(() => ({
         frozen: Object.isFrozen(MapCirclesAppState),
         keys: Object.keys(MapCirclesAppState).sort(),
+        globals: {
+          addCircle: typeof window.addCircle,
+          clearAllCircles: typeof window.clearAllCircles,
+          getCurrentMapProject: typeof window.getCurrentMapProject,
+          mapCirclesStore: typeof window.mapCirclesStore,
+          removeCircle: typeof window.removeCircle,
+          runtimeHousehold: typeof window.runtimeHousehold,
+          runtimeJourney: typeof window.runtimeJourney,
+          runtimeMapProject: typeof window.runtimeMapProject,
+          updateCurrentFeatureCollection:
+            typeof window.updateCurrentFeatureCollection,
+          zoomToCircle: typeof window.zoomToCircle,
+        },
+        privateBindings: {
+          clearAllCircles: typeof clearAllCircles,
+          getCurrentMapProject: typeof getCurrentMapProject,
+          mapCirclesStore: typeof mapCirclesStore,
+          runtimeHousehold: typeof runtimeHousehold,
+          runtimeJourney: typeof runtimeJourney,
+          runtimeMapProject: typeof runtimeMapProject,
+          updateCurrentFeatureCollection:
+            typeof updateCurrentFeatureCollection,
+        },
       })),
     ).toEqual({
       frozen: true,
       keys: ['getCurrentMapProject', 'getSnapshot'],
+      globals: {
+        addCircle: 'function',
+        clearAllCircles: 'undefined',
+        getCurrentMapProject: 'undefined',
+        mapCirclesStore: 'undefined',
+        removeCircle: 'function',
+        runtimeHousehold: 'undefined',
+        runtimeJourney: 'undefined',
+        runtimeMapProject: 'undefined',
+        updateCurrentFeatureCollection: 'undefined',
+        zoomToCircle: 'function',
+      },
+      privateBindings: {
+        clearAllCircles: 'undefined',
+        getCurrentMapProject: 'undefined',
+        mapCirclesStore: 'undefined',
+        runtimeHousehold: 'undefined',
+        runtimeJourney: 'undefined',
+        runtimeMapProject: 'undefined',
+        updateCurrentFeatureCollection: 'undefined',
+      },
     });
 
     state.mapProject.featureCollection.features.push({ invalid: true });
@@ -160,14 +228,16 @@ test.describe('GeoJSON runtime同期', () => {
     ).toEqual([]);
   });
 
-  test('Store更新後にUI反映が失敗しても円とFeatureCollectionをともにロールバックする', async ({
+  test('円追加中のrenderList失敗はsnapshotとUIを完全にロールバックする', async ({
     page,
   }) => {
     await openMap(page);
+    const before = await getTransactionState(page);
 
     const errorMessage = await page.evaluate(() => {
       const originalRenderList = window.renderList;
       window.renderList = () => {
+        window.renderList = originalRenderList;
         throw new Error('synthetic render failure');
       };
 
@@ -182,22 +252,80 @@ test.describe('GeoJSON runtime同期', () => {
         return null;
       } catch (error) {
         return error.message;
-      } finally {
-        window.renderList = originalRenderList;
       }
     });
 
     expect(errorMessage).toBe('synthetic render failure');
+    const after = await getTransactionState(page);
 
-    const state = await page.evaluate(() => ({
-      circleCount: circles.length,
-      mapProject: MapCirclesAppState.getCurrentMapProject(),
-    }));
-
-    expect(state.circleCount).toBe(0);
-    expect(state.mapProject.featureCollection.features).toEqual([]);
+    expect(after).toEqual(before);
+    expect(after.mapProject.updatedAt).toBe(before.mapProject.updatedAt);
     await expect(page.locator('.leaflet-overlay-pane path')).toHaveCount(0);
     await expect(page.locator('.leaflet-marker-pane .circle-label')).toHaveCount(0);
+    await expect(page.locator('.circle-item')).toHaveCount(0);
+  });
+
+  test('個別削除中のrenderList失敗はsnapshotとUIを完全にロールバックする', async ({
+    page,
+  }) => {
+    await openMap(page);
+    await clickMap(page);
+    const before = await getTransactionState(page);
+
+    const errorMessage = await page.evaluate(() => {
+      const originalRenderList = window.renderList;
+      window.renderList = () => {
+        window.renderList = originalRenderList;
+        throw new Error('synthetic remove render failure');
+      };
+
+      try {
+        window.removeCircle(circles[0].id);
+        return null;
+      } catch (error) {
+        return error.message;
+      }
+    });
+
+    expect(errorMessage).toBe('synthetic remove render failure');
+    const after = await getTransactionState(page);
+
+    expect(after).toEqual(before);
+    expect(after.mapProject.updatedAt).toBe(before.mapProject.updatedAt);
+    await expect(page.locator('.leaflet-overlay-pane path')).toHaveCount(1);
+    await expect(page.locator('.leaflet-marker-pane .circle-label')).toHaveCount(1);
+    await expect(page.locator('.circle-item')).toHaveCount(1);
+  });
+
+  test('全削除中のrenderList失敗はsnapshotとUIを完全にロールバックする', async ({
+    page,
+  }) => {
+    await openMap(page);
+    await clickMap(page, 0.45, 0.5);
+    await clickMap(page, 0.55, 0.5);
+
+    const clearButton = page.locator('#clear-all');
+    await clearButton.click();
+    const before = await getTransactionState(page);
+    await page.evaluate(() => {
+      const originalRenderList = window.renderList;
+      window.renderList = () => {
+        window.renderList = originalRenderList;
+        throw new Error('synthetic clear render failure');
+      };
+    });
+
+    const pageErrorPromise = page.waitForEvent('pageerror');
+    await clearButton.click();
+    const pageError = await pageErrorPromise;
+    expect(pageError.message).toBe('synthetic clear render failure');
+
+    const after = await getTransactionState(page);
+    expect(after).toEqual(before);
+    expect(after.mapProject.updatedAt).toBe(before.mapProject.updatedAt);
+    await expect(page.locator('.leaflet-overlay-pane path')).toHaveCount(2);
+    await expect(page.locator('.leaflet-marker-pane .circle-label')).toHaveCount(2);
+    await expect(page.locator('.circle-item')).toHaveCount(2);
   });
 
   test('reload後は円とFeatureCollectionが消えWeb Storageを使用しない', async ({ page }) => {
