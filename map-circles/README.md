@@ -15,14 +15,15 @@ map-circles/
 │  └─ components.css
 └─ js/
    ├─ config.js
+   ├─ domain.js
+   ├─ memory-store.js
+   ├─ geojson-adapter.js
    ├─ map.js
    ├─ circles.js
    ├─ ui.js
    ├─ geocoder.js
    ├─ hazards.js
-   ├─ app.js
-   ├─ domain.js
-   └─ memory-store.js
+   └─ app.js
 ```
 
 | ファイル | 責務 |
@@ -32,14 +33,15 @@ map-circles/
 | `styles/layout.css` | パネル、地図、status、PC／スマホの寸法と配置 |
 | `styles/components.css` | 入力、preset、円一覧、ボタン、ハザードUIの見た目 |
 | `js/config.js` | 初期半径・色とブラウザメモリ上の円状態 |
+| `js/domain.js` | `household`、`journey`、`mapProject`、Circle Featureの生成と検証 |
+| `js/memory-store.js` | 3 entityの参照整合性を保つブラウザメモリ上のCRUD |
+| `js/geojson-adapter.js` | Leaflet非依存のcircle recordとCircle Featureの相互変換 |
 | `js/map.js` | Leaflet地図、zoom control、OSM base tileの初期化 |
 | `js/circles.js` | 円とlabel markerの追加、zoom、個別削除 |
 | `js/ui.js` | status、円一覧、半径preset、色選択 |
 | `js/geocoder.js` | Nominatim検索の成功・0件・error処理 |
 | `js/hazards.js` | 4種のハザードlayer、ON／OFF、透明度 |
-| `js/app.js` | map click、全削除、パネル、初期化、inline handler公開 |
-| `js/domain.js` | `household`、`journey`、`mapProject`の生成と検証 |
-| `js/memory-store.js` | 3 entityの参照整合性を保つブラウザメモリ上のCRUD |
+| `js/app.js` | 非永続Store初期化、map click、全削除、パネル、read-only状態公開 |
 
 ## 読み込み順
 
@@ -48,10 +50,11 @@ CSSは `tokens.css` → `layout.css` → `components.css` の順です。
 JavaScriptはLeafletの後に、次のclassic scriptをすべて`defer`付きで読み込みます。
 
 ```text
-config.js → map.js → circles.js → ui.js → geocoder.js → hazards.js → app.js
+config.js → domain.js → memory-store.js → geojson-adapter.js
+→ map.js → circles.js → ui.js → geocoder.js → hazards.js → app.js
 ```
 
-`domain.js`と`memory-store.js`は将来のUI接続に備えた独立assetです。現行UIの`index.html`からは読み込まず、上記の実行順や既存挙動を変更しません。Node.jsではCommonJS、ブラウザのclassic scriptではそれぞれ`MapCirclesDomain`、`MapCirclesMemoryStore`という単一namespaceを公開します。
+`domain.js`、`memory-store.js`、`geojson-adapter.js`はruntimeで読み込みます。Node.jsではCommonJS、ブラウザのclassic scriptではそれぞれ`MapCirclesDomain`、`MapCirclesMemoryStore`、`MapCirclesGeoJsonAdapter`という単一namespaceを公開します。
 
 ES Modules、bundler、React、Vue、Vite、TypeScriptは導入していません。
 
@@ -61,6 +64,7 @@ ES Modules、bundler、React、Vue、Vite、TypeScriptは導入していませ�
 
 - OpenStreetMapを背景としたLeaflet地図
 - 地図クリックとNominatim検索成功による円追加
+- 円の追加・個別削除・全削除とCircle Featureの同期
 - 6種類の半径preset、50m〜50,000mのカスタム半径、6色、任意ラベル
 - 円へのzoom、個別削除、3秒で解除される2段階の全削除
 - 洪水、土砂災害、高潮、津波ハザードと透明度変更
@@ -189,7 +193,7 @@ MapProjectは、1つのJourneyに属する地図作業単位です。
 }
 ```
 
-現工程では空の`FeatureCollection`だけを許可します。GeoJSONのFeatureを画面上の円へ変換するadapterは次工程以降で実装し、今回のモデルやStoreにはLeaflet、DOM、通信処理を持たせません。
+`featureCollection`は、空または有効なCircle Featureを0件以上保持します。Feature IDはMapProject内で一意です。DomainとStoreにはLeaflet、DOM、通信処理を持たせません。
 
 ### Memory Store
 
@@ -200,14 +204,44 @@ MapProjectは、1つのJourneyに属する地図作業単位です。
 - `id`、`createdAt`、親IDは更新できず、更新時は`updatedAt`だけをStoreが更新します。
 - 入出力をdeep cloneし、呼び出し元から内部状態を変更できないようにします。
 - IndexedDB、localStorage、file、networkは使用せず、reloadやタブ終了で全データが消えます。
-- 現行UIとは未接続であり、画面、文言、操作、公開挙動に変化はありません。
+- 現行UIとは`featureCollection`だけを同期します。viewportとhazardLayersは同期しません。
+
+## PR4 Circle FeatureとGeoJSON Adapter
+
+円はPolygonへ近似せず、GeoJSONのPoint geometryと半径propertyで表します。
+
+```js
+{
+  type: "Feature",
+  id: "UUID",
+  geometry: {
+    type: "Point",
+    coordinates: [136.8815, 35.1709]
+  },
+  properties: {
+    schemaVersion: 1,
+    kind: "circle",
+    radiusMeters: 800,
+    color: "#c8443a",
+    label: "地点1"
+  }
+}
+```
+
+Leafletの座標順は`[lat, lng]`、GeoJSONは`[lng, lat]`です。`geojson-adapter.js`が順序を明示的に入れ替え、pure object同士を相互変換します。Leaflet layer、DOM node、network処理はAdapterへ渡しません。
+
+現在の`circles[]`はLeafletのcircle／markerを管理する描画状態として残し、各recordが対応する`featureId`を保持します。追加・個別削除・全削除では、Memory StoreのFeatureCollectionとLeaflet／`circles[]`を同じ処理内で更新します。validationや後段処理に失敗した場合は直前のFeatureCollectionと描画状態へ戻します。
+
+runtime起動時に匿名の`HH-001` Household、`land_purchase` Journey、MapProjectをブラウザメモリ内だけに作成します。氏名、住所、勤務先などの実顧客情報は使用しません。Storeは非永続で、reloadやタブ終了時に円とFeatureCollectionは消えます。
+
+testからはread-onlyの`MapCirclesAppState`で現在のMapProjectとdeep clone済みsnapshotを確認できます。Storeのcreate／update／delete APIは公開しません。
 
 ## 未実装・次Gate以降
 
 次は未実装です。
 
-- domain／Memory Storeと現行UIを接続するadapter
-- `mapProject.featureCollection`と既存の円状態を相互変換するGeoJSON adapter
+- viewport、hazard ON／OFF、hazard opacityのStore同期
+- Marker、LineString、Polygon、MultiPolygon、GeometryCollection
 - IndexedDB、localStorage、保存、import／export、undo／redo
 - Leaflet-Geoman、Turf.js
 - Nominatim入力制限UI、既知のアクセシビリティ改善
@@ -231,8 +265,8 @@ npm run test:map-circles:domain
 npm run test:map-circles
 ```
 
-Windows PowerShellでは必要に応じて`npm.cmd`と`npx.cmd`を使用します。domain testは、3 entityの生成・検証、PII／unknown field拒否、参照整合性、restrict delete、deep clone、更新不変条件、Node／ブラウザnamespaceを検証します。
+Windows PowerShellでは必要に応じて`npm.cmd`と`npx.cmd`を使用します。domain testは、3 entityとCircle Featureの検証、Adapter round-trip、PII／unknown field拒否、参照整合性、restrict delete、deep clone、更新不変条件、Node／ブラウザnamespaceを検証します。
 
-`test:map-circles`はdomain testに続けて既存Playwright 32件を実行します。Playwrightは製品asset manifest、Pages相対パス、外部通信mock、PC／スマホ寸法、主要操作、PII guardを検証します。
+`test:map-circles`はdomain testに続けてPlaywrightを実行します。PlaywrightはFeatureCollection同期、reload消失、製品asset manifest、Pages相対パス、外部通信mock、PC／スマホ寸法、主要操作、PII guardを検証します。
 
 Pull Request更新時とmainへのpush時はGitHub Actionsでも同じtestを実行します。CIはrepositoryの読取権限だけを使用し、secretsや実顧客データを使用しません。

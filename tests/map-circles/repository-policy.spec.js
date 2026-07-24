@@ -19,6 +19,9 @@ const EXPECTED_STYLESHEETS = [
 ];
 const EXPECTED_SCRIPTS = [
   './js/config.js',
+  './js/domain.js',
+  './js/memory-store.js',
+  './js/geojson-adapter.js',
   './js/map.js',
   './js/circles.js',
   './js/ui.js',

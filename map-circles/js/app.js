@@ -1,3 +1,35 @@
+// ========== 非永続データモデル初期化 ==========
+const mapCirclesStore = MapCirclesMemoryStore.createMemoryStore();
+const runtimeHousehold = mapCirclesStore.createHousehold({
+  displayCode: 'HH-001',
+});
+const runtimeJourney = mapCirclesStore.createJourney({
+  householdId: runtimeHousehold.id,
+  serviceType: 'land_purchase',
+  displayLabel: '検討1',
+  status: 'active',
+});
+const runtimeMapProject = mapCirclesStore.createMapProject({
+  journeyId: runtimeJourney.id,
+  displayLabel: '条件整理マップ1',
+});
+const currentMapProjectId = runtimeMapProject.id;
+
+function getCurrentMapProject() {
+  return mapCirclesStore.getMapProject(currentMapProjectId);
+}
+
+function updateCurrentFeatureCollection(featureCollection) {
+  return mapCirclesStore.updateMapProject(currentMapProjectId, {
+    featureCollection,
+  });
+}
+
+globalThis.MapCirclesAppState = Object.freeze({
+  getCurrentMapProject,
+  getSnapshot: () => mapCirclesStore.snapshot(),
+});
+
 // ========== マップクリック ==========
 map.on('click', (e) => {
   addCircle(e.latlng.lat, e.latlng.lng);
@@ -38,9 +70,7 @@ clearBtn.addEventListener('click', () => {
   // 2回目：実行
   clearTimeout(clearArmedTimer);
   const count = circles.length;
-  circles.forEach(c => { map.removeLayer(c.circle); map.removeLayer(c.marker); });
-  circles = [];
-  renderList();
+  clearAllCircles();
   clearArmed = false;
   clearBtn.textContent = clearBtnOriginalText;
   clearBtn.style.background = '';

@@ -25,6 +25,7 @@
   });
   const ISO_TIMESTAMP_PATTERN =
     /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/;
+  const HEX_COLOR_PATTERN = /^#[0-9a-f]{6}$/i;
   const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
   class ValidationError extends Error {
@@ -50,16 +51,22 @@
     if (!isPlainObject(value)) fail(entity, field, 'must be a plain object');
   }
 
-  function assertAllowedFields(entity, value, allowedFields) {
+  function fieldPath(prefix, field) {
+    return prefix ? `${prefix}.${field}` : field;
+  }
+
+  function assertAllowedFields(entity, value, allowedFields, prefix = '') {
     for (const field of Object.keys(value)) {
-      if (!allowedFields.includes(field)) fail(entity, field, 'is not allowed');
+      if (!allowedFields.includes(field)) {
+        fail(entity, fieldPath(prefix, field), 'is not allowed');
+      }
     }
   }
 
-  function assertRequiredFields(entity, value, requiredFields) {
+  function assertRequiredFields(entity, value, requiredFields, prefix = '') {
     for (const field of requiredFields) {
       if (!Object.prototype.hasOwnProperty.call(value, field)) {
-        fail(entity, field, 'is required');
+        fail(entity, fieldPath(prefix, field), 'is required');
       }
     }
   }
@@ -251,8 +258,8 @@
   function validateFeatureCollection(value) {
     const entity = 'MapProject';
     assertPlainObject(entity, 'featureCollection', value);
-    assertAllowedFields(entity, value, ['type', 'features']);
-    assertRequiredFields(entity, value, ['type', 'features']);
+    assertAllowedFields(entity, value, ['type', 'features'], 'featureCollection');
+    assertRequiredFields(entity, value, ['type', 'features'], 'featureCollection');
 
     if (value.type !== 'FeatureCollection') {
       fail(entity, 'featureCollection.type', 'must be FeatureCollection');
@@ -260,9 +267,103 @@
     if (!Array.isArray(value.features)) {
       fail(entity, 'featureCollection.features', 'must be an array');
     }
-    if (value.features.length !== 0) {
-      fail(entity, 'featureCollection.features', 'must be empty in this gate');
+
+    const featureIds = new Set();
+    value.features.forEach((feature, index) => {
+      const field = `featureCollection.features[${index}]`;
+      validateCircleFeatureValue(feature, entity, field);
+      if (featureIds.has(feature.id)) {
+        fail(entity, `${field}.id`, `duplicate ID ${feature.id}`);
+      }
+      featureIds.add(feature.id);
+    });
+    return true;
+  }
+
+  function validateCircleFeatureValue(value, entity, field) {
+    const fields = ['type', 'id', 'geometry', 'properties'];
+    assertPlainObject(entity, field, value);
+    assertAllowedFields(entity, value, fields, field);
+    assertRequiredFields(entity, value, fields, field);
+
+    if (value.type !== 'Feature') {
+      fail(entity, `${field}.type`, 'must be Feature');
     }
+    assertUuid(entity, `${field}.id`, value.id);
+
+    const geometryField = `${field}.geometry`;
+    assertPlainObject(entity, geometryField, value.geometry);
+    assertAllowedFields(
+      entity,
+      value.geometry,
+      ['type', 'coordinates'],
+      geometryField,
+    );
+    assertRequiredFields(
+      entity,
+      value.geometry,
+      ['type', 'coordinates'],
+      geometryField,
+    );
+    if (value.geometry.type !== 'Point') {
+      fail(entity, `${geometryField}.type`, 'must be Point');
+    }
+    if (!Array.isArray(value.geometry.coordinates)
+      || value.geometry.coordinates.length !== 2) {
+      fail(entity, `${geometryField}.coordinates`, 'must contain exactly [lng, lat]');
+    }
+
+    const [lng, lat] = value.geometry.coordinates;
+    assertFiniteNumber(entity, `${geometryField}.coordinates[0]`, lng);
+    if (lng < -180 || lng > 180) {
+      fail(entity, `${geometryField}.coordinates[0]`, 'must be between -180 and 180');
+    }
+    assertFiniteNumber(entity, `${geometryField}.coordinates[1]`, lat);
+    if (lat < -90 || lat > 90) {
+      fail(entity, `${geometryField}.coordinates[1]`, 'must be between -90 and 90');
+    }
+
+    const propertiesField = `${field}.properties`;
+    const propertyFields = [
+      'schemaVersion',
+      'kind',
+      'radiusMeters',
+      'color',
+      'label',
+    ];
+    assertPlainObject(entity, propertiesField, value.properties);
+    assertAllowedFields(entity, value.properties, propertyFields, propertiesField);
+    assertRequiredFields(entity, value.properties, propertyFields, propertiesField);
+
+    if (value.properties.schemaVersion !== SCHEMA_VERSION) {
+      fail(entity, `${propertiesField}.schemaVersion`, `must be ${SCHEMA_VERSION}`);
+    }
+    if (value.properties.kind !== 'circle') {
+      fail(entity, `${propertiesField}.kind`, 'must be circle');
+    }
+    assertFiniteNumber(
+      entity,
+      `${propertiesField}.radiusMeters`,
+      value.properties.radiusMeters,
+    );
+    if (value.properties.radiusMeters < 50
+      || value.properties.radiusMeters > 50000) {
+      fail(
+        entity,
+        `${propertiesField}.radiusMeters`,
+        'must be between 50 and 50000',
+      );
+    }
+    if (typeof value.properties.color !== 'string'
+      || !HEX_COLOR_PATTERN.test(value.properties.color)) {
+      fail(entity, `${propertiesField}.color`, 'must use #RRGGBB format');
+    }
+    assertNonEmptyString(entity, `${propertiesField}.label`, value.properties.label);
+    return true;
+  }
+
+  function validateCircleFeature(value) {
+    return validateCircleFeatureValue(value, 'CircleFeature', 'feature');
   }
 
   function validateMapProject(value) {
@@ -384,6 +485,8 @@
     createHousehold,
     createJourney,
     createMapProject,
+    validateCircleFeature,
+    validateFeatureCollection,
     validateHousehold,
     validateJourney,
     validateMapProject,
