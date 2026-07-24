@@ -27,8 +27,8 @@ map-circles/
 | --- | --- |
 | `index.html` | 既存markupと外部assetの相対パス読込 |
 | `styles/tokens.css` | 色・背景などのCSS変数と基本reset |
-| `styles/layout.css` | パネル、地図、PC／スマホの寸法と配置 |
-| `styles/components.css` | 入力、preset、円一覧、status、ハザードUIの見た目 |
+| `styles/layout.css` | パネル、地図、status、PC／スマホの寸法と配置 |
+| `styles/components.css` | 入力、preset、円一覧、ボタン、ハザードUIの見た目 |
 | `js/config.js` | 初期半径・色とブラウザメモリ上の円状態 |
 | `js/map.js` | Leaflet地図、zoom control、OSM base tileの初期化 |
 | `js/circles.js` | 円とlabel markerの追加、zoom、個別削除 |
@@ -86,16 +86,72 @@ Playwright testではすべてローカルmockし、ライブAPIや外部タイ�
 
 ## 顧客データとNominatimの禁止事項
 
-- 氏名、正確な自宅住所、家族住所、非公開の勤務先情報を検索へ入力しません。
+検索してよい対象：
+
+- 駅名
+- 市区町村
+- 町名
+- 公共施設
+- 商業施設
+- 公開されている会社、学校、店舗
+
+検索してはいけない対象：
+
+- 顧客の正確な自宅住所
+- 顧客家族の住所
+- 非公開の勤務先情報
+- 顧客氏名を含む検索
+
+現行UIでは、これらの入力を技術的には遮断していません。上記は利用時に必ず守る運用ルールです。
+
 - 個人情報をコード、fixture、console、test artifact、公開repositoryへ入れません。
 - fixtureとtest入力は「架空中央駅」「架空市」など完全な架空データだけを使用します。
 - PII guardは製品HTML／CSS／JavaScriptとtest source／fixtureを検査します。
+
+## 将来の管理関係
+
+```text
+household 1 ── n journey 1 ── n mapProject
+```
+
+### Household
+
+```js
+{
+  id: "UUID",
+  displayCode: "HH-001",
+  createdAt,
+  updatedAt
+}
+```
+
+氏名、住所、勤務先フィールドは持たせません。
+
+### Journey
+
+Journeyは、1世帯が持つ1つの目的・案件進行単位です。
+
+v0.3 Pilotでは`land_purchase`のみを対象とします。
+
+```js
+{
+  id: "UUID",
+  householdId: "UUID",
+  serviceType: "land_purchase",
+  displayLabel: "検討1",
+  status: "active | paused | closed",
+  createdAt,
+  updatedAt
+}
+```
+
+細かい営業フェーズ分類は今回追加しません。上記データモデルの実装は工程上のPR3以降で予定しており、本PRでは記録のみです。
 
 ## 未実装・次Gate以降
 
 次は未実装です。
 
-- `household`、`journey`、`mapProject`のデータモデル
+- `household`、`journey`、`mapProject`の実装と永続化
 - IndexedDB、localStorage、保存、import／export、undo／redo
 - GeoJSON、Leaflet-Geoman、Turf.js
 - Nominatim入力制限UI、既知のアクセシビリティ改善
