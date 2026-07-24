@@ -4,8 +4,8 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 
-const domain = require('../../../map-circles/js/domain.js');
-const memoryStore = require('../../../map-circles/js/memory-store.js');
+const domain = require('../../../journey-map/js/domain.js');
+const memoryStore = require('../../../journey-map/js/memory-store.js');
 
 const HOUSEHOLD_ID = '00000000-0000-4000-8000-000000000011';
 const HOUSEHOLD_ID_2 = '00000000-0000-4000-8000-000000000012';
@@ -291,11 +291,11 @@ test('unknown fieldとPII fieldのStore入力を保持しない', () => {
 
 test('Browser classic scriptは単一MapCirclesMemoryStore namespaceを公開する', () => {
   const domainSource = fs.readFileSync(
-    path.resolve(__dirname, '../../../map-circles/js/domain.js'),
+    path.resolve(__dirname, '../../../journey-map/js/domain.js'),
     'utf8',
   );
   const storeSource = fs.readFileSync(
-    path.resolve(__dirname, '../../../map-circles/js/memory-store.js'),
+    path.resolve(__dirname, '../../../journey-map/js/memory-store.js'),
     'utf8',
   );
   const context = {

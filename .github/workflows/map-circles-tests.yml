@@ -1,4 +1,4 @@
-name: map-circles characterization tests
+name: map applications characterization tests
 
 on:
   pull_request:
@@ -6,8 +6,11 @@ on:
       - main
     paths:
       - "map-circles/**"
+      - "journey-map/**"
       - "tests/map-circles/**"
+      - "tests/journey-map/**"
       - "playwright.config.js"
+      - "playwright.journey-map.config.js"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/map-circles-tests.yml"
@@ -16,8 +19,11 @@ on:
       - main
     paths:
       - "map-circles/**"
+      - "journey-map/**"
       - "tests/map-circles/**"
+      - "tests/journey-map/**"
       - "playwright.config.js"
+      - "playwright.journey-map.config.js"
       - "package.json"
       - "package-lock.json"
       - ".github/workflows/map-circles-tests.yml"
@@ -47,16 +53,18 @@ jobs:
       - name: Install Playwright Chromium
         run: npx playwright install chromium --with-deps
 
-      - name: Run map-circles characterization tests
-        run: npm run test:map-circles
+      - name: Run map application characterization tests
+        run: npm run test:maps
 
       - name: Upload Playwright failure artifacts
         if: ${{ failure() }}
         uses: actions/upload-artifact@v5
         with:
-          name: map-circles-playwright-${{ github.run_id }}
+          name: map-applications-playwright-${{ github.run_id }}
           path: |
             playwright-report/map-circles/
+            playwright-report/journey-map/
             test-results/map-circles/
+            test-results/journey-map/
           if-no-files-found: warn
           retention-days: 7

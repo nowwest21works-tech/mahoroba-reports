@@ -139,7 +139,7 @@ test.describe('Leaflet-Geoman dependencyとtoolbar', () => {
       'utf8',
     ));
     const source = fs.readFileSync(
-      path.resolve(__dirname, '../../map-circles/index.html'),
+      path.resolve(__dirname, '../../journey-map/index.html'),
       'utf8',
     );
 

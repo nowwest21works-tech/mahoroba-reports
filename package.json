@@ -1,11 +1,15 @@
 {
-  "name": "mahoroba-reports-map-circles-tests",
+  "name": "mahoroba-reports-map-tests",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "test:map-circles": "npm run test:map-circles:domain && playwright test --config=playwright.config.js",
-    "test:map-circles:domain": "node --test tests/map-circles/domain/*.node.cjs",
-    "test:map-circles:report": "playwright show-report playwright-report/map-circles"
+    "test:maps": "npm run test:map-circles && npm run test:journey-map",
+    "test:map-circles": "playwright test --config=playwright.config.js",
+    "test:map-circles:report": "playwright show-report playwright-report/map-circles",
+    "test:journey-map": "npm run test:journey-map:domain && npm run test:journey-map:e2e",
+    "test:journey-map:domain": "node --test tests/journey-map/domain/*.node.cjs",
+    "test:journey-map:e2e": "playwright test --config=playwright.journey-map.config.js",
+    "test:journey-map:report": "playwright show-report playwright-report/journey-map"
   },
   "devDependencies": {
     "@geoman-io/leaflet-geoman-free": "2.20.0",

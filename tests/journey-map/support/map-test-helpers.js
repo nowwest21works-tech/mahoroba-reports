@@ -1,6 +1,6 @@
 const path = require('node:path');
 
-const APP_PATH = '/mahoroba-reports/map-circles/';
+const APP_PATH = '/mahoroba-reports/journey-map/';
 const APP_ORIGIN = 'http://127.0.0.1:4173';
 const TRANSPARENT_TILE = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
@@ -9,9 +9,14 @@ const TRANSPARENT_TILE = Buffer.from(
 
 const LEAFLET_JS = require.resolve('leaflet/dist/leaflet.js');
 const LEAFLET_CSS = require.resolve('leaflet/dist/leaflet.css');
+const GEOMAN_JS = require.resolve('@geoman-io/leaflet-geoman-free');
+const GEOMAN_CSS = require.resolve(
+  '@geoman-io/leaflet-geoman-free/dist/leaflet-geoman.css',
+);
 
 async function installNetworkSandbox(page, options = {}) {
   const audit = {
+    geomanRequests: [],
     nominatimRequests: [],
     tileRequests: [],
     unexpectedExternal: [],
@@ -40,6 +45,28 @@ async function installNetworkSandbox(page, options = {}) {
       contentType: 'text/css; charset=utf-8',
       path: LEAFLET_CSS,
     }),
+  );
+
+  await page.route(
+    'https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.js',
+    (route) => {
+      audit.geomanRequests.push(route.request().url());
+      return route.fulfill({
+        contentType: 'text/javascript; charset=utf-8',
+        path: GEOMAN_JS,
+      });
+    },
+  );
+
+  await page.route(
+    'https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.css',
+    (route) => {
+      audit.geomanRequests.push(route.request().url());
+      return route.fulfill({
+        contentType: 'text/css; charset=utf-8',
+        path: GEOMAN_CSS,
+      });
+    },
   );
 
   await page.route('https://fonts.googleapis.com/**', (route) =>
@@ -119,9 +146,17 @@ async function getMapState(page) {
     circles: circles.map((item) => ({
       center: item.center,
       color: item.color,
+      featureId: item.featureId,
       label: item.label,
       radius: item.radius,
     })),
+  }));
+}
+
+async function getAppState(page) {
+  return page.evaluate(() => ({
+    mapProject: MapCirclesAppState.getCurrentMapProject(),
+    snapshot: MapCirclesAppState.getSnapshot(),
   }));
 }
 
@@ -133,6 +168,7 @@ module.exports = {
   APP_PATH,
   clickMap,
   fixturePath,
+  getAppState,
   getMapState,
   installNetworkSandbox,
   openMap,
