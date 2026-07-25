@@ -1,70 +1,108 @@
 # まほろば顧客条件マップ
 
-`journey-map`は、候補地点の距離圏、複数種類の図形、ハザード情報を一つの地図上で扱う詳細版の静的Webアプリです。main commit `e092789b4be717e52ab39083ada824c77ad7a7c5`時点のv0.3技術MVPを、内部機能を変えずに`map-circles`から移設しています。
+`journey-map`は、土地探しの条件を地点・円・線・範囲として地図上に整理し、匿名の顧客コードと案件名ごとにブラウザ内へ保存する詳細版Webアプリです。
 
-## 目的
+## 目的と想定利用場面
 
-土地探しの検討条件を地図上の図形として整理し、将来の案件単位管理へつながる技術baselineを提供します。
-
-## 想定利用場面
-
-- 候補地点、検討範囲、路線、区域の地図上での整理
-- Marker、Circle、Line、Polygonを使った条件の可視化
-- 描画・編集操作とGeoJSON／Memory Store同期の技術検証
-- `household → journey → mapProject`単位の架空案件Pilot
+- 候補地点、駅、検討路線、優先エリアを1枚の地図で整理する
+- 打ち合わせごとに条件地図を保存し、次回に読み込んで更新する
+- 別案を複製し、元の地図を残したまま比較する
+- JSONバックアップを手元へ書き出し、同じアプリへ復元する
 
 ## 搭載機能
 
-- Marker、Circle、Line、Polygon
-- 図形の描画、編集、移動、削除
-- Leaflet-Geoman Free 2.20.0 toolbar
-- canonical GeoJSON FeatureCollectionとの同期
-- ブラウザメモリ上のMemory Store
-- `household → journey → mapProject`データモデル
-- transaction失敗時のrollback
-- canonical Leaflet layer eventによる更新
-- 既存の地図クリック／検索によるCircle追加との互換
-- 4種類のハザード表示
+- Marker、Circle、Line、Polygonの描画・編集・移動・削除
+- Leaflet-Geoman Free 2.20.0の日本語操作表示
+- GeoJSON FeatureCollectionとMemory Storeの同期、transaction失敗時のrollback
+- `household → journey → mapProject`のDomainモデル
+- 匿名メタデータ（顧客コード、案件名、地図名）
+- IndexedDBによる顧客・案件別のローカル保存
+- 保存済み地図の一覧表示、読込、更新保存、複製
+- viewportと4種類の図形の復元
+- `.mahoroba-map.json`形式のJSONバックアップ書出し／読込
+- 既存の地図クリック・住所検索によるCircle追加との互換
 
 ## 非搭載機能
 
-- 永続保存、IndexedDB、localStorage
-- import、export、undo、redo
-- 認証、backend、外部database
-- CircleMarker、Rectangle、Text、Cut、Rotate
-- holes、MultiPolygon、MultiLineString、GeometryCollection
-- viewportとハザード状態のStore同期
+- 保存済み地図の削除
+- 自動保存
+- PDF／PNG出力
+- undo／redo
+- 認証、backend、クラウドdatabase、共有URL
+- localStorage、sessionStorage
+- import時のschema migration
 
-## 起動URL
+## 保存方式
 
-Repository rootでローカルサーバーを起動します。
+- Database: `mahorobaJourneyMaps`
+- Object Store: `mapProjects`
+- keyPath: `projectId`
+- index: `updatedAt`
+- schemaVersion: `1`
+
+保存recordは次の項目だけを保持します。
+
+- `schemaVersion`
+- `projectId`
+- `householdCode`
+- `journeyName`
+- `mapProjectName`
+- `featureCollection`
+- `viewport`
+- `createdAt`
+- `updatedAt`
+
+`projectId`はUUID、日時はcanonical UTC ISO-8601です。保存一覧は`updatedAt`の新しい順に表示します。初回保存でIDを発行し、以後の保存は同じIDを更新します。
+
+保存先は現在使用しているブラウザのIndexedDBです。別の端末や別のブラウザには自動同期されません。ブラウザデータを消去すると保存済み地図も消えるため、必要な地図はJSONバックアップを書き出してください。
+
+## 個人情報を入力しないルール
+
+実顧客情報は入力しないでください。顧客名、家族名、電話番号、メールアドレス、正確な自宅住所、勤務先、年収、借入情報は保存対象に追加していません。
+
+次のような匿名情報だけを使います。
+
+- 顧客コード: `HH-001`
+- 案件名: `土地探し 第1回`
+- 地図名: `通勤圏・優先エリア整理`
+
+入力内容は自動保存されません。画面の「保存」を押した時だけIndexedDBへ保存されます。
+
+## JSONバックアップ
+
+書出しファイル名の例:
+
+```text
+HH-001_土地探し第1回_通勤圏・優先エリア整理.mahoroba-map.json
+```
+
+読込時はschemaVersion、必須項目、UUID、canonical timestamp、FeatureCollection、Feature IDの重複、kindとgeometry typeの整合、unknown fieldを検証します。不正なファイルは拒否し、現在表示中の地図を変更しません。
+
+同じ`projectId`のバックアップを読み込むと、そのIDの保存recordを復元します。
+
+## ローカル起動
+
+repository rootでHTTP serverを起動します。
 
 ```powershell
 python -m http.server 8000 --bind 127.0.0.1
 ```
 
-ローカルURL：
+ローカルURL:
 
 ```text
 http://127.0.0.1:8000/journey-map/
 ```
 
-公開予定URL：
+公開予定URL:
 
 ```text
 https://nowwest21works-tech.github.io/mahoroba-reports/journey-map/
 ```
 
-## 個人情報と保存
+## 軽量版との違い
 
-- 顧客氏名、正確な住所、家族情報、勤務先などの実顧客情報を入力しないでください。
-- Pilotでは`HH-001`、`検討1`、`架空地点A`などの中立的な架空データだけを使用してください。
-- 図形とデータモデルはブラウザメモリだけに保持されます。
-- リロード、タブ終了、ブラウザ終了で全データが消えます。
-
-## まほろば距離円マップとの違い
-
-`map-circles`の軽量版はCircleの素早い追加・比較に限定しています。この詳細版は4種類の図形、Geoman編集、GeoJSON同期、Memory Store、rollback、案件管理用データモデルを含みます。
+`map-circles`の「まほろば距離円マップ」は、円を素早く複数描く用途に限定した軽量版です。この詳細版は4種類の図形、Geoman編集、GeoJSON同期、案件単位のIndexedDB保存、複製、JSONバックアップを備えます。
 
 ## Test
 
@@ -72,6 +110,5 @@ https://nowwest21works-tech.github.io/mahoroba-reports/journey-map/
 npm.cmd run test:journey-map:domain
 npm.cmd run test:journey-map:e2e
 npm.cmd run test:journey-map
+npm.cmd run test:maps
 ```
-
-Node testはdomain、GeoJSON Adapter、Memory Storeを確認します。Playwrightは4種類の図形、create／edit／drag／remove、rollback、canonical layer event、Map同名event非commit、Drag後Edit、reload初期化、Web Storage未使用、PC／360px表示、console error、page error、PII guard、asset manifest、GitHub Pages配下path、外部通信mockを確認します。

@@ -19,7 +19,7 @@ test.describe('円操作', () => {
     await page.getByTitle('この円にズーム').click();
     await expect.poll(async () => (await getMapState(page)).zoom).toBeGreaterThan(initialZoom);
 
-    await page.getByTitle('削除').click();
+    await page.locator('.circle-item').getByTitle('削除', { exact: true }).click();
     expect((await getMapState(page)).circles).toEqual([]);
     await expect(page.locator('#circle-list')).toContainText('まだ円がありません');
   });

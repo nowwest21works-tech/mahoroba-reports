@@ -242,6 +242,27 @@
   function initialize(capabilities) {
     runtime = capabilities;
 
+    map.pm.setLang('ja', {
+      tooltips: {
+        placeMarker: 'クリックして地点を置く',
+        placeMarkerTouch: '地図をタップして地点を置く',
+        firstVertex: 'クリックして最初の頂点を置く',
+        continueLine: 'クリックして次の頂点を置く',
+        finishLine: '最後の頂点をクリックして線を確定',
+        finishPoly: '最初の頂点をクリックして範囲を確定',
+        startCircle: 'クリックして円の中心を置く',
+        finishCircle: 'クリックして円の大きさを確定',
+      },
+      buttonTitles: {
+        drawMarkerButton: '地点を置く',
+        drawPolyButton: '範囲を描く',
+        drawLineButton: '線を描く',
+        drawCircleButton: '円を描く',
+        editButton: '形を編集',
+        dragButton: '全体を移動',
+        deleteButton: '削除する',
+      },
+    }, 'ja');
     map.pm.setGlobalOptions({
       allowSelfIntersection: false,
       continueDrawing: false,
@@ -269,6 +290,22 @@
       drawText: false,
       cutPolygon: false,
       rotateMode: false,
+    });
+    const toolbarLabels = {
+      marker: '地点を置く',
+      circle: '円を描く',
+      polyline: '線を描く',
+      polygon: '範囲を描く',
+      edit: '形を編集',
+      drag: '全体を移動',
+      delete: '削除する',
+    };
+    Object.entries(toolbarLabels).forEach(([iconName, label]) => {
+      const icon = document.querySelector(`.leaflet-pm-icon-${iconName}`);
+      const button = icon && (icon.closest('a, button') || icon);
+      if (!button) return;
+      button.title = label;
+      button.setAttribute('aria-label', label);
     });
 
     map.on('pm:globaldrawmodetoggled', () => {
