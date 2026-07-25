@@ -95,7 +95,12 @@ test.describe('GeoJSON runtime同期', () => {
       })),
     ).toEqual({
       frozen: true,
-      keys: ['getCurrentMapProject', 'getSnapshot'],
+      keys: [
+        'captureProjectState',
+        'getCurrentMapProject',
+        'getSnapshot',
+        'replaceProjectState',
+      ],
       globals: {
         addCircle: 'function',
         clearAllCircles: 'undefined',
@@ -183,7 +188,7 @@ test.describe('GeoJSON runtime同期', () => {
   test('個別削除でLeaflet、circles、Featureを同時に削除する', async ({ page }) => {
     await openMap(page);
     await clickMap(page);
-    await page.getByTitle('削除').click();
+    await page.locator('.circle-item').getByTitle('削除', { exact: true }).click();
 
     expect((await getMapState(page)).circles).toEqual([]);
     expect(

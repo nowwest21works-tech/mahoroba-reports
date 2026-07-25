@@ -1,13 +1,13 @@
 /* ========== 入力 ========== */
 .input-row { display: flex; gap: 6px; margin-bottom: 8px; }
-input[type="text"], input[type="number"] {
+input[type="text"], input[type="number"], select {
   flex: 1; padding: 9px 12px;
   border: 1px solid var(--line);
   background: white; border-radius: 2px;
   font-family: inherit; font-size: 13px; color: var(--ink);
   transition: border-color 0.2s;
 }
-input[type="text"]:focus, input[type="number"]:focus {
+input[type="text"]:focus, input[type="number"]:focus, select:focus {
   outline: none; border-color: var(--accent);
 }
 button {
@@ -21,6 +21,62 @@ button {
 button:hover { background: var(--accent); border-color: var(--accent); }
 button.ghost { background: transparent; color: var(--ink); }
 button.ghost:hover { background: var(--ink); color: var(--panel); }
+button:disabled, select:disabled {
+  cursor: wait;
+  opacity: 0.55;
+}
+
+/* ========== 顧客・案件別ローカル保存 ========== */
+.project-fields {
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 7px 8px;
+  align-items: center;
+}
+.project-fields label,
+.select-label {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+}
+.project-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+.project-actions-primary { margin-top: 12px; }
+.select-label {
+  display: block;
+  margin: 12px 0 5px;
+}
+#saved-projects {
+  display: block;
+  width: 100%;
+  min-width: 0;
+}
+.project-state {
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
+.project-state[data-kind="dirty"] { color: #8a5c00; }
+.project-state[data-kind="error"] { color: var(--accent); }
+.privacy-note {
+  margin-top: 10px;
+  padding: 9px 10px;
+  background: rgba(200, 68, 58, 0.08);
+  border-left: 2px solid var(--accent);
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.65;
+}
+.operation-guide p {
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.8;
+}
+.operation-guide strong { color: var(--ink); }
 
 /* ========== プリセット半径 ========== */
 .preset-grid {

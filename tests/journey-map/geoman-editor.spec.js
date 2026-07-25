@@ -214,7 +214,12 @@ test.describe('Leaflet-Geoman dependencyとtoolbar', () => {
       layerRegistry: typeof window.layerRegistry,
       removeGeometry: typeof window.removeGeometry,
     }))).toEqual({
-      appStateKeys: ['getCurrentMapProject', 'getSnapshot'],
+      appStateKeys: [
+        'captureProjectState',
+        'getCurrentMapProject',
+        'getSnapshot',
+        'replaceProjectState',
+      ],
       createGeometry: 'undefined',
       editGeometry: 'undefined',
       geometryEditorRuntime: 'undefined',

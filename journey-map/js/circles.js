@@ -38,9 +38,18 @@ const {
     });
   }
 
+  function updateCurrentProjectState(featureCollection, viewport) {
+    return store.updateMapProject(mapProjectId, {
+      featureCollection,
+      viewport,
+    });
+  }
+
   globalThis.MapCirclesAppState = Object.freeze({
+    captureProjectState,
     getCurrentMapProject,
     getSnapshot: () => store.snapshot(),
+    replaceProjectState,
   });
 
   function createCircleLabelIcon(label, radius, color) {
@@ -58,6 +67,143 @@ const {
       interactive: false,
       pmIgnore: true,
     });
+  }
+
+  function cloneData(value) {
+    return JSON.parse(JSON.stringify(value));
+  }
+
+  function captureProjectState() {
+    const center = map.getCenter();
+    return {
+      featureCollection: cloneData(getCurrentSnapshotProject().featureCollection),
+      viewport: {
+        center: { lat: center.lat, lng: center.lng },
+        zoom: map.getZoom(),
+      },
+    };
+  }
+
+  function createLayerBundle(feature, circleId) {
+    const record = MapCirclesGeoJsonAdapter.featureToShapeRecord(feature);
+    const pathOptions = record.kind === 'marker'
+      ? { pmIgnore: false }
+      : {
+        color: record.color,
+        fillColor: record.color,
+        fillOpacity: record.kind === 'line' ? 0 : 0.15,
+        opacity: 0.7,
+        weight: 2,
+        pmIgnore: false,
+      };
+    let layer;
+    let labelLayer = null;
+    let circleRecord = null;
+
+    if (record.kind === 'marker') {
+      layer = L.marker(record.center, pathOptions);
+    } else if (record.kind === 'circle') {
+      layer = L.circle(record.center, {
+        ...pathOptions,
+        radius: record.radius,
+      });
+      labelLayer = createCircleLabelLayer(record);
+      circleRecord = {
+        id: circleId,
+        ...record,
+        marker: labelLayer,
+        circle: layer,
+      };
+    } else if (record.kind === 'line') {
+      layer = L.polyline(record.points, pathOptions);
+    } else {
+      const outerRing = record.rings[0];
+      const unclosedRing = outerRing.slice(0, -1);
+      layer = L.polygon(unclosedRing, pathOptions);
+    }
+
+    return {
+      circleRecord,
+      feature,
+      labelLayer,
+      layer,
+    };
+  }
+
+  function emitStateChanged(reason) {
+    document.dispatchEvent(new CustomEvent('journeymap:state-changed', {
+      detail: { reason },
+    }));
+  }
+
+  function replaceProjectState(featureCollection, viewport) {
+    MapCirclesDomain.validateFeatureCollection(featureCollection);
+    const previousProject = getCurrentSnapshotProject();
+    const previousState = captureProjectState();
+    const previousCircles = cloneCircleRecords();
+    const previousEntries = Array.from(layerRegistry.entries());
+    const previousListDom = captureCircleListDom();
+    const previousNextId = nextId;
+    let circleId = 1;
+    const prepared = featureCollection.features.map((feature) => {
+      const bundle = createLayerBundle(cloneData(feature), circleId);
+      if (bundle.circleRecord) circleId += 1;
+      return bundle;
+    });
+
+    try {
+      previousEntries.forEach(([featureId, entry]) => {
+        unregisterFeature(featureId);
+        if (map.hasLayer(entry.layer)) map.removeLayer(entry.layer);
+        if (entry.labelLayer && map.hasLayer(entry.labelLayer)) {
+          map.removeLayer(entry.labelLayer);
+        }
+      });
+      updateCurrentProjectState(cloneData(featureCollection), cloneData(viewport));
+      circles = [];
+      prepared.forEach((bundle) => {
+        bundle.layer.addTo(map);
+        if (bundle.labelLayer) bundle.labelLayer.addTo(map);
+        registerFeature(bundle.feature, bundle.layer, bundle.labelLayer);
+        if (bundle.circleRecord) circles.push(bundle.circleRecord);
+      });
+      nextId = circleId;
+      map.setView(
+        [viewport.center.lat, viewport.center.lng],
+        viewport.zoom,
+        { animate: false },
+      );
+      renderList();
+      emitStateChanged('replace');
+    } catch (error) {
+      prepared.forEach((bundle) => {
+        unregisterFeature(bundle.feature.id);
+        if (map.hasLayer(bundle.layer)) map.removeLayer(bundle.layer);
+        if (bundle.labelLayer && map.hasLayer(bundle.labelLayer)) {
+          map.removeLayer(bundle.labelLayer);
+        }
+      });
+      updateCurrentProjectState(
+        previousProject.featureCollection,
+        previousState.viewport,
+      );
+      previousEntries.forEach(([featureId, entry]) => {
+        restoreRegistryEntry(featureId, entry);
+        if (!map.hasLayer(entry.layer)) entry.layer.addTo(map);
+        if (entry.labelLayer && !map.hasLayer(entry.labelLayer)) {
+          entry.labelLayer.addTo(map);
+        }
+      });
+      circles = previousCircles;
+      nextId = previousNextId;
+      map.setView(
+        [previousState.viewport.center.lat, previousState.viewport.center.lng],
+        previousState.viewport.zoom,
+        { animate: false },
+      );
+      restoreCircleListDom(previousListDom);
+      throw error;
+    }
   }
 
   function registerFeature(feature, layer, labelLayer = null) {
@@ -194,6 +340,7 @@ const {
     }
 
     if (feature.properties.kind === 'circle') nextId = previousNextId + 1;
+    emitStateChanged('create');
     return layerRegistry.get(feature.id);
   }
 
@@ -256,6 +403,7 @@ const {
       throw error;
     }
 
+    emitStateChanged('edit');
     return feature;
   }
 
@@ -300,6 +448,7 @@ const {
       nextId = previousNextId;
       throw error;
     }
+    emitStateChanged('remove');
   }
 
   function addCircle(
@@ -384,6 +533,7 @@ const {
       nextId = previousNextId;
       throw error;
     }
+    emitStateChanged('clear-circles');
   }
 
   function zoomToCircle(id) {

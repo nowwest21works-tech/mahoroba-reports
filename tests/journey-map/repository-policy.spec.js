@@ -26,6 +26,8 @@ const EXPECTED_SCRIPTS = [
   './js/config.js',
   './js/domain.js',
   './js/memory-store.js',
+  './js/project-schema.js',
+  './js/indexeddb-store.js',
   './js/geojson-adapter.js',
   './js/map.js',
   './js/circles.js',
@@ -33,6 +35,7 @@ const EXPECTED_SCRIPTS = [
   './js/geocoder.js',
   './js/hazards.js',
   './js/geometry-editor.js',
+  './js/project-manager.js',
   './js/app.js',
 ];
 const baseline = JSON.parse(
@@ -91,6 +94,7 @@ test.describe('GitHub Pages互換と製品source固定', () => {
     ].filter((match) => !match[1].includes('leaflet.min.js'));
 
     expect(source).not.toMatch(/<style(?:\s|>)/);
+    expect(source).toContain('<link rel="icon" href="data:,">');
     expect(applicationScriptTags.every((match) => /\bsrc=/.test(match[1]))).toBe(true);
     expect(applicationScriptTags.every((match) => /\bdefer\b/.test(match[1]))).toBe(true);
     expect(localStylesheets).toEqual(EXPECTED_STYLESHEETS);
