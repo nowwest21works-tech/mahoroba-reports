@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 
-const domain = require('../../../map-circles/js/domain.js');
+const domain = require('../../../journey-map/js/domain.js');
 
 const HOUSEHOLD_ID = '00000000-0000-4000-8000-000000000001';
 const JOURNEY_ID = '00000000-0000-4000-8000-000000000002';
@@ -469,7 +469,7 @@ test('geometryとkindの不一致、MultiPolygon、unknown fieldを拒否する'
 });
 
 test('Browser classic scriptは単一MapCirclesDomain namespaceを公開する', () => {
-  const sourcePath = path.resolve(__dirname, '../../../map-circles/js/domain.js');
+  const sourcePath = path.resolve(__dirname, '../../../journey-map/js/domain.js');
   const source = fs.readFileSync(sourcePath, 'utf8');
   const context = {
     crypto: { randomUUID: () => HOUSEHOLD_ID },

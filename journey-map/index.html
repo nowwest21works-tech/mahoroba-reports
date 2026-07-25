@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>まほろば顧客条件マップ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.css" />
+<link rel="stylesheet" href="./styles/tokens.css">
+<link rel="stylesheet" href="./styles/layout.css">
+<link rel="stylesheet" href="./styles/components.css">
+</head>
+<body>
+
+<div id="panel">
+  <div class="panel-header">
+    <h1>まほろば顧客条件マップ</h1>
+    <div class="subtitle">PROPERTY · DISTANCE · CIRCLE</div>
+  </div>
+
+  <!-- 住所検索 -->
+  <div class="section">
+    <h2>場所を探す</h2>
+    <div class="input-row">
+      <input type="text" id="search-input" placeholder="例：名古屋駅 / 千種区 / 〒〇〇〇..." />
+      <button id="search-btn">検索</button>
+    </div>
+    <div class="hint">地名・駅名・住所で地図移動。地図上を直接クリックでも円を置けます。</div>
+  </div>
+
+  <!-- 半径 -->
+  <div class="section">
+    <h2>半径を選ぶ</h2>
+    <div class="preset-grid">
+      <button class="preset-btn" data-radius="500"><span class="label">500m</span><span class="desc">徒歩6分</span></button>
+      <button class="preset-btn active" data-radius="800"><span class="label">800m</span><span class="desc">徒歩10分</span></button>
+      <button class="preset-btn" data-radius="1000"><span class="label">1km</span><span class="desc">徒歩13分</span></button>
+      <button class="preset-btn" data-radius="2000"><span class="label">2km</span><span class="desc">自転車8分</span></button>
+      <button class="preset-btn" data-radius="3000"><span class="label">3km</span><span class="desc">学区目安</span></button>
+      <button class="preset-btn" data-radius="5000"><span class="label">5km</span><span class="desc">商圏目安</span></button>
+    </div>
+    <div class="input-row">
+      <input type="number" id="custom-radius" placeholder="カスタム半径 (m)" min="50" max="50000" />
+      <button id="apply-custom" class="ghost">適用</button>
+    </div>
+  </div>
+
+  <!-- 色とラベル -->
+  <div class="section">
+    <h2>色とラベル</h2>
+    <div class="color-palette" id="color-palette">
+      <div class="color-swatch active" data-color="#c8443a" style="background:#c8443a"></div>
+      <div class="color-swatch" data-color="#2c3e50" style="background:#2c3e50"></div>
+      <div class="color-swatch" data-color="#3a8c5f" style="background:#3a8c5f"></div>
+      <div class="color-swatch" data-color="#d4a017" style="background:#d4a017"></div>
+      <div class="color-swatch" data-color="#7a4e9c" style="background:#7a4e9c"></div>
+      <div class="color-swatch" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+    </div>
+    <input type="text" id="label-input" placeholder="ラベル（例：最寄り駅 / 候補物件A）" />
+  </div>
+
+  <!-- ハザードマップ -->
+  <div class="section">
+    <h2>ハザード情報を重ねる</h2>
+    <div class="hazard-list" id="hazard-list">
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="flood" />
+        <span class="hazard-color" style="background:#4a90d9"></span>
+        <span class="hazard-name">洪水浸水想定区域</span>
+        <span class="hazard-tag">想定最大規模</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="landslide" />
+        <span class="hazard-color" style="background:#a06040"></span>
+        <span class="hazard-name">土砂災害警戒区域</span>
+        <span class="hazard-tag">土石流</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="hightide" />
+        <span class="hazard-color" style="background:#5fb6c4"></span>
+        <span class="hazard-name">高潮浸水想定区域</span>
+        <span class="hazard-tag">想定最大規模</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="tsunami" />
+        <span class="hazard-color" style="background:#9b6db5"></span>
+        <span class="hazard-name">津波浸水想定区域</span>
+        <span class="hazard-tag">最大クラス</span>
+      </label>
+    </div>
+    <div class="opacity-control">
+      <label>透明度</label>
+      <input type="range" id="hazard-opacity" min="10" max="100" value="60" />
+      <span class="opacity-val" id="hazard-opacity-val">60%</span>
+    </div>
+    <div class="hint" style="margin-top:8px">
+      出典：<strong>国土交通省 ハザードマップポータルサイト</strong>。AIが構造的に苦手な「土地の温度感」の最初の手がかり。必ず現地確認・自治体公表資料との突合をしてください。
+    </div>
+  </div>
+
+  <!-- 円リスト -->
+  <div class="section">
+    <h2>配置した円<span id="count-badge" style="margin-left:auto;font-size:11px;color:var(--ink-soft);font-family:'Shippori Mincho',serif;letter-spacing:0;"></span></h2>
+    <div id="circle-list" class="circle-list"></div>
+  </div>
+
+  <!-- 操作 -->
+  <details>
+    <summary>使い方ヒント</summary>
+    <div style="padding: 14px 24px 18px; font-size: 12px; color: var(--ink-soft); line-height: 1.7;">
+      <strong style="color:var(--ink);">▸ 円を置く</strong><br>
+      地図上をクリック、または住所検索後その地点に追加されます。<br><br>
+      <strong style="color:var(--ink);">▸ 不動産業務での使い方</strong><br>
+      ・候補物件から徒歩10分圏（800m）を可視化<br>
+      ・複数候補駅の徒歩圏が重なるエリアを発見<br>
+      ・学区・商圏・通勤圏の重なりを目視<br><br>
+      <strong style="color:var(--ink);">▸ 円の編集</strong><br>
+      リストの「⊕」でその円にズーム、「✕」で削除。
+    </div>
+  </details>
+
+  <div style="padding: 12px 24px;">
+    <button id="clear-all" class="ghost" style="width:100%">すべての円を削除</button>
+  </div>
+
+  <div class="footer-note">
+    OpenStreetMap contributors · まほろば不動産戦略室
+  </div>
+</div>
+
+<div class="map-wrap" id="map-wrap">
+  <button id="toggle-panel" title="パネル開閉">☰</button>
+  <div id="map"></div>
+  <div id="status"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.js" defer></script>
+<script src="./js/config.js" defer></script>
+<script src="./js/domain.js" defer></script>
+<script src="./js/memory-store.js" defer></script>
+<script src="./js/geojson-adapter.js" defer></script>
+<script src="./js/map.js" defer></script>
+<script src="./js/circles.js" defer></script>
+<script src="./js/ui.js" defer></script>
+<script src="./js/geocoder.js" defer></script>
+<script src="./js/hazards.js" defer></script>
+<script src="./js/geometry-editor.js" defer></script>
+<script src="./js/app.js" defer></script>
+</body>
+</html>

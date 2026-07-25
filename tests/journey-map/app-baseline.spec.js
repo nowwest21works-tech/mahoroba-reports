@@ -10,7 +10,7 @@ test.describe('初期表示', () => {
     await page.setViewportSize({ width: 1440, height: 900 });
     const audit = await openMap(page);
 
-    await expect(page).toHaveTitle('まほろば距離円マップ');
+    await expect(page).toHaveTitle('まほろば顧客条件マップ');
     await expect(page.locator('#panel')).toBeVisible();
     await expect(page.locator('#map')).toBeVisible();
     await expect(page.locator('.leaflet-control-attribution')).toContainText('OpenStreetMap');

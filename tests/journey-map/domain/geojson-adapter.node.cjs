@@ -4,7 +4,7 @@ const test = require('node:test');
 const assert = require('node:assert/strict');
 const vm = require('node:vm');
 
-const adapter = require('../../../map-circles/js/geojson-adapter.js');
+const adapter = require('../../../journey-map/js/geojson-adapter.js');
 
 const FEATURE_ID = '00000000-0000-4000-8000-000000000101';
 const FEATURE_ID_2 = '00000000-0000-4000-8000-000000000102';
@@ -298,11 +298,11 @@ test('shape APIはID generatorを差し替え、invalid／unknown fieldを拒否
 
 test('Browser classic scriptは単一namespaceと既定UUID生成を提供する', () => {
   const domainSource = fs.readFileSync(
-    path.resolve(__dirname, '../../../map-circles/js/domain.js'),
+    path.resolve(__dirname, '../../../journey-map/js/domain.js'),
     'utf8',
   );
   const adapterSource = fs.readFileSync(
-    path.resolve(__dirname, '../../../map-circles/js/geojson-adapter.js'),
+    path.resolve(__dirname, '../../../journey-map/js/geojson-adapter.js'),
     'utf8',
   );
   const context = {
