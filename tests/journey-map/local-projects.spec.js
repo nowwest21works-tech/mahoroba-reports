@@ -84,6 +84,11 @@ async function waitForProjectManager(page) {
   await expect(page.locator('#project-state')).not.toHaveText('保存状態を確認中');
 }
 
+async function waitForProjectAction(page, controlSelector, statusMessage) {
+  await expect(page.locator('#status')).toHaveText(statusMessage);
+  await expect(page.locator(controlSelector)).toBeEnabled();
+}
+
 async function seedMixedRuntime(page, viewport = {
   center: { lat: 35.2, lng: 136.9 },
   zoom: 12,
@@ -98,7 +103,11 @@ async function seedMixedRuntime(page, viewport = {
 
 async function saveProject(page) {
   await page.locator('#save-project').click();
-  await expect(page.locator('#project-state')).toContainText('保存済み');
+  await waitForProjectAction(
+    page,
+    '#save-project',
+    '地図をこのブラウザに保存しました',
+  );
   return page.evaluate(async () => {
     const records = await JourneyMapIndexedDb.listProjects();
     return records[0];
@@ -234,6 +243,11 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
     await page.locator('#new-project').click();
     await page.locator('#saved-projects').selectOption(record.projectId);
     await page.locator('#open-project').click();
+    await waitForProjectAction(
+      page,
+      '#open-project',
+      '保存済み地図を開きました',
+    );
 
     const state = await getAppState(page);
     expect(state.mapProject.featureCollection.features.map(
@@ -274,6 +288,7 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
     await page.locator('#open-project').click();
 
     await expect(page.locator('#project-state')).toHaveAttribute('data-kind', 'error');
+    await expect(page.locator('#open-project')).toBeEnabled();
     expect((await getAppState(page)).mapProject.featureCollection)
       .toEqual(before.mapProject.featureCollection);
   });
@@ -282,7 +297,8 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
     await openMap(page);
     await waitForProjectManager(page);
     const original = await saveProject(page);
-    await page.waitForTimeout(20);
+    await expect.poll(() => Date.now())
+      .toBeGreaterThan(Date.parse(original.updatedAt));
     await page.locator('#map-project-name').fill('更新後の地図');
     const updated = await saveProject(page);
 
@@ -297,8 +313,14 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
     await openMap(page);
     await waitForProjectManager(page);
     const original = await saveProject(page);
-    await page.waitForTimeout(20);
+    await expect.poll(() => Date.now())
+      .toBeGreaterThan(Date.parse(original.updatedAt));
     await page.locator('#duplicate-project').click();
+    await waitForProjectAction(
+      page,
+      '#duplicate-project',
+      '地図を複製して保存しました',
+    );
     await expect(page.locator('#map-project-name')).toHaveValue(
       '通勤圏・優先エリア整理（複製）',
     );
@@ -339,6 +361,11 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(record)),
     });
+    await waitForProjectAction(
+      page,
+      '#import-file',
+      'JSONバックアップを読み込みました',
+    );
     await expect(page.locator('#map-project-name')).toHaveValue('架空バックアップ');
     expect(
       (await getAppState(page)).mapProject.featureCollection.features,
@@ -373,6 +400,7 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
     });
 
     await expect(page.locator('#project-state')).toHaveAttribute('data-kind', 'error');
+    await expect(page.locator('#import-file')).toBeEnabled();
     expect((await getAppState(page)).mapProject.featureCollection)
       .toEqual(before.mapProject.featureCollection);
     expect(await page.evaluate(() => JourneyMapIndexedDb.listProjects()))
@@ -386,6 +414,7 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
     await expect(page.locator('#project-state')).toContainText(
       'JSONファイルを読み取れませんでした',
     );
+    await expect(page.locator('#import-file')).toBeEnabled();
     expect((await getAppState(page)).mapProject.featureCollection)
       .toEqual(before.mapProject.featureCollection);
   });
@@ -414,6 +443,7 @@ test.describe('日本語操作とローカル地図プロジェクト', () => {
     await expect(page.locator('#project-state')).toContainText(
       'synthetic import render failure',
     );
+    await expect(page.locator('#import-file')).toBeEnabled();
     expect((await getAppState(page)).mapProject.featureCollection)
       .toEqual(before.mapProject.featureCollection);
     await expect(page.locator('#map-project-name')).toHaveValue(beforeMetadata);
