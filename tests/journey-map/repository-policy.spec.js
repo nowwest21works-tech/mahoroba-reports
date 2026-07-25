@@ -35,6 +35,7 @@ const EXPECTED_SCRIPTS = [
   './js/geocoder.js',
   './js/hazards.js',
   './js/geometry-editor.js',
+  './js/map-notes.js',
   './js/project-manager.js',
   './js/app.js',
 ];

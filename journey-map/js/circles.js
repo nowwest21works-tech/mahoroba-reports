@@ -22,6 +22,7 @@ const {
   const layerRegistry = new Map();
   const featureIdByLayer = new WeakMap();
   let geometryEditorLifecycle = null;
+  let mapNotesLifecycle = null;
 
   function getCurrentMapProject() {
     return store.getMapProject(mapProjectId);
@@ -60,6 +61,17 @@ const {
       iconAnchor: [0, 0],
     });
   }
+
+  function createMapNoteMarkerIcon() {
+    return L.divIcon({
+      className: 'map-note-pin',
+      html: '<span aria-hidden="true"></span>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11],
+    });
+  }
+
+  L.Marker.prototype.options.icon = createMapNoteMarkerIcon();
 
   function createCircleLabelLayer(record) {
     return L.marker(record.center, {
@@ -101,7 +113,10 @@ const {
     let circleRecord = null;
 
     if (record.kind === 'marker') {
-      layer = L.marker(record.center, pathOptions);
+      layer = L.marker(record.center, {
+        ...pathOptions,
+        icon: createMapNoteMarkerIcon(),
+      });
     } else if (record.kind === 'circle') {
       layer = L.circle(record.center, {
         ...pathOptions,
@@ -221,11 +236,20 @@ const {
       throw new Error('Geometry editor lifecycle is unavailable');
     }
     geometryEditorLifecycle.bindLayer(layer);
+    if (feature.properties.kind === 'marker') {
+      if (!mapNotesLifecycle) {
+        throw new Error('Map notes lifecycle is unavailable');
+      }
+      mapNotesLifecycle.bindMarkerLayer(layer, feature);
+    }
   }
 
   function unregisterFeature(featureId) {
     const entry = layerRegistry.get(featureId);
     if (!entry) return null;
+    if (entry.kind === 'marker' && mapNotesLifecycle) {
+      mapNotesLifecycle.unbindMarkerLayer(featureId, entry.layer);
+    }
     layerRegistry.delete(featureId);
     featureIdByLayer.delete(entry.layer);
     return entry;
@@ -238,6 +262,14 @@ const {
       throw new Error('Geometry editor lifecycle is unavailable');
     }
     geometryEditorLifecycle.bindLayer(entry.layer);
+    if (entry.kind === 'marker') {
+      if (!mapNotesLifecycle) {
+        throw new Error('Map notes lifecycle is unavailable');
+      }
+      const feature = findFeature(featureId);
+      if (!feature) throw new Error('Map note feature is unavailable');
+      mapNotesLifecycle.bindMarkerLayer(entry.layer, feature);
+    }
   }
 
   function assertRuntimeAlignment(featureCollection) {
@@ -315,6 +347,9 @@ const {
     let labelLayer = null;
 
     try {
+      if (feature.properties.kind === 'marker') {
+        layer.setIcon(createMapNoteMarkerIcon());
+      }
       if (!map.hasLayer(layer)) layer.addTo(map);
       if (feature.properties.kind === 'circle') {
         const shapeRecord = MapCirclesGeoJsonAdapter.featureToCircleRecord(feature);
@@ -382,6 +417,8 @@ const {
           ),
         );
         renderList();
+      } else if (feature.properties.kind === 'marker') {
+        mapNotesLifecycle.updateMarkerLayer(entry.layer, feature);
       }
       updateCurrentFeatureCollection(nextFeatureCollection);
     } catch (error) {
@@ -398,6 +435,8 @@ const {
             previousCircle.color,
           ),
         );
+      } else if (previousFeature.properties.kind === 'marker') {
+        mapNotesLifecycle.updateMarkerLayer(entry.layer, previousFeature);
       }
       restoreCircleListDom(previousListDom);
       throw error;
@@ -484,6 +523,34 @@ const {
     return circles[circles.length - 1];
   }
 
+  function createMapNote(lat, lng, label) {
+    const feature = MapCirclesGeoJsonAdapter.shapeRecordToFeature({
+      kind: 'marker',
+      center: [lat, lng],
+      label,
+    });
+    const layer = L.marker([lat, lng], {
+      icon: createMapNoteMarkerIcon(),
+      pmIgnore: false,
+    });
+    commitCreatedFeature(feature, layer);
+    return cloneData(feature);
+  }
+
+  function updateMapNote(featureId, label) {
+    const previousFeature = findFeature(featureId);
+    if (!previousFeature || previousFeature.properties.kind !== 'marker') {
+      throw new Error('選択した地図メモが見つかりません');
+    }
+    const record = MapCirclesGeoJsonAdapter.featureToShapeRecord(previousFeature);
+    const feature = MapCirclesGeoJsonAdapter.shapeRecordToFeature({
+      ...record,
+      label,
+    });
+    commitEditedFeature(featureId, feature);
+    return cloneData(feature);
+  }
+
   function removeCircle(id) {
     const target = circles.find((record) => record.id === id);
     if (!target) return;
@@ -560,6 +627,28 @@ const {
       || typeof geometryEditorLifecycle.bindLayer !== 'function'
     ) {
       throw new Error('Geometry editor lifecycle is invalid');
+    }
+  }, { once: true });
+
+  document.addEventListener('journeymap:map-notes-ready', (event) => {
+    if (!event.detail || typeof event.detail.initialize !== 'function') {
+      throw new Error('Map notes initializer is unavailable');
+    }
+    mapNotesLifecycle = event.detail.initialize(Object.freeze({
+      createMapNote,
+      getFeature: (featureId) => {
+        const feature = findFeature(featureId);
+        return feature ? cloneData(feature) : null;
+      },
+      updateMapNote,
+    }));
+    if (
+      !mapNotesLifecycle
+      || typeof mapNotesLifecycle.bindMarkerLayer !== 'function'
+      || typeof mapNotesLifecycle.unbindMarkerLayer !== 'function'
+      || typeof mapNotesLifecycle.updateMarkerLayer !== 'function'
+    ) {
+      throw new Error('Map notes lifecycle is invalid');
     }
   }, { once: true });
 

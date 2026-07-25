@@ -1,5 +1,6 @@
 // ========== マップクリック ==========
 map.on('click', (e) => {
+  if (JourneyMapNotes.handleMapClick(e.latlng)) return;
   if (
     map.pm.globalDrawModeEnabled()
     || map.pm.globalEditModeEnabled()
