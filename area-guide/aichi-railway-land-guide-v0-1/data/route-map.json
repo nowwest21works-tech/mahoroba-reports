@@ -1,0 +1,83 @@
+{
+  "viewBox": "0 0 1120 660",
+  "note": "土地探し検討用の模式図。実際の距離・方角・縮尺を表すものではない。",
+  "routes": [
+    {
+      "routeName": "地下鉄桜通線",
+      "color": "#9b4c5c",
+      "label": { "x": 70, "y": 74 },
+      "points": [[150, 90], [300, 92], [450, 108], [610, 132], [760, 158]]
+    },
+    {
+      "routeName": "名鉄名古屋本線",
+      "color": "#7c5c38",
+      "label": { "x": 70, "y": 160 },
+      "points": [[150, 180], [305, 182], [455, 200], [610, 222], [765, 248], [910, 272]]
+    },
+    {
+      "routeName": "JR東海道本線",
+      "color": "#3b6f8f",
+      "label": { "x": 70, "y": 270 },
+      "points": [[470, 302], [640, 332]]
+    },
+    {
+      "routeName": "名鉄豊田線",
+      "color": "#6c7f4a",
+      "label": { "x": 70, "y": 356 },
+      "points": [[420, 390], [590, 396], [760, 410]]
+    },
+    {
+      "routeName": "JR中央本線",
+      "color": "#90648a",
+      "label": { "x": 70, "y": 448 },
+      "points": [[310, 468], [470, 472], [630, 486], [800, 508]]
+    },
+    {
+      "routeName": "名鉄犬山線",
+      "color": "#4d7a73",
+      "label": { "x": 70, "y": 540 },
+      "points": [[240, 560], [415, 548], [590, 532]]
+    },
+    {
+      "routeName": "名鉄津島線",
+      "color": "#8a6f3d",
+      "label": { "x": 70, "y": 620 },
+      "points": [[150, 618], [330, 606], [510, 590], [690, 574]]
+    }
+  ],
+  "stations": [
+    { "routeDisplayName": "地下鉄桜通線", "stationName": "野並", "x": 150, "y": 90, "labelDx": -14, "labelDy": -22, "anchor": "end" },
+    { "routeDisplayName": "地下鉄桜通線", "stationName": "鳴子北", "x": 300, "y": 92, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "地下鉄桜通線", "stationName": "相生山", "x": 450, "y": 108, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "地下鉄桜通線", "stationName": "神沢", "x": 610, "y": 132, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "地下鉄桜通線", "stationName": "徳重", "x": 760, "y": 158, "labelDx": 14, "labelDy": -18, "anchor": "start" },
+
+    { "routeDisplayName": "名鉄名古屋本線", "stationName": "鳴海", "x": 150, "y": 180, "labelDx": -14, "labelDy": -22, "anchor": "end" },
+    { "routeDisplayName": "名鉄名古屋本線", "stationName": "左京山", "x": 305, "y": 182, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "名鉄名古屋本線", "stationName": "有松", "x": 455, "y": 200, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "名鉄名古屋本線", "stationName": "中京競馬場前", "x": 610, "y": 222, "labelDx": 0, "labelDy": 34, "anchor": "middle" },
+    { "routeDisplayName": "名鉄名古屋本線", "stationName": "前後", "x": 765, "y": 248, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "名鉄名古屋本線", "stationName": "豊明", "x": 910, "y": 272, "labelDx": 14, "labelDy": -12, "anchor": "start" },
+
+    { "routeDisplayName": "JR東海道本線", "stationName": "大高", "x": 470, "y": 302, "labelDx": -14, "labelDy": -22, "anchor": "end" },
+    { "routeDisplayName": "JR東海道本線", "stationName": "南大高", "x": 640, "y": 332, "labelDx": 14, "labelDy": -16, "anchor": "start" },
+
+    { "routeDisplayName": "名鉄豊田線", "stationName": "赤池", "x": 420, "y": 390, "labelDx": -14, "labelDy": -22, "anchor": "end" },
+    { "routeDisplayName": "名鉄豊田線", "stationName": "日進", "x": 590, "y": 396, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "名鉄豊田線", "stationName": "米野木", "x": 760, "y": 410, "labelDx": 14, "labelDy": -14, "anchor": "start" },
+
+    { "routeDisplayName": "JR中央本線", "stationName": "勝川", "x": 310, "y": 468, "labelDx": -14, "labelDy": -22, "anchor": "end" },
+    { "routeDisplayName": "JR中央本線", "stationName": "春日井", "x": 470, "y": 472, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "JR中央本線", "stationName": "神領", "x": 630, "y": 486, "labelDx": 0, "labelDy": -24, "anchor": "middle" },
+    { "routeDisplayName": "JR中央本線", "stationName": "高蔵寺", "x": 800, "y": 508, "labelDx": 14, "labelDy": -14, "anchor": "start" },
+
+    { "routeDisplayName": "名鉄犬山線", "stationName": "上小田井", "x": 240, "y": 560, "labelDx": -14, "labelDy": -22, "anchor": "end" },
+    { "routeDisplayName": "名鉄犬山線", "stationName": "西春", "x": 415, "y": 548, "labelDx": 0, "labelDy": -26, "anchor": "middle" },
+    { "routeDisplayName": "名鉄犬山線", "stationName": "徳重・名古屋芸大", "x": 590, "y": 532, "labelDx": 14, "labelDy": -16, "anchor": "start" },
+
+    { "routeDisplayName": "名鉄津島線", "stationName": "須ヶ口", "x": 150, "y": 618, "labelDx": -14, "labelDy": -22, "anchor": "end" },
+    { "routeDisplayName": "名鉄津島線", "stationName": "甚目寺", "x": 330, "y": 606, "labelDx": 0, "labelDy": -26, "anchor": "middle" },
+    { "routeDisplayName": "名鉄津島線", "stationName": "七宝", "x": 510, "y": 590, "labelDx": 0, "labelDy": -26, "anchor": "middle" },
+    { "routeDisplayName": "名鉄津島線", "stationName": "木田", "x": 690, "y": 574, "labelDx": 14, "labelDy": -16, "anchor": "start" }
+  ]
+}
