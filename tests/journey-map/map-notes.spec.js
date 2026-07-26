@@ -82,6 +82,33 @@ async function expectSingleNoteTooltip(page, label) {
   await expect(notes).toHaveText(label);
 }
 
+async function readNoteLayout(page) {
+  return page.locator('.map-note-content').evaluate((element) => {
+    const tooltip = element.closest('.map-note-tooltip');
+    const contentStyle = getComputedStyle(element);
+    const tooltipStyle = getComputedStyle(tooltip);
+    const contentBox = element.getBoundingClientRect();
+    const tooltipBox = tooltip.getBoundingClientRect();
+    return {
+      textContent: element.textContent,
+      contentWidth: contentBox.width,
+      contentHeight: contentBox.height,
+      contentScrollHeight: element.scrollHeight,
+      tooltipWidth: tooltipBox.width,
+      fontSize: Number.parseFloat(contentStyle.fontSize),
+      lineHeight: Number.parseFloat(contentStyle.lineHeight),
+      whiteSpace: contentStyle.whiteSpace,
+      overflowWrap: contentStyle.overflowWrap,
+      wordBreak: contentStyle.wordBreak,
+      contentWritingMode: contentStyle.writingMode,
+      tooltipWritingMode: tooltipStyle.writingMode,
+      tooltipMaxWidth: tooltipStyle.maxWidth,
+      webkitLineClamp: contentStyle.webkitLineClamp,
+      webkitBoxOrient: contentStyle.webkitBoxOrient,
+    };
+  });
+}
+
 test.describe('Marker labelを使う地図メモ', () => {
   test('入力、操作案内、120文字制限、個人情報注意を表示する', async ({ page }) => {
     await openMap(page);
@@ -429,7 +456,7 @@ test.describe('Marker labelを使う地図メモ', () => {
     )).toEqual(['marker', 'circle']);
   });
 
-  test('PC表示で吹き出しが4行相当へ収まりtoolbarを隠さない', async ({ page }) => {
+  test('PC表示で日本語を横書き4行に制御し全文を保持する', async ({ page }) => {
     const consoleErrors = [];
     const pageErrors = [];
     page.on('console', (message) => {
@@ -439,12 +466,30 @@ test.describe('Marker labelを使う地図メモ', () => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await openMap(page);
     await waitForProjectManager(page);
-    await placeNote(page, '一行目\n二行目\n三行目\n四行目\n五行目', 0.5, 0.65);
+    const prefix =
+      '駅徒歩圏の候補\n交通量と騒音を現地確認\n架空条件を確認\n架空周辺を確認\n架空五行目';
+    const label = `${prefix}${'架'.repeat(120 - prefix.length)}`;
+    expect(label).toHaveLength(120);
+    await placeNote(page, label, 0.5, 0.65);
 
     const tooltipBox = await page.locator('.map-note-tooltip').boundingBox();
     const toolbarBox = await page.locator('.leaflet-pm-toolbar').first().boundingBox();
-    expect(tooltipBox.width).toBeLessThanOrEqual(240);
-    expect(tooltipBox.height).toBeLessThan(100);
+    const layout = await readNoteLayout(page);
+    expect(layout.textContent).toBe(label);
+    expect(await page.locator('#map-note-input').inputValue()).toBe(label);
+    expect((await markerFeatures(page))[0].properties.label).toBe(label);
+    expect(layout.contentWritingMode).toBe('horizontal-tb');
+    expect(layout.tooltipWritingMode).toBe('horizontal-tb');
+    expect(layout.whiteSpace).toBe('pre-wrap');
+    expect(layout.overflowWrap).toBe('anywhere');
+    expect(layout.wordBreak).toBe('normal');
+    expect(layout.webkitLineClamp).toBe('4');
+    expect(layout.webkitBoxOrient).toBe('vertical');
+    expect(layout.tooltipMaxWidth).toBe('220px');
+    expect(layout.tooltipWidth).toBeLessThanOrEqual(220);
+    expect(layout.contentWidth).toBeGreaterThan(layout.fontSize * 4);
+    expect(layout.contentHeight).toBeLessThanOrEqual(layout.lineHeight * 4 + 1);
+    expect(layout.contentScrollHeight).toBeGreaterThan(layout.contentHeight);
     expect(
       tooltipBox.x < toolbarBox.x + toolbarBox.width
       && tooltipBox.x + tooltipBox.width > toolbarBox.x
@@ -455,7 +500,7 @@ test.describe('Marker labelを使う地図メモ', () => {
     expect(pageErrors).toEqual([]);
   });
 
-  test('360px表示で入力と吹き出しが画面内に収まりerrorを出さない', async ({
+  test('360px表示で横書き吹き出しを170px以内に保ちerrorを出さない', async ({
     page,
   }) => {
     const consoleErrors = [];
@@ -472,12 +517,60 @@ test.describe('Marker labelを使う地図メモ', () => {
     const inputBox = await page.locator('#map-note-input').boundingBox();
     const actionsBox = await page.locator('.map-note-actions').boundingBox();
     const tooltipBox = await page.locator('.map-note-tooltip').boundingBox();
+    const layout = await readNoteLayout(page);
     expect(inputBox.x).toBeGreaterThanOrEqual(0);
     expect(inputBox.x + inputBox.width).toBeLessThanOrEqual(360);
     expect(actionsBox.x + actionsBox.width).toBeLessThanOrEqual(360);
-    expect(tooltipBox.width).toBeLessThanOrEqual(190);
+    expect(tooltipBox.x).toBeGreaterThanOrEqual(0);
+    expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(360);
+    expect(layout.contentWritingMode).toBe('horizontal-tb');
+    expect(layout.tooltipWritingMode).toBe('horizontal-tb');
+    expect(layout.tooltipMaxWidth).toBe('170px');
+    expect(layout.tooltipWidth).toBeLessThanOrEqual(170);
+    expect(layout.contentWidth).toBeGreaterThan(layout.fontSize * 4);
+    expect(layout.fontSize).toBeGreaterThanOrEqual(11);
     expect(consoleErrors).toEqual([]);
     expect(pageErrors).toEqual([]);
+  });
+
+  test('既存Marker labelも安全なDOMで横書き表示する', async ({ page }) => {
+    await openMap(page);
+    await waitForProjectManager(page);
+    const label = '既存Markerの架空メモ\n現地確認';
+    await page.evaluate((existingLabel) => {
+      MapCirclesAppState.replaceProjectState({
+        type: 'FeatureCollection',
+        features: [{
+          type: 'Feature',
+          id: [
+            '00000000',
+            '0000',
+            '4000',
+            '8000',
+            '000000000511',
+          ].join('-'),
+          geometry: { type: 'Point', coordinates: [136.88, 35.17] },
+          properties: {
+            schemaVersion: 1,
+            kind: 'marker',
+            label: existingLabel,
+          },
+        }],
+      }, {
+        center: { lat: 35.17, lng: 136.88 },
+        zoom: 13,
+      });
+    }, label);
+
+    await expect(page.locator('.map-note-content')).toHaveText(label);
+    await page.locator('.map-note-marker').click();
+    await expect(page.locator('#map-note-input')).toHaveValue(label);
+    const layout = await readNoteLayout(page);
+    expect(layout.textContent).toBe(label);
+    expect(layout.contentWritingMode).toBe('horizontal-tb');
+    expect(layout.contentWidth).toBeGreaterThan(layout.fontSize * 4);
+    expect((await markerFeatures(page))[0].properties.label).toBe(label);
+    await expect(page.locator('.map-note-content script')).toHaveCount(0);
   });
 
   test('Marker移動後もメモの常時表示と選択を維持する', async ({ page }) => {

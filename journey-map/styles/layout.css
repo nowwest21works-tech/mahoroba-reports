@@ -64,6 +64,8 @@
 
 /* 地図メモ */
 .leaflet-tooltip.map-note-tooltip {
+  box-sizing: border-box;
+  width: max-content;
   max-width: 220px;
   padding: 7px 9px;
   background: #fffdf7;
@@ -72,18 +74,23 @@
   color: var(--ink);
   box-shadow: 0 2px 8px rgba(0,0,0,0.18);
   white-space: normal;
+  writing-mode: horizontal-tb;
 }
 .leaflet-tooltip.map-note-tooltip::before {
   border-top-color: rgba(26, 26, 26, 0.35);
 }
 .map-note-content {
-  max-height: 5.8em;
+  display: -webkit-box;
   overflow: hidden;
   overflow-wrap: anywhere;
+  word-break: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
   font-size: 11px;
   font-weight: 500;
   line-height: 1.45;
   white-space: pre-wrap;
+  writing-mode: horizontal-tb;
 }
 .map-note-marker-selected {
   filter: drop-shadow(0 0 4px #c8443a);
