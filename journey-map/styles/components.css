@@ -1,14 +1,21 @@
 /* ========== 入力 ========== */
 .input-row { display: flex; gap: 6px; margin-bottom: 8px; }
-input[type="text"], input[type="number"], select {
+input[type="text"], input[type="number"], select, textarea {
   flex: 1; padding: 9px 12px;
   border: 1px solid var(--line);
   background: white; border-radius: 2px;
   font-family: inherit; font-size: 13px; color: var(--ink);
   transition: border-color 0.2s;
 }
-input[type="text"]:focus, input[type="number"]:focus, select:focus {
+input[type="text"]:focus, input[type="number"]:focus, select:focus, textarea:focus {
   outline: none; border-color: var(--accent);
+}
+textarea {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  resize: vertical;
+  line-height: 1.55;
 }
 button {
   padding: 9px 14px; border: 1px solid var(--ink);
@@ -77,6 +84,56 @@ button:disabled, select:disabled {
   line-height: 1.8;
 }
 .operation-guide strong { color: var(--ink); }
+
+/* ========== 地図メモ ========== */
+.map-note-label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 500;
+}
+.map-note-counter {
+  margin-top: 4px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  text-align: right;
+}
+.map-note-counter[data-kind="error"],
+.map-note-state[data-kind="error"] {
+  color: var(--accent);
+}
+.map-note-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+}
+#place-map-note[aria-pressed="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.map-note-guide,
+.map-note-privacy,
+.map-note-state {
+  font-size: 10px;
+  line-height: 1.65;
+}
+.map-note-guide {
+  margin-top: 9px;
+  color: var(--ink-soft);
+}
+.map-note-privacy {
+  margin-top: 7px;
+  padding: 8px 10px;
+  background: rgba(200, 68, 58, 0.08);
+  border-left: 2px solid var(--accent);
+  color: var(--ink-soft);
+}
+.map-note-state {
+  margin-top: 7px;
+  color: var(--ink-soft);
+}
 
 /* ========== プリセット半径 ========== */
 .preset-grid {

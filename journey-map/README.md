@@ -12,6 +12,7 @@
 ## 搭載機能
 
 - Marker、Circle、Line、Polygonの描画・編集・移動・削除
+- Markerの`label`を使う日本語の地図メモ配置・選択・更新
 - Leaflet-Geoman Free 2.20.0の日本語操作表示
 - GeoJSON FeatureCollectionとMemory Storeの同期、transaction失敗時のrollback
 - `household → journey → mapProject`のDomainモデル
@@ -21,6 +22,16 @@
 - viewportと4種類の図形の復元
 - `.mahoroba-map.json`形式のJSONバックアップ書出し／読込
 - 既存の地図クリック・住所検索によるCircle追加との互換
+
+## 地図メモ
+
+「地図メモ」へ120文字以内の短い日本語メモを入力し、「メモを地図に置く」を押してから地図上をクリックします。メモは既存のMarker Featureとして追加され、`properties.label`へ本文を保存します。新しいFeature kind、保存recordのtop-level field、IndexedDB schema、schemaVersionは追加しません。
+
+地図上のメモは常時表示されます。改行を保持し、最大4行程度・固定色の吹き出しに収めます。表示内容はDOMの`textContent`として扱い、HTML、script、style、linkを実行しません。
+
+メモをクリックすると選択状態になり、内容が入力欄へ戻ります。「選択中のメモを更新」で本文を変更できます。位置の変更はGeomanの「全体を移動」、削除は「削除する」を使用します。追加・更新・移動・削除は未保存変更として扱われます。
+
+メモはFeatureCollectionの一部として、保存、更新保存、reload後の読込、複製、JSON書出し／読込、rollbackへそのまま含まれます。既存のMarker FeatureとJSONバックアップも引き続き読み込めます。
 
 ## 非搭載機能
 
@@ -59,6 +70,8 @@
 ## 個人情報を入力しないルール
 
 実顧客情報は入力しないでください。顧客名、家族名、電話番号、メールアドレス、正確な自宅住所、勤務先、年収、借入情報は保存対象に追加していません。
+
+地図メモにも個人名、電話番号、正確な自宅住所、勤務先などを入力しないでください。
 
 次のような匿名情報だけを使います。
 

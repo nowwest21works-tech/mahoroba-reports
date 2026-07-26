@@ -62,6 +62,65 @@
 }
 .circle-label::before { display: none; }
 
+/* 地図メモ */
+.leaflet-tooltip.map-note-tooltip {
+  box-sizing: border-box;
+  width: max-content;
+  max-width: 220px;
+  padding: 7px 9px;
+  background: #fffdf7;
+  border: 1px solid rgba(26, 26, 26, 0.35);
+  border-radius: 3px;
+  color: var(--ink);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  white-space: normal;
+  writing-mode: horizontal-tb;
+}
+.leaflet-tooltip.map-note-tooltip::before {
+  border-top-color: rgba(26, 26, 26, 0.35);
+}
+.map-note-content {
+  display: -webkit-box;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.45;
+  white-space: pre-wrap;
+  writing-mode: horizontal-tb;
+}
+.map-note-marker-selected {
+  filter: drop-shadow(0 0 4px #c8443a);
+  outline: 3px solid rgba(200, 68, 58, 0.55);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+.map-note-pin {
+  display: grid;
+  place-items: center;
+  background: var(--ink);
+  border: 3px solid #fffdf7;
+  border-radius: 50% 50% 50% 0;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+  transform: rotate(-45deg);
+}
+.map-note-pin span {
+  width: 6px;
+  height: 6px;
+  background: var(--accent);
+  border-radius: 50%;
+}
+.map-note-tooltip-selected {
+  border-color: var(--accent) !important;
+  box-shadow: 0 2px 10px rgba(200, 68, 58, 0.35) !important;
+}
+#map.map-note-placement-active {
+  cursor: crosshair;
+}
+
 /* トグルボタン */
 #toggle-panel {
   position: absolute; top: 16px; left: 16px;
@@ -102,6 +161,7 @@
   #map { height: 50vh; }
   #panel.collapsed ~ #map-wrap { height: 100vh; }
   #panel.collapsed ~ #map-wrap #map { height: 100vh; }
+  .leaflet-tooltip.map-note-tooltip { max-width: 170px; }
 }
 
 .map-wrap { flex: 1; position: relative; }
