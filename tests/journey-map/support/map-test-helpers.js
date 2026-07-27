@@ -191,7 +191,18 @@ async function installNetworkSandbox(page, options = {}) {
     });
   });
 
-  if (options.urbanAreaFixture) {
+  if (options.urbanAreaFailure) {
+    await page.route(
+      `${APP_ORIGIN}${APP_PATH}data/urban-area-classification/aichi.geojson`,
+      (route) => {
+        audit.urbanAreaRequests.push(route.request().url());
+        return route.fulfill({
+          body: '',
+          status: options.urbanAreaFailure,
+        });
+      },
+    );
+  } else if (options.urbanAreaFixture) {
     await page.route(
       `${APP_ORIGIN}${APP_PATH}data/urban-area-classification/aichi.geojson`,
       (route) => {

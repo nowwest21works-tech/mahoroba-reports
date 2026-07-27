@@ -199,11 +199,6 @@
   background: rgba(88, 168, 121, 0.4);
   border: 1px dashed #28714f;
 }
-.legend-swatch.non-divided {
-  background: rgba(214, 169, 60, 0.42);
-  border: 1px dotted #8a671c;
-}
-
 /* スクロールバー */
 #panel::-webkit-scrollbar { width: 6px; }
 #panel::-webkit-scrollbar-track { background: var(--bg); }

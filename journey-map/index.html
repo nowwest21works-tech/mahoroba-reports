@@ -165,16 +165,17 @@
         aria-describedby="urban-area-classification-state urban-area-classification-caution"
       />
       <span class="urban-area-toggle-swatch" aria-hidden="true"></span>
-      <span class="urban-area-toggle-name">区域区分</span>
-      <span class="urban-area-toggle-tag">参考情報</span>
+      <span class="urban-area-toggle-name">市街化区域・市街化調整区域</span>
+      <span class="urban-area-toggle-tag">区域区分</span>
     </label>
     <div
       id="urban-area-classification-state"
       class="urban-area-state"
       aria-live="polite"
-    >区域区分レイヤー：OFF</div>
+    >市街化区域・市街化調整区域：OFF</div>
     <p id="urban-area-classification-caution" class="urban-area-caution">
       この表示は参考情報です。建築可否、開発許可、都市計画上の正式な区域は、各自治体の担当窓口で必ず確認してください。
+      非線引き都市計画区域および都市計画区域外は、このレイヤーでは判定・表示していません。
     </p>
     <p class="urban-area-source">
       出典：国土交通省 不動産情報ライブラリ「都市計画決定GISデータ（令和7年度）」XKT001を加工
@@ -259,13 +260,12 @@
   <aside
     id="urban-area-classification-legend"
     class="urban-area-legend"
-    aria-label="区域区分の凡例"
+    aria-label="市街化区域・市街化調整区域の凡例"
     hidden
   >
-    <div class="urban-area-legend-title">区域区分</div>
+    <div class="urban-area-legend-title">市街化区域・市街化調整区域</div>
     <div><span class="legend-swatch promotion"></span>市街化区域</div>
     <div><span class="legend-swatch control"></span>市街化調整区域</div>
-    <div><span class="legend-swatch non-divided"></span>非線引き都市計画区域</div>
   </aside>
   <div id="status"></div>
 </div>

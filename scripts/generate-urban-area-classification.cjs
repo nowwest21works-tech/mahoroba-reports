@@ -7,6 +7,7 @@ const {
   REFERENCE_YEAR,
   SOURCE_DATASET,
   SOURCE_NAME,
+  classificationCodeFrom,
   normalizeFeature,
 } = require('../journey-map/js/urban-area-classification-domain.js');
 
@@ -157,11 +158,15 @@ async function fetchTile(tile, apiKey) {
   if (!response.ok) {
     throw new Error(`XKT001 ${tile.z}/${tile.x}/${tile.y}: HTTP ${response.status}`);
   }
-  const collection = await response.json();
+  const responseText = await response.text();
+  const collection = JSON.parse(responseText);
   if (collection?.type !== 'FeatureCollection' || !Array.isArray(collection.features)) {
     throw new Error(`XKT001 ${tile.z}/${tile.x}/${tile.y}: GeoJSON形式が不正です`);
   }
-  return collection.features;
+  return {
+    features: collection.features,
+    bytes: Buffer.byteLength(responseText),
+  };
 }
 
 function featureSignature(feature) {
@@ -171,13 +176,24 @@ function featureSignature(feature) {
 async function generate(options, apiKey) {
   const tiles = tileRange(AICHI_BOUNDS, options.zoom);
   const uniqueFeatures = new Map();
+  const sourceClassificationCounts = new Map();
+  let sourcePayloadBytes = 0;
   for (let index = 0; index < tiles.length; index += 1) {
     const tile = tiles[index];
     process.stdout.write(`\rXKT001を取得中 ${index + 1}/${tiles.length}`);
-    const rawFeatures = await fetchTile(tile, apiKey);
+    const tileResult = await fetchTile(tile, apiKey);
+    sourcePayloadBytes += tileResult.bytes;
+    const rawFeatures = tileResult.features;
     for (const rawFeature of rawFeatures) {
       if (rawFeature?.properties?.prefecture !== '愛知県') continue;
       if (!['Polygon', 'MultiPolygon'].includes(rawFeature?.geometry?.type)) continue;
+      const sourceClassification =
+        String(rawFeature.properties.area_classification_ja || '').trim() ||
+        '(空欄)';
+      sourceClassificationCounts.set(
+        sourceClassification,
+        (sourceClassificationCounts.get(sourceClassification) || 0) + 1,
+      );
       const normalized = normalizeFeature(rawFeature, { referenceYear: REFERENCE_YEAR });
       normalized.geometry = simplifyGeometry(normalized.geometry, options.tolerance);
       uniqueFeatures.set(featureSignature(normalized), normalized);
@@ -187,6 +203,14 @@ async function generate(options, apiKey) {
     }
   }
   process.stdout.write('\n');
+
+  const classificationCounts = {};
+  for (const feature of uniqueFeatures.values()) {
+    const label = feature.properties.classificationLabel;
+    classificationCounts[label] = (classificationCounts[label] || 0) + 1;
+  }
+  const unknownSourceClassificationValues = [...sourceClassificationCounts.keys()]
+    .filter((classification) => classificationCodeFrom(classification) === 'unknown');
 
   const collection = {
     type: 'FeatureCollection',
@@ -201,6 +225,11 @@ async function generate(options, apiKey) {
       simplificationToleranceDegrees: options.tolerance,
       generatedAt: new Date().toISOString(),
       featureCount: uniqueFeatures.size,
+      sourcePayloadBytes,
+      classificationCounts,
+      sourceTileFeatureClassificationCounts:
+        Object.fromEntries(sourceClassificationCounts),
+      unknownSourceClassificationValues,
     },
     features: [...uniqueFeatures.values()],
   };
@@ -211,6 +240,7 @@ async function generate(options, apiKey) {
     tiles: tiles.length,
     features: uniqueFeatures.size,
     bytes: Buffer.byteLength(JSON.stringify(collection)),
+    sourcePayloadBytes,
   };
 }
 
@@ -225,6 +255,7 @@ async function main() {
   console.log(`生成先: ${result.output}`);
   console.log(`取得タイル: ${result.tiles}`);
   console.log(`Feature数: ${result.features}`);
+  console.log(`元API応答容量: ${result.sourcePayloadBytes} bytes`);
   console.log(`生成容量: ${result.bytes} bytes`);
 }
 

@@ -101,6 +101,9 @@
             interactive: true,
             bubblingMouseEvents: false,
             pmIgnore: true,
+            filter: (feature) => domain.isDisplayClassification(
+              feature.properties.classificationCode,
+            ),
             style: (feature) => domain.styleFor(feature.properties.classificationCode),
             onEachFeature,
           });
@@ -119,7 +122,7 @@
     if (!enabled) {
       if (layer && map.hasLayer(layer)) map.removeLayer(layer);
       legend.hidden = true;
-      setState('区域区分レイヤー：OFF');
+      setState('市街化区域・市街化調整区域：OFF');
       toggle.disabled = false;
       return;
     }
@@ -131,8 +134,11 @@
       loadedLayer.addTo(map);
       loadedLayer.bringToBack();
       legend.hidden = false;
-      setState(`区域区分レイヤー：ON（${loadedLayer.getLayers().length}区画）`, 'success');
-      showStatus('区域区分レイヤー：ON');
+      setState(
+        `市街化区域・市街化調整区域：ON（${loadedLayer.getLayers().length}区画）`,
+        'success',
+      );
+      showStatus('市街化区域・市街化調整区域：ON');
     } catch (error) {
       toggle.checked = false;
       legend.hidden = true;

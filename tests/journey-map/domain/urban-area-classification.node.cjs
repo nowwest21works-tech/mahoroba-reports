@@ -2,8 +2,10 @@ const assert = require('node:assert/strict');
 const test = require('node:test');
 const {
   CLASSIFICATIONS,
+  DISPLAY_CLASSIFICATION_CODES,
   classificationCodeFrom,
   formatReferenceYear,
+  isDisplayClassification,
   normalizeFeature,
   normalizeProperties,
   styleFor,
@@ -42,20 +44,25 @@ test('XKT001属性をUI用の正規化modelへ変換する', () => {
   });
 });
 
-test('区域区分を安定した分類codeへ変換し未知値をunknownにする', () => {
+test('表示対象と都市計画区域を安定した分類codeへ変換し、それ以外をunknownにする', () => {
   assert.equal(classificationCodeFrom('市街化区域'), 'urbanization-promotion-area');
   assert.equal(classificationCodeFrom('市街化調整区域'), 'urbanization-control-area');
-  assert.equal(
-    classificationCodeFrom('非線引き都市計画区域'),
-    'non-divided-city-planning-area',
-  );
-  assert.equal(
-    classificationCodeFrom('都市計画区域外'),
-    'outside-city-planning-area',
-  );
-  assert.equal(classificationCodeFrom('都市計画区域'), 'unknown');
+  assert.equal(classificationCodeFrom('都市計画区域'), 'city-planning-area');
+  assert.equal(classificationCodeFrom('非線引き都市計画区域'), 'unknown');
+  assert.equal(classificationCodeFrom('都市計画区域外'), 'unknown');
   assert.equal(classificationCodeFrom('想定外'), 'unknown');
   assert.equal(classificationCodeFrom(undefined), 'unknown');
+});
+
+test('塗りつぶし表示は市街化区域と市街化調整区域だけを対象にする', () => {
+  assert.deepEqual(DISPLAY_CLASSIFICATION_CODES, [
+    'urbanization-promotion-area',
+    'urbanization-control-area',
+  ]);
+  assert.equal(isDisplayClassification('urbanization-promotion-area'), true);
+  assert.equal(isDisplayClassification('urbanization-control-area'), true);
+  assert.equal(isDisplayClassification('city-planning-area'), false);
+  assert.equal(isDisplayClassification('unknown'), false);
 });
 
 test('欠損属性をundefined文字列にせず項目自体を省略する', () => {
@@ -91,14 +98,16 @@ test('Polygonだけを複製して正規化し元Featureを変更しない', () 
   );
 });
 
-test('分類ごとのstyleが色・境界線・透明度を返す', () => {
-  for (const code of Object.keys(CLASSIFICATIONS)) {
+test('表示対象分類のstyleが色・境界線・透明度を返す', () => {
+  for (const code of DISPLAY_CLASSIFICATION_CODES) {
     const style = styleFor(code);
     assert.match(style.color, /^#[0-9a-f]{6}$/i);
     assert.match(style.fillColor, /^#[0-9a-f]{6}$/i);
     assert.ok(style.fillOpacity >= 0.1 && style.fillOpacity <= 0.3);
     assert.ok(style.weight >= 1);
   }
+  assert.equal(styleFor('city-planning-area').fillOpacity, 0);
+  assert.equal(styleFor('city-planning-area').weight, 0);
   assert.equal(styleFor('unknown-value').fillColor, CLASSIFICATIONS.unknown.fillColor);
 });
 

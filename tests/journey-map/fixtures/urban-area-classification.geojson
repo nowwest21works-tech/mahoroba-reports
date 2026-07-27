@@ -54,8 +54,8 @@
       "properties": {
         "schemaVersion": 1,
         "layerType": "urban-area-classification",
-        "classificationCode": "non-divided-city-planning-area",
-        "classificationLabel": "非線引き都市計画区域",
+        "classificationCode": "city-planning-area",
+        "classificationLabel": "都市計画区域",
         "prefectureName": "愛知県",
         "municipalityName": "架空北市",
         "referenceYear": 2025,

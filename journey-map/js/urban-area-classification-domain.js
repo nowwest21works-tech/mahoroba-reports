@@ -9,6 +9,10 @@
   const SOURCE_DATASET = 'XKT001';
   const SOURCE_NAME = '国土交通省 不動産情報ライブラリ';
   const REFERENCE_YEAR = 2025;
+  const DISPLAY_CLASSIFICATION_CODES = Object.freeze([
+    'urbanization-promotion-area',
+    'urbanization-control-area',
+  ]);
 
   const CLASSIFICATIONS = Object.freeze({
     'urbanization-promotion-area': Object.freeze({
@@ -27,21 +31,13 @@
       weight: 1.5,
       dashArray: '6 4',
     }),
-    'non-divided-city-planning-area': Object.freeze({
-      label: '非線引き都市計画区域',
-      color: '#8a671c',
-      fillColor: '#d6a93c',
-      fillOpacity: 0.24,
-      weight: 1.4,
-      dashArray: '2 4',
-    }),
-    'outside-city-planning-area': Object.freeze({
-      label: '都市計画区域外',
-      color: '#66645f',
-      fillColor: '#a7a49c',
-      fillOpacity: 0.18,
-      weight: 1.2,
-      dashArray: '1 5',
+    'city-planning-area': Object.freeze({
+      label: '都市計画区域',
+      color: '#77736c',
+      fillColor: '#aaa69e',
+      fillOpacity: 0,
+      weight: 0,
+      dashArray: null,
     }),
     unknown: Object.freeze({
       label: '未確認',
@@ -74,11 +70,12 @@
     const normalized = cleanText(value)?.replace(/\s+/g, '') || '';
     if (/市街化調整区域/.test(normalized)) return 'urbanization-control-area';
     if (/市街化区域/.test(normalized)) return 'urbanization-promotion-area';
-    if (/(?:非|未)線引き(?:都市計画)?区域/.test(normalized)) {
-      return 'non-divided-city-planning-area';
-    }
-    if (/都市計画区域外/.test(normalized)) return 'outside-city-planning-area';
+    if (normalized === '都市計画区域') return 'city-planning-area';
     return 'unknown';
+  }
+
+  function isDisplayClassification(classificationCode) {
+    return DISPLAY_CLASSIFICATION_CODES.includes(classificationCode);
   }
 
   function firstText(source, fields) {
@@ -169,12 +166,14 @@
 
   return Object.freeze({
     CLASSIFICATIONS,
+    DISPLAY_CLASSIFICATION_CODES,
     LAYER_TYPE,
     REFERENCE_YEAR,
     SOURCE_DATASET,
     SOURCE_NAME,
     classificationCodeFrom,
     formatReferenceYear,
+    isDisplayClassification,
     normalizeFeature,
     normalizeProperties,
     styleFor,

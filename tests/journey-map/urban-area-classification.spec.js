@@ -26,12 +26,19 @@ test.describe('区域区分レイヤー', () => {
 
     await toggle.check();
     await expect(page.locator('#urban-area-classification-state'))
-      .toHaveText('区域区分レイヤー：ON（3区画）');
+      .toHaveText('市街化区域・市街化調整区域：ON（2区画）');
     await expect(legend).toBeVisible();
     await expect(legend).toContainText('市街化区域');
     await expect(legend).toContainText('市街化調整区域');
-    await expect(legend).toContainText('非線引き都市計画区域');
-    await expect(page.locator('.leaflet-urban-area-classification-pane path')).toHaveCount(3);
+    await expect(legend).not.toContainText('非線引き都市計画区域');
+    await expect(page.locator('.leaflet-urban-area-classification-pane path')).toHaveCount(2);
+    const renderedClassifications = await page.evaluate(() =>
+      UrbanAreaClassificationLayer.getLayer().getLayers()
+        .map((item) => item.feature.properties.classificationCode));
+    expect(renderedClassifications).toEqual([
+      'urbanization-promotion-area',
+      'urbanization-control-area',
+    ]);
     expect(audit.urbanAreaRequests).toHaveLength(1);
 
     const styles = await page.locator('.leaflet-urban-area-classification-pane path')
@@ -41,7 +48,7 @@ test.describe('区域区分レイヤー', () => {
         stroke: path.getAttribute('stroke'),
         dashArray: path.getAttribute('stroke-dasharray'),
       })));
-    expect(new Set(styles.map((style) => style.fill)).size).toBe(3);
+    expect(new Set(styles.map((style) => style.fill)).size).toBe(2);
     expect(styles.every((style) => Number(style.fillOpacity) <= 0.3)).toBe(true);
     expect(styles.some((style) => style.dashArray)).toBe(true);
 
@@ -53,7 +60,7 @@ test.describe('区域区分レイヤー', () => {
   test('polygon選択で日本語属性を安全に表示し地図clickへ伝播しない', async ({ page }) => {
     await openMap(page, { urbanAreaFixture: DATA_FIXTURE });
     await page.locator('#urban-area-classification-toggle').check();
-    await expect(page.locator('.leaflet-urban-area-classification-pane path')).toHaveCount(3);
+    await expect(page.locator('.leaflet-urban-area-classification-pane path')).toHaveCount(2);
     const before = await getMapState(page);
 
     await page.locator(
@@ -96,7 +103,7 @@ test.describe('区域区分レイヤー', () => {
   });
 
   test('製品GeoJSON未配置時はdummy表示せず安全にOFFへ戻る', async ({ page }) => {
-    await openMap(page);
+    await openMap(page, { urbanAreaFailure: 404 });
     const toggle = page.locator('#urban-area-classification-toggle');
     await toggle.check();
     await expect(toggle).not.toBeChecked();
