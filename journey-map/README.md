@@ -21,6 +21,8 @@
 - 保存済み地図の一覧表示、読込、更新保存、複製
 - viewportと4種類の図形の復元
 - `.mahoroba-map.json`形式のJSONバックアップ書出し／読込
+- 現在の地図表示をそのまま保存するPNG画像書き出し
+- A4横1ページの印刷用画面から行うPDF保存
 - 既存の地図クリック・住所検索によるCircle追加との互換
 
 ## 地図メモ
@@ -37,7 +39,6 @@
 
 - 保存済み地図の削除
 - 自動保存
-- PDF／PNG出力
 - undo／redo
 - 認証、backend、クラウドdatabase、共有URL
 - localStorage、sessionStorage
@@ -92,6 +93,26 @@ HH-001_土地探し第1回_通勤圏・優先エリア整理.mahoroba-map.json
 読込時はschemaVersion、必須項目、UUID、canonical timestamp、FeatureCollection、Feature IDの重複、kindとgeometry typeの整合、unknown fieldを検証します。不正なファイルは拒否し、現在表示中の地図を変更しません。
 
 同じ`projectId`のバックアップを読み込むと、そのIDの保存recordを復元します。
+
+## PNG画像・PDF保存
+
+顧客・案件の地図にある「PNG画像を保存」は、クリック時点の地図の表示範囲とzoomを画像化します。OpenStreetMap、表示中のハザードタイル、Circle、Line、Polygon、Markerの地図メモ、地図内の出典を含みます。サイドパネル、zoom・Geoman操作ボタン、編集頂点、選択中表示、画面ステータスは画像へ含めません。
+
+PNGのファイル名は次の形式です。Windowsで使えない記号、連続する空白、長すぎる入力は書き出し時だけ安全な形へ整えます。入力値や保存recordは変更しません。
+
+```text
+mahoroba-map_<顧客コード>_<案件名>_<地図名>_<YYYYMMDD-HHmm>.png
+```
+
+「PDFとして保存」は新しい印刷用画面を開きます。現在の地図画像、匿名メタデータ、図形件数、表示中のハザード名、現地確認の注意、出典をA4横1ページ向けに構成します。ブラウザの印刷画面で保存先に「PDFに保存」を選択してください。アプリがPDFファイルを直接生成する方式ではありません。
+
+地図のcanvas化には固定versionの`html2canvas 1.4.1`（MIT License）を使用します。ブラウザ内だけで画像を生成し、画像や入力値をserverへ送信しません。メモとmetadataは引き続きDOMの`textContent`で扱い、HTMLやscriptとして実行しません。
+
+外部タイルはCORSを許可した画像として読み込みます。表示領域内の地図・ハザードタイルが未読込、通信失敗、提供元に存在しない場合は、欠けた画像を成功扱いで保存せずエラーを表示します。通信状態や表示位置を確認して再実行してください。外部タイル提供元の仕様変更、ブラウザのcanvas・印刷実装、端末のメモリ上限によって書き出せない場合があります。大きな画面では画像の総pixel数を制限し、ブラウザの過度なメモリ消費を防ぎます。
+
+Chrome／Edgeの現行版を主な確認対象とします。GitHub Pagesのrepository subpathで動くよう、追加した製品assetは相対パスで参照します。公開ページでもタイルの読込完了後に実行してください。PNG／PDF操作はFeatureCollection、IndexedDB schema、schemaVersion、保存済みJSONを変更しません。
+
+実顧客情報を入力しないルールは書き出し時も同じです。出力ファイルには画面上の地図、メモ、入力中の匿名メタデータが含まれるため、保管場所と共有相手を確認し、不要になったファイルは利用者自身で安全に削除してください。
 
 ## ローカル起動
 

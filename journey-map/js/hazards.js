@@ -34,6 +34,8 @@ function toggleHazard(key, enabled) {
         maxZoom: cfg.maxZoom,
         minZoom: cfg.minZoom,
         opacity: hazardOpacity,
+        crossOrigin: true,
+        exportRole: 'hazard',
         pmIgnore: true,
       });
     }

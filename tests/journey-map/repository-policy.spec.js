@@ -17,6 +17,8 @@ const GEOMAN_BASE =
   `https://unpkg.com/@geoman-io/leaflet-geoman-free@${GEOMAN_VERSION}/dist`;
 const LEAFLET_BASE =
   'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4';
+const HTML2CANVAS_URL =
+  'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
 const EXPECTED_STYLESHEETS = [
   './styles/tokens.css',
   './styles/layout.css',
@@ -37,6 +39,7 @@ const EXPECTED_SCRIPTS = [
   './js/geometry-editor.js',
   './js/map-notes.js',
   './js/project-manager.js',
+  './js/map-export.js',
   './js/app.js',
 ];
 const baseline = JSON.parse(
@@ -108,6 +111,7 @@ test.describe('GitHub Pages互換と製品source固定', () => {
     expect(scripts).toEqual([
       `${LEAFLET_BASE}/leaflet.min.js`,
       `${GEOMAN_BASE}/leaflet-geoman.js`,
+      HTML2CANVAS_URL,
       ...EXPECTED_SCRIPTS,
     ]);
   });
@@ -132,6 +136,19 @@ test.describe('GitHub Pages互換と製品source固定', () => {
     expect(source).not.toMatch(
       /@geoman-io\/leaflet-geoman-free\/dist\/leaflet-geoman/,
     );
+  });
+
+  test('html2canvasはjourney-mapだけで固定versionとCORS属性を使用する', () => {
+    const source = fs.readFileSync(INDEX_PATH, 'utf8');
+    const mapCirclesSource = fs.readFileSync(
+      path.join(REPOSITORY_ROOT, 'map-circles', 'index.html'),
+      'utf8',
+    );
+
+    expect(source).toContain(`src="${HTML2CANVAS_URL}"`);
+    expect(source).toContain('crossorigin="anonymous"');
+    expect(source).not.toMatch(/html2canvas(?:@|\/)(?:latest|next)/i);
+    expect(mapCirclesSource).not.toContain('html2canvas');
   });
 
   test('Pages配下の製品assetが200で読み込まれ、初期表示にconsole errorがない', async ({ page }) => {

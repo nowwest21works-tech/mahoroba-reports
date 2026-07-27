@@ -69,6 +69,27 @@ button:disabled, select:disabled {
 }
 .project-state[data-kind="dirty"] { color: #8a5c00; }
 .project-state[data-kind="error"] { color: var(--accent); }
+.map-export {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.map-export-heading {
+  color: var(--ink);
+  font-family: 'Shippori Mincho', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.map-export-help,
+.map-export-state {
+  margin-top: 7px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  line-height: 1.55;
+}
+.map-export-state[data-kind="success"] { color: #2f6b49; }
+.map-export-state[data-kind="error"] { color: var(--accent); }
 .privacy-note {
   margin-top: 10px;
   padding: 9px 10px;

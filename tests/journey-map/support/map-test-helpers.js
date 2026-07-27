@@ -17,6 +17,7 @@ const GEOMAN_CSS = require.resolve(
 async function installNetworkSandbox(page, options = {}) {
   const audit = {
     geomanRequests: [],
+    html2canvasRequests: [],
     nominatimRequests: [],
     tileRequests: [],
     unexpectedExternal: [],
@@ -45,6 +46,69 @@ async function installNetworkSandbox(page, options = {}) {
       contentType: 'text/css; charset=utf-8',
       path: LEAFLET_CSS,
     }),
+  );
+
+  await page.route(
+    'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js',
+    (route) => {
+      audit.html2canvasRequests.push(route.request().url());
+      return route.fulfill({
+        contentType: 'text/javascript; charset=utf-8',
+        body: `
+          window.__html2canvasCalls = [];
+          window.html2canvas = async (element, options = {}) => {
+            const mapRect = element.getBoundingClientRect();
+            window.__html2canvasCalls.push({
+              attributionVisibility: getComputedStyle(
+                element.querySelector('.leaflet-control-attribution')
+              ).visibility,
+              bounds: map.getBounds().toBBoxString(),
+              controlVisibility: getComputedStyle(
+                element.querySelector('.leaflet-control-zoom')
+              ).visibility,
+              elementId: element.id,
+              options: {
+                allowTaint: options.allowTaint,
+                backgroundColor: options.backgroundColor,
+                logging: options.logging,
+                scale: options.scale,
+                useCORS: options.useCORS,
+              },
+              featureKinds: MapCirclesAppState.captureProjectState()
+                .featureCollection.features.map((feature) => feature.properties.kind),
+              noteTexts: Array.from(
+                element.querySelectorAll('.map-note-content'),
+                (note) => note.textContent,
+              ),
+              statusVisibility: getComputedStyle(
+                document.querySelector('#status')
+              ).visibility,
+              zoom: map.getZoom(),
+            });
+            if (window.__html2canvasFailure) {
+              throw new Error(window.__html2canvasFailure);
+            }
+            if (window.__html2canvasDeferred) {
+              await new Promise((resolve) => {
+                window.__resolveHtml2canvas = resolve;
+              });
+            }
+            const canvas = document.createElement('canvas');
+            const scale = options.scale || 1;
+            canvas.width = Math.max(1, Math.round(mapRect.width * scale));
+            canvas.height = Math.max(1, Math.round(mapRect.height * scale));
+            const context = canvas.getContext('2d');
+            context.fillStyle = options.backgroundColor || '#ffffff';
+            context.fillRect(0, 0, canvas.width, canvas.height);
+            context.fillStyle = '#1a1a1a';
+            context.font = '20px sans-serif';
+            context.fillText('まほろば顧客条件マップ', 20, 36);
+            return canvas;
+          };
+        `,
+        status: 200,
+      });
+    },
   );
 
   await page.route(
@@ -87,6 +151,7 @@ async function installNetworkSandbox(page, options = {}) {
 
   await page.route(/https:\/\/[^/]+\.tile\.openstreetmap\.org\/.*/, (route) => {
     audit.tileRequests.push(route.request().url());
+    if (options.tileFailure) return route.abort('failed');
     return route.fulfill({
       body: TRANSPARENT_TILE,
       contentType: 'image/svg+xml',
@@ -96,9 +161,17 @@ async function installNetworkSandbox(page, options = {}) {
 
   await page.route('https://disaportaldata.gsi.go.jp/**', (route) => {
     audit.tileRequests.push(route.request().url());
+    if (options.hazardFailure) {
+      return route.fulfill({
+        body: '',
+        headers: { 'Access-Control-Allow-Origin': '*' },
+        status: 404,
+      });
+    }
     return route.fulfill({
       body: TRANSPARENT_TILE,
       contentType: 'image/svg+xml',
+      headers: { 'Access-Control-Allow-Origin': '*' },
       status: 200,
     });
   });

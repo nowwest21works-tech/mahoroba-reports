@@ -55,6 +55,19 @@
         hidden
       />
     </div>
+    <div class="map-export">
+      <div class="map-export-heading">表示中の地図を書き出す</div>
+      <div class="project-actions">
+        <button id="export-map-png" type="button">PNG画像を保存</button>
+        <button id="export-map-pdf" type="button" class="ghost">PDFとして保存</button>
+      </div>
+      <p class="map-export-help">
+        現在の表示範囲を画像化します。PDFは印刷画面で「PDFに保存」を選択してください。
+      </p>
+      <div id="map-export-state" class="map-export-state" aria-live="polite">
+        書き出しの準備ができています
+      </div>
+    </div>
     <div id="project-state" class="project-state" aria-live="polite">保存状態を確認中</div>
     <div class="privacy-note">
       実顧客情報は入力しないでください。顧客名、連絡先、正確な自宅住所、勤務先、収入・借入情報は保存対象外です。
@@ -219,6 +232,12 @@
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
 <script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.js" defer></script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+  defer
+></script>
 <script src="./js/config.js" defer></script>
 <script src="./js/domain.js" defer></script>
 <script src="./js/memory-store.js" defer></script>
@@ -233,6 +252,7 @@
 <script src="./js/geometry-editor.js" defer></script>
 <script src="./js/map-notes.js" defer></script>
 <script src="./js/project-manager.js" defer></script>
+<script src="./js/map-export.js" defer></script>
 <script src="./js/app.js" defer></script>
 </body>
 </html>
