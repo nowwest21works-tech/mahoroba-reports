@@ -20,6 +20,7 @@ async function installNetworkSandbox(page, options = {}) {
     html2canvasRequests: [],
     nominatimRequests: [],
     tileRequests: [],
+    urbanAreaRequests: [],
     unexpectedExternal: [],
   };
 
@@ -189,6 +190,20 @@ async function installNetworkSandbox(page, options = {}) {
       status: response.status,
     });
   });
+
+  if (options.urbanAreaFixture) {
+    await page.route(
+      `${APP_ORIGIN}${APP_PATH}data/urban-area-classification/aichi.geojson`,
+      (route) => {
+        audit.urbanAreaRequests.push(route.request().url());
+        return route.fulfill({
+          contentType: 'application/geo+json; charset=utf-8',
+          path: options.urbanAreaFixture,
+          status: 200,
+        });
+      },
+    );
+  }
 
   return audit;
 }
