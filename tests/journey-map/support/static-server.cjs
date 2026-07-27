@@ -9,6 +9,7 @@ const REPOSITORY_ROOT = path.resolve(__dirname, '..', '..', '..');
 
 const MIME_TYPES = {
   '.css': 'text/css; charset=utf-8',
+  '.geojson': 'application/geo+json; charset=utf-8',
   '.html': 'text/html; charset=utf-8',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
@@ -36,12 +37,10 @@ const server = http.createServer((request, response) => {
     return;
   }
 
-  if (!pathname.startsWith(PREFIX)) {
-    send(response, 404, 'Not found');
-    return;
-  }
-
-  let relativePath = pathname.slice(PREFIX.length);
+  const relativePathname = pathname.startsWith(PREFIX)
+    ? pathname.slice(PREFIX.length)
+    : pathname.replace(/^\/+/, '');
+  let relativePath = relativePathname;
   if (relativePath.endsWith('/')) {
     relativePath += 'index.html';
   }

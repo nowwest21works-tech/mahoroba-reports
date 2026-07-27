@@ -23,6 +23,7 @@
 - `.mahoroba-map.json`形式のJSONバックアップ書出し／読込
 - 現在の地図表示をそのまま保存するPNG画像書き出し
 - A4横1ページの印刷用画面から行うPDF保存
+- 愛知県の市街化区域・市街化調整区域を静的GeoJSONから遅延読込する参照レイヤー
 - 既存の地図クリック・住所検索によるCircle追加との互換
 
 ## 地図メモ
@@ -114,9 +115,34 @@ Chrome／Edgeの現行版を主な確認対象とします。GitHub Pagesのrepo
 
 実顧客情報を入力しないルールは書き出し時も同じです。出力ファイルには画面上の地図、メモ、入力中の匿名メタデータが含まれるため、保管場所と共有相手を確認し、不要になったファイルは利用者自身で安全に削除してください。
 
+## 市街化区域・市街化調整区域レイヤー
+
+「都市計画情報を重ねる」の「市街化区域・市街化調整区域」をONにすると、愛知県の2分類だけを表示します。初期状態はOFFです。表示対象ポリゴンはベースマップより上、利用者が作成したMarker、Circle、Line、Polygonより下の専用paneへ描画します。区域クリックは地図クリックへ伝播せず、意図しないCircleを追加しません。
+
+- 市街化区域：ピンク系、実線境界
+- 市街化調整区域：緑系、破線境界
+
+XKT001の `都市計画区域` は上位の親ポリゴンとして `city-planning-area` に正規化し、GeoJSONには保持しますが、Leafletの塗りつぶし、境界線、popup、クリック判定、凡例へ追加しません。
+
+ON時だけ地図右下へ2分類の凡例を表示します。表示対象区域をクリックまたはタップすると、取得できる範囲で区域区分、都市計画区域名、市区町村、基準年度、出典を表示します。欠損項目は`undefined`や`null`として表示せず、項目自体を省略します。
+
+製品画面は国交省APIを直接呼びません。開発環境でXKT001を取得・正規化し、次の静的GeoJSONを配信します。
+
+```text
+journey-map/data/urban-area-classification/aichi.geojson
+```
+
+生成手順、properties schema、簡略化、出典と利用上の制約は[data/urban-area-classification/README.md](./data/urban-area-classification/README.md)を参照してください。GeoJSONが未配置・不正・取得不能の場合は、レイヤーを安全にOFFへ戻し、既存の地図操作を継続します。
+
+この表示は参考情報です。建築可否、開発許可、都市計画上の正式な区域は、各自治体の担当窓口で必ず確認してください。非線引き都市計画区域および都市計画区域外は、このレイヤーでは判定・表示していません。無色部分は都市計画区域外または非線引き区域を意味せず、データ未収録の可能性もあります。
+
+非線引き都市計画区域は `都市計画区域` から表示対象2分類を差し引いて推定しません。公式の属性定義または別データで確実に判定できる方法を調査する後続課題です。
+
 ## ローカル起動
 
-repository rootでHTTP serverを起動します。
+repository rootでHTTP serverを起動します。`journey-map/index.html`をダブルクリックして
+`file://`で直接開かないでください。ブラウザの制約により、同じフォルダにあるGeoJSONでも
+`fetch()`に失敗します。
 
 ```powershell
 python -m http.server 8000 --bind 127.0.0.1
@@ -126,6 +152,20 @@ python -m http.server 8000 --bind 127.0.0.1
 
 ```text
 http://127.0.0.1:8000/journey-map/
+```
+
+このURLから開けば、GeoJSONは次のURLで200応答として配信されます。
+
+```text
+http://127.0.0.1:8000/journey-map/data/urban-area-classification/aichi.geojson
+```
+
+生成済みの`journey-map/data/urban-area-classification/aichi.geojson`がある場合、レビュー前の
+再生成は不要です。ファイルがない場合、または国交省の元データから更新する場合だけ、
+`REINFOLIB_API_KEY`を環境変数へ設定したターミナルでrepository rootから次を実行します。
+
+```powershell
+npm.cmd run data:urban-area
 ```
 
 公開予定URL:

@@ -1,0 +1,67 @@
+{
+  "type": "FeatureCollection",
+  "name": "test-only-urban-area-classification",
+  "metadata": {
+    "fixtureOnly": true,
+    "referenceYear": 2025,
+    "sourceDataset": "XKT001"
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[136.875, 35.166], [136.883, 35.166], [136.883, 35.174], [136.875, 35.174], [136.875, 35.166]]]
+      },
+      "properties": {
+        "schemaVersion": 1,
+        "layerType": "urban-area-classification",
+        "classificationCode": "urbanization-promotion-area",
+        "classificationLabel": "市街化区域",
+        "planningAreaName": "架空中央都市計画区域",
+        "prefectureName": "愛知県",
+        "municipalityName": "架空中央市",
+        "referenceYear": 2025,
+        "sourceName": "国土交通省 不動産情報ライブラリ",
+        "sourceDataset": "XKT001"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[136.884, 35.166], [136.892, 35.166], [136.892, 35.174], [136.884, 35.174], [136.884, 35.166]]]
+      },
+      "properties": {
+        "schemaVersion": 1,
+        "layerType": "urban-area-classification",
+        "classificationCode": "urbanization-control-area",
+        "classificationLabel": "市街化調整区域",
+        "planningAreaName": "架空中央都市計画区域",
+        "prefectureName": "愛知県",
+        "municipalityName": "架空中央市",
+        "referenceYear": 2025,
+        "sourceName": "国土交通省 不動産情報ライブラリ",
+        "sourceDataset": "XKT001"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[[136.875, 35.175], [136.883, 35.175], [136.883, 35.183], [136.875, 35.183], [136.875, 35.175]]]
+      },
+      "properties": {
+        "schemaVersion": 1,
+        "layerType": "urban-area-classification",
+        "classificationCode": "city-planning-area",
+        "classificationLabel": "都市計画区域",
+        "prefectureName": "愛知県",
+        "municipalityName": "架空北市",
+        "referenceYear": 2025,
+        "sourceName": "国土交通省 不動産情報ライブラリ",
+        "sourceDataset": "XKT001"
+      }
+    }
+  ]
+}

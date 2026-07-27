@@ -273,3 +273,96 @@ button:disabled, select:disabled {
   font-size: 11px; font-family: 'Shippori Mincho', serif;
   width: 32px; text-align: right;
 }
+
+/* ========== 区域区分 ========== */
+.urban-area-toggle-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  cursor: pointer;
+  font-size: 12px;
+}
+.urban-area-toggle-row:hover { border-color: var(--ink); }
+.urban-area-toggle-row input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+.urban-area-toggle-swatch {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 1px dashed #28714f;
+  background: linear-gradient(
+    135deg,
+    rgba(232, 93, 131, 0.35) 0 50%,
+    rgba(88, 168, 121, 0.35) 50% 100%
+  );
+}
+.urban-area-toggle-name {
+  flex: 1;
+  font-weight: 500;
+}
+.urban-area-toggle-tag {
+  color: var(--ink-soft);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+.urban-area-state,
+.urban-area-caution,
+.urban-area-source,
+.urban-area-api-credit {
+  margin-top: 8px;
+  font-size: 10px;
+  line-height: 1.65;
+}
+.urban-area-state { color: var(--ink-soft); }
+.urban-area-state[data-kind="loading"] { color: #8a671c; }
+.urban-area-state[data-kind="success"] { color: #28714f; }
+.urban-area-state[data-kind="error"] { color: var(--accent); }
+.urban-area-caution {
+  padding: 8px 10px;
+  background: rgba(200, 68, 58, 0.08);
+  border-left: 2px solid var(--accent);
+  color: var(--ink);
+}
+.urban-area-source,
+.urban-area-api-credit { color: var(--ink-soft); }
+
+.urban-area-popup {
+  min-width: 220px;
+  color: var(--ink);
+  font-family: 'Noto Sans JP', sans-serif;
+}
+.urban-area-popup-title {
+  color: var(--ink-soft);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+}
+.urban-area-popup-classification {
+  margin: 2px 0 10px;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 16px;
+  font-weight: 700;
+}
+.urban-area-popup-row {
+  display: grid;
+  grid-template-columns: 90px minmax(0, 1fr);
+  gap: 8px;
+  padding: 5px 0;
+  border-top: 1px solid var(--line);
+  font-size: 11px;
+}
+.urban-area-popup-label { color: var(--ink-soft); }
+.urban-area-popup-value { overflow-wrap: anywhere; }
+.urban-area-popup-caution {
+  margin: 9px 0 0;
+  color: var(--accent);
+  font-size: 10px;
+  line-height: 1.55;
+}

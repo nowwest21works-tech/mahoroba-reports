@@ -160,6 +160,45 @@
 }
 #status.show { opacity: 1; }
 
+/* 区域区分の凡例 */
+.urban-area-legend {
+  position: absolute;
+  right: 16px;
+  bottom: 72px;
+  z-index: 800;
+  width: min(220px, calc(100% - 32px));
+  padding: 10px 12px;
+  background: rgba(250, 250, 247, 0.94);
+  border: 1px solid var(--line);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  color: var(--ink);
+  font-size: 10px;
+  line-height: 1.8;
+  pointer-events: none;
+}
+.urban-area-legend[hidden] { display: none; }
+.urban-area-legend-title {
+  margin-bottom: 3px;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.legend-swatch {
+  display: inline-block;
+  width: 14px;
+  height: 10px;
+  margin-right: 7px;
+  vertical-align: -1px;
+}
+.legend-swatch.promotion {
+  background: rgba(232, 93, 131, 0.45);
+  border: 1px solid #b8325a;
+}
+.legend-swatch.control {
+  background: rgba(88, 168, 121, 0.4);
+  border: 1px dashed #28714f;
+}
 /* スクロールバー */
 #panel::-webkit-scrollbar { width: 6px; }
 #panel::-webkit-scrollbar-track { background: var(--bg); }
@@ -174,6 +213,12 @@
   #panel.collapsed ~ #map-wrap { height: 100vh; }
   #panel.collapsed ~ #map-wrap #map { height: 100vh; }
   .leaflet-tooltip.map-note-tooltip { max-width: 170px; }
+  .urban-area-legend {
+    right: 10px;
+    bottom: 62px;
+    width: min(200px, calc(100% - 20px));
+    padding: 8px 10px;
+  }
 }
 
 .map-wrap { flex: 1; position: relative; }

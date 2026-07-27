@@ -36,6 +36,8 @@ const EXPECTED_SCRIPTS = [
   './js/ui.js',
   './js/geocoder.js',
   './js/hazards.js',
+  './js/urban-area-classification-domain.js',
+  './js/urban-area-classification-layer.js',
   './js/geometry-editor.js',
   './js/map-notes.js',
   './js/project-manager.js',
@@ -196,7 +198,7 @@ test.describe('GitHub Pages互換と製品source固定', () => {
 test.describe('製品とtest dataのPII guard', () => {
   test('製品source、fixture、test sourceに個人情報形式や禁止fieldを含めない', () => {
     const testFiles = walkFiles(TEST_ROOT).filter((filePath) =>
-      /\.(?:js|json)$/.test(filePath),
+      /\.(?:geojson|js|json)$/.test(filePath),
     );
     const productFiles = walkFiles(PRODUCT_ROOT).filter((filePath) =>
       /\.(?:html|css|js)$/.test(filePath),

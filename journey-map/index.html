@@ -156,6 +156,36 @@
   </div>
 
   <!-- ハザードマップ -->
+  <div class="section urban-area-section">
+    <h2>都市計画情報を重ねる</h2>
+    <label class="urban-area-toggle-row">
+      <input
+        type="checkbox"
+        id="urban-area-classification-toggle"
+        aria-describedby="urban-area-classification-state urban-area-classification-caution"
+      />
+      <span class="urban-area-toggle-swatch" aria-hidden="true"></span>
+      <span class="urban-area-toggle-name">市街化区域・市街化調整区域</span>
+      <span class="urban-area-toggle-tag">区域区分</span>
+    </label>
+    <div
+      id="urban-area-classification-state"
+      class="urban-area-state"
+      aria-live="polite"
+    >市街化区域・市街化調整区域：OFF</div>
+    <p id="urban-area-classification-caution" class="urban-area-caution">
+      この表示は参考情報です。建築可否、開発許可、都市計画上の正式な区域は、各自治体の担当窓口で必ず確認してください。
+      非線引き都市計画区域および都市計画区域外は、このレイヤーでは判定・表示していません。
+    </p>
+    <p class="urban-area-source">
+      出典：国土交通省 不動産情報ライブラリ「都市計画決定GISデータ（令和7年度）」XKT001を加工
+    </p>
+    <p class="urban-area-api-credit">
+      このサービスは、国土交通省の不動産情報ライブラリのAPI機能を使用していますが、提供情報の最新性、正確性、完全性等が保証されたものではありません。
+    </p>
+  </div>
+
+  <!-- ハザードマップ -->
   <div class="section">
     <h2>ハザード情報を重ねる</h2>
     <div class="hazard-list" id="hazard-list">
@@ -227,6 +257,16 @@
 <div class="map-wrap" id="map-wrap">
   <button id="toggle-panel" title="パネル開閉">☰</button>
   <div id="map"></div>
+  <aside
+    id="urban-area-classification-legend"
+    class="urban-area-legend"
+    aria-label="市街化区域・市街化調整区域の凡例"
+    hidden
+  >
+    <div class="urban-area-legend-title">市街化区域・市街化調整区域</div>
+    <div><span class="legend-swatch promotion"></span>市街化区域</div>
+    <div><span class="legend-swatch control"></span>市街化調整区域</div>
+  </aside>
   <div id="status"></div>
 </div>
 
@@ -249,6 +289,8 @@
 <script src="./js/ui.js" defer></script>
 <script src="./js/geocoder.js" defer></script>
 <script src="./js/hazards.js" defer></script>
+<script src="./js/urban-area-classification-domain.js" defer></script>
+<script src="./js/urban-area-classification-layer.js" defer></script>
 <script src="./js/geometry-editor.js" defer></script>
 <script src="./js/map-notes.js" defer></script>
 <script src="./js/project-manager.js" defer></script>
