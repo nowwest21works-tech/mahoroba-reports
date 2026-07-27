@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "private": true,
   "scripts": {
+    "data:urban-area": "node scripts/generate-urban-area-classification.cjs",
     "test:maps": "npm run test:map-circles && npm run test:journey-map",
     "test:map-circles": "playwright test --config=playwright.config.js",
     "test:map-circles:report": "playwright show-report playwright-report/map-circles",
