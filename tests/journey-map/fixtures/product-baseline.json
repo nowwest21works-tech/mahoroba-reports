@@ -14,7 +14,7 @@
     "js/geocoder.js": "4cee6bcd20825020e623b0532538ff66dbba38a80e96d935cf2fece4c5d3f024",
     "js/hazards.js": "209672b109bb7b4dcc3058ccd363f945a0b4e5e6fb7391d774a9ce498b61d5c6",
     "js/urban-area-classification-domain.js": "0a8c2d72b01d602518f231fa1ca023aa8580659c5e31fa4dd938a6991af52281",
-    "js/urban-area-classification-layer.js": "16a5679f86a34215cc5d3dfac33d27a777c7d9046afd897d3890a93bee886bb6",
+    "js/urban-area-classification-layer.js": "e0b852b0ec73aa6371ede0095b61f51142f94419f34dd1c8a6c3036aa66dc369",
     "js/geometry-editor.js": "13355f6696df2ba9c1aaf3214a6c68faab867ad82756e869ff59f830cdc534cc",
     "js/map-notes.js": "4b2adc9cb8ec4ece1027dcc3287100f0ab9f0e8995e001d2890bec54d6a797a9",
     "js/indexeddb-store.js": "5d6ab917f57bf3ba4c6ef14d09cc39d3d5981c4bdb8019964ba0c44ae83519e6",

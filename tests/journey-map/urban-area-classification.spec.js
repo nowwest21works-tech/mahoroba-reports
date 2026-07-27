@@ -2,6 +2,9 @@ const fs = require('node:fs');
 const path = require('node:path');
 const { test, expect } = require('@playwright/test');
 const {
+  APP_ORIGIN,
+  APP_PATH,
+  LOCAL_APP_PATH,
   clickMap,
   fixturePath,
   getMapState,
@@ -15,6 +18,63 @@ const SCREENSHOT_ROOT = path.resolve(
 );
 
 test.describe('区域区分レイヤー', () => {
+  test('本番GeoJSONをローカル／Pages相当のHTTPパスから取得して描画できる', async ({
+    page,
+    request,
+  }) => {
+    const dataPaths = [LOCAL_APP_PATH, APP_PATH].map(
+      (appPath) => `${appPath}data/urban-area-classification/aichi.geojson`,
+    );
+
+    for (const dataPath of dataPaths) {
+      const response = await request.get(dataPath);
+      expect(response.status()).toBe(200);
+      expect(response.headers()['content-type']).toContain('application/geo+json');
+      const collection = await response.json();
+      expect(collection.type).toBe('FeatureCollection');
+      expect(collection.features).toHaveLength(1667);
+    }
+
+    const responses = [];
+    page.on('response', (response) => {
+      if (response.url().endsWith('/data/urban-area-classification/aichi.geojson')) {
+        responses.push({
+          contentType: response.headers()['content-type'],
+          status: response.status(),
+          url: response.url(),
+        });
+      }
+    });
+
+    await openMap(page, { appPath: LOCAL_APP_PATH });
+    await expect.poll(() => page.evaluate(
+      () => UrbanAreaClassificationLayer.DATA_URL,
+    )).toBe(
+      `${APP_ORIGIN}${LOCAL_APP_PATH}data/urban-area-classification/aichi.geojson`,
+    );
+
+    await page.goto(APP_PATH);
+    await page.locator('#map.leaflet-container').waitFor();
+    await expect.poll(() => page.evaluate(
+      () => UrbanAreaClassificationLayer.DATA_URL,
+    )).toBe(
+      `${APP_ORIGIN}${APP_PATH}data/urban-area-classification/aichi.geojson`,
+    );
+    await page.locator('#urban-area-classification-toggle').check();
+    await expect(page.locator('#urban-area-classification-state'))
+      .toHaveText('市街化区域・市街化調整区域：ON（949区画）', { timeout: 30_000 });
+    await expect(page.locator('#urban-area-classification-state')).not.toContainText(
+      'データ生成手順はREADMEを確認してください',
+    );
+    await expect(page.locator('.leaflet-urban-area-classification-pane path'))
+      .toHaveCount(949);
+    expect(responses).toEqual([{
+      contentType: 'application/geo+json; charset=utf-8',
+      status: 200,
+      url: `${APP_ORIGIN}${APP_PATH}data/urban-area-classification/aichi.geojson`,
+    }]);
+  });
+
   test('初期OFFからON／OFFでき、凡例・分類style・出典を表示する', async ({ page }) => {
     const audit = await openMap(page, { urbanAreaFixture: DATA_FIXTURE });
     const toggle = page.locator('#urban-area-classification-toggle');
@@ -105,7 +165,7 @@ test.describe('区域区分レイヤー', () => {
   test('製品GeoJSON未配置時はdummy表示せず安全にOFFへ戻る', async ({ page }) => {
     await openMap(page, { urbanAreaFailure: 404 });
     const toggle = page.locator('#urban-area-classification-toggle');
-    await toggle.check();
+    await toggle.click();
     await expect(toggle).not.toBeChecked();
     await expect(page.locator('#urban-area-classification-legend')).toBeHidden();
     await expect(page.locator('#urban-area-classification-state'))
@@ -113,12 +173,14 @@ test.describe('区域区分レイヤー', () => {
     await expect(page.locator('.leaflet-urban-area-classification-pane path')).toHaveCount(0);
   });
 
-  test('360px幅でも凡例が地図内に収まり操作を覆いすぎない', async ({ page }) => {
+  test('360px幅でも本番GeoJSONの凡例が地図内に収まり操作を覆いすぎない', async ({ page }) => {
     await page.setViewportSize({ width: 360, height: 800 });
-    await openMap(page, { urbanAreaFixture: DATA_FIXTURE });
+    await openMap(page);
     await page.locator('#urban-area-classification-toggle').check();
     const legend = page.locator('#urban-area-classification-legend');
     await expect(legend).toBeVisible();
+    await expect(page.locator('#urban-area-classification-state'))
+      .toHaveText('市街化区域・市街化調整区域：ON（949区画）', { timeout: 30_000 });
     const box = await legend.boundingBox();
     const mapBox = await page.locator('#map').boundingBox();
     expect(box).not.toBeNull();

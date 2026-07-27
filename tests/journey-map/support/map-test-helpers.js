@@ -2,6 +2,7 @@ const path = require('node:path');
 
 const APP_PATH = '/mahoroba-reports/journey-map/';
 const APP_ORIGIN = 'http://127.0.0.1:4173';
+const LOCAL_APP_PATH = '/journey-map/';
 const TRANSPARENT_TILE = Buffer.from(
   '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"></svg>',
   'utf8',
@@ -221,7 +222,7 @@ async function installNetworkSandbox(page, options = {}) {
 
 async function openMap(page, options = {}) {
   const audit = await installNetworkSandbox(page, options);
-  await page.goto(APP_PATH);
+  await page.goto(options.appPath || APP_PATH);
   await page.locator('#map.leaflet-container').waitFor();
   return audit;
 }
@@ -264,7 +265,9 @@ function fixturePath(fileName) {
 }
 
 module.exports = {
+  APP_ORIGIN,
   APP_PATH,
+  LOCAL_APP_PATH,
   clickMap,
   fixturePath,
   getAppState,

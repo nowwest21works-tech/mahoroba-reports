@@ -2,7 +2,12 @@
   'use strict';
 
   const domain = root.UrbanAreaClassificationDomain;
-  const DATA_URL = './data/urban-area-classification/aichi.geojson';
+  const scriptUrl = document.currentScript?.src
+    || new URL('./js/urban-area-classification-layer.js', document.baseURI).href;
+  const DATA_URL = new URL(
+    '../data/urban-area-classification/aichi.geojson',
+    scriptUrl,
+  ).href;
   const PANE_NAME = 'urban-area-classification';
   const toggle = document.getElementById('urban-area-classification-toggle');
   const state = document.getElementById('urban-area-classification-state');

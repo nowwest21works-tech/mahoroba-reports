@@ -140,7 +140,9 @@ journey-map/data/urban-area-classification/aichi.geojson
 
 ## ローカル起動
 
-repository rootでHTTP serverを起動します。
+repository rootでHTTP serverを起動します。`journey-map/index.html`をダブルクリックして
+`file://`で直接開かないでください。ブラウザの制約により、同じフォルダにあるGeoJSONでも
+`fetch()`に失敗します。
 
 ```powershell
 python -m http.server 8000 --bind 127.0.0.1
@@ -150,6 +152,20 @@ python -m http.server 8000 --bind 127.0.0.1
 
 ```text
 http://127.0.0.1:8000/journey-map/
+```
+
+このURLから開けば、GeoJSONは次のURLで200応答として配信されます。
+
+```text
+http://127.0.0.1:8000/journey-map/data/urban-area-classification/aichi.geojson
+```
+
+生成済みの`journey-map/data/urban-area-classification/aichi.geojson`がある場合、レビュー前の
+再生成は不要です。ファイルがない場合、または国交省の元データから更新する場合だけ、
+`REINFOLIB_API_KEY`を環境変数へ設定したターミナルでrepository rootから次を実行します。
+
+```powershell
+npm.cmd run data:urban-area
 ```
 
 公開予定URL:
