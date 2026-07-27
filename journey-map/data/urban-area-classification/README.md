@@ -26,12 +26,18 @@ API利用申請の「利用目的」記載案：
 
 ## 生成
 
-PowerShellで、このprocessだけにAPIキーを設定して実行します。
+PowerShellで、入力内容を画面へ表示せず、このprocessだけにAPIキーを設定して実行します。
 
 ```powershell
-$env:REINFOLIB_API_KEY = Read-Host "不動産情報ライブラリ APIキー"
-node scripts/generate-urban-area-classification.cjs
-Remove-Item Env:REINFOLIB_API_KEY
+$secureApiKey = Read-Host "不動産情報ライブラリ APIキー" -AsSecureString
+$apiKeyPointer = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secureApiKey)
+try {
+  $env:REINFOLIB_API_KEY = [Runtime.InteropServices.Marshal]::PtrToStringBSTR($apiKeyPointer)
+  npm.cmd run data:urban-area
+} finally {
+  Remove-Item Env:REINFOLIB_API_KEY -ErrorAction SilentlyContinue
+  [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($apiKeyPointer)
+}
 ```
 
 標準設定は愛知県を覆うzoom 11のXYZ tileを順番に取得し、250ms間隔を空けます。出力先は次の相対pathです。
