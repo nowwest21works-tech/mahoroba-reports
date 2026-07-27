@@ -120,6 +120,18 @@
 #map.map-note-placement-active {
   cursor: crosshair;
 }
+.map-export-capturing #status,
+.map-export-capturing ~ #status,
+.map-export-capturing .leaflet-control:not(.leaflet-control-attribution),
+.map-export-capturing .leaflet-pm-toolbar,
+.map-export-capturing .leaflet-pm-icon-marker,
+.map-export-capturing .map-note-marker-selected {
+  visibility: hidden !important;
+}
+.map-export-capturing .map-note-tooltip-selected {
+  border-color: rgba(26, 26, 26, 0.35) !important;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.18) !important;
+}
 
 /* トグルボタン */
 #toggle-panel {

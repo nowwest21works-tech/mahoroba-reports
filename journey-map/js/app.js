@@ -20,4 +20,9 @@ document.getElementById('toggle-panel').addEventListener('click', () => {
 
 // ========== 初期化 ==========
 renderList();
+JourneyMapExport.initialize({
+  captureProjectState: MapCirclesAppState.captureProjectState,
+  mapInstance: map,
+  renderMap: globalThis.html2canvas,
+});
 showStatus('地図上をクリックして円を配置できます');
