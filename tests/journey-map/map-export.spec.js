@@ -282,11 +282,32 @@ test.describe('PNG画像書き出し', () => {
 
     await expect(page.locator('#export-map-png')).toBeDisabled();
     await expect(page.locator('#export-map-pdf')).toBeDisabled();
+    await expect.poll(
+      () => page.evaluate(() => window.__html2canvasCalls.length),
+      {
+        message: 'PNG出力処理がhtml2canvasを1回だけ開始する',
+        timeout: 5000,
+      },
+    ).toBe(1);
+    await page.evaluate(() => {
+      document.querySelector('#export-map-png').click();
+      return new Promise((resolve) => {
+        requestAnimationFrame(() => requestAnimationFrame(resolve));
+      });
+    });
     expect(await page.evaluate(() => window.__html2canvasCalls.length)).toBe(1);
     await page.evaluate(() => window.__resolveHtml2canvas());
     await expect(page.locator('#export-map-png')).toBeEnabled();
     await expect(page.locator('#export-map-pdf')).toBeEnabled();
     await expect(page.locator('#map')).not.toHaveClass(/map-export-capturing/);
+    expect(await page.evaluate(() => window.__html2canvasCalls.length)).toBe(1);
+
+    const before = await page.evaluate(() =>
+      MapCirclesAppState.captureProjectState().featureCollection.features.length);
+    await page.evaluate(() => addCircle(35.165, 136.87));
+    await expect.poll(async () => page.evaluate(() =>
+      MapCirclesAppState.captureProjectState().featureCollection.features.length))
+      .toBe(before + 1);
   });
 
   test('TileLayer eventを待ち、期限内にベース地図が揃わない場合はtimeoutする', async ({
