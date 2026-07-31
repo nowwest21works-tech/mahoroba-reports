@@ -1,0 +1,97 @@
+{
+  "dataset": "GEBCO_2026 Grid",
+  "format": "PMTiles v3 / MVT",
+  "calculationExtent": [
+    120.0,
+    20.0,
+    150.0,
+    50.0
+  ],
+  "reviewExtent": [
+    122.0,
+    24.0,
+    147.0,
+    47.0
+  ],
+  "simplifyToleranceDegrees": 0.005,
+  "levels": [
+    {
+      "seaLevel": -140,
+      "url": "/data/terrain/japan-minus-140m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 472351
+    },
+    {
+      "seaLevel": -135,
+      "url": "/data/terrain/japan-minus-135m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 462341
+    },
+    {
+      "seaLevel": -130,
+      "url": "/data/terrain/japan-minus-130m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 482999
+    },
+    {
+      "seaLevel": -125,
+      "url": "/data/terrain/japan-minus-125m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 491504
+    },
+    {
+      "seaLevel": -120,
+      "url": "/data/terrain/japan-minus-120m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 492057
+    },
+    {
+      "seaLevel": -115,
+      "url": "/data/terrain/japan-minus-115m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 486102
+    },
+    {
+      "seaLevel": -110,
+      "url": "/data/terrain/japan-minus-110m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 511302
+    },
+    {
+      "seaLevel": -105,
+      "url": "/data/terrain/japan-minus-105m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 523337
+    },
+    {
+      "seaLevel": -100,
+      "url": "/data/terrain/japan-minus-100m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 522288
+    },
+    {
+      "seaLevel": -95,
+      "url": "/data/terrain/japan-minus-95m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 509356
+    },
+    {
+      "seaLevel": -90,
+      "url": "/data/terrain/japan-minus-90m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 510266
+    },
+    {
+      "seaLevel": -85,
+      "url": "/data/terrain/japan-minus-85m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 511075
+    },
+    {
+      "seaLevel": -80,
+      "url": "/data/terrain/japan-minus-80m.pmtiles",
+      "sourceLayer": "terrain",
+      "bytes": 539671
+    }
+  ]
+}

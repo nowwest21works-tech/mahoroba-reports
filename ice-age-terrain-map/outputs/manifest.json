@@ -1,0 +1,36 @@
+{
+  "schema_version": "1.0",
+  "manifest_type": "artifact-manifest",
+  "phase": "1",
+  "dataset": "GEBCO_2026 Grid",
+  "metadata": {
+    "input": "data/raw/gebco_2026_japan.tif",
+    "input_sha256": "afd8cb07c1bbe87a3a4ee5393f624a1a9209914fd0bea0cd98cb8053c956c038",
+    "sea_level_m": -120,
+    "age_label": "約20,000年前（代表値）",
+    "json_encoding": "UTF-8",
+    "ensure_ascii": false
+  },
+  "artifacts": [
+    {
+      "file": "lgm-japan-minus-120m.geojson",
+      "bytes": 1521780,
+      "sha256": "cfa8b38ee59002ddb6a944726c47b02a3ecaacf08e36e8c307fd230654b7f11d"
+    },
+    {
+      "file": "lgm-japan-minus-120m.png",
+      "bytes": 301831,
+      "sha256": "946e10068521ac05ba49e713d59a598afa464f84705c9d96689d7355c1b6beb9"
+    },
+    {
+      "file": "lgm-tokai-minus-120m.geojson",
+      "bytes": 122714,
+      "sha256": "71ffc45b49552c7b6b2a91a6c3f7e5e49711c22519f2edc8b00d3a0163db381a"
+    },
+    {
+      "file": "lgm-tokai-minus-120m.png",
+      "bytes": 162150,
+      "sha256": "dd34ec21cd217964809eebe6512700af9cedf893980caed2910fdc121c30ac09"
+    }
+  ]
+}

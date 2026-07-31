@@ -1,0 +1,163 @@
+{
+  "schema_version": "1.0",
+  "manifest_type": "artifact-manifest",
+  "phase": "1.5",
+  "dataset": "GEBCO_2026 Grid",
+  "metadata": {
+    "sea_levels_m": [
+      -140.0,
+      -120.0,
+      -100.0,
+      -80.0
+    ],
+    "json_encoding": "UTF-8",
+    "ensure_ascii": false
+  },
+  "artifacts": [
+    {
+      "file": "delivery-size-estimate.json",
+      "bytes": 1227,
+      "sha256": "ab66e9b7e7cffac4e823d1da7cf99da89a2f6b963bdf13723613a0e3e4600acf"
+    },
+    {
+      "file": "focus-ise-mikawa-bay-minus-120m.png",
+      "bytes": 135220,
+      "sha256": "b3837dd13d1762e4b9afcdfc1046131037689948bd587173826094bcfcbcdaf4"
+    },
+    {
+      "file": "focus-seto-inland-sea-minus-120m.png",
+      "bytes": 210208,
+      "sha256": "37c772dd5d6a0d2328e81a19723b42b2acd6dcb11eb1bc1cc71f0e8077463f68"
+    },
+    {
+      "file": "focus-soya-strait-minus-120m.png",
+      "bytes": 147191,
+      "sha256": "1ebaf5a13b284c20bebbadfeb233645a5c2346a13417871c5755d60d2ec38812"
+    },
+    {
+      "file": "focus-tokyo-bay-minus-120m.png",
+      "bytes": 106116,
+      "sha256": "4425ec2c3c6479a32274c737aecf43a266343b8bb0284edcc3f956bac74d9451"
+    },
+    {
+      "file": "focus-tsugaru-strait-minus-120m.png",
+      "bytes": 173882,
+      "sha256": "423a49508f82f607b64088ee62b440e22162f853f2c0ec2f68797c1c9318bc3a"
+    },
+    {
+      "file": "focus-tsushima-strait-minus-120m.png",
+      "bytes": 210660,
+      "sha256": "78f2d22a87031dae60bf68a9afe68bff4af31839fe648e01eebd73ca6690e4cd"
+    },
+    {
+      "file": "geometry-simplification-statistics.json",
+      "bytes": 2308,
+      "sha256": "24dd8befede1ddf47898c9df21d55264619c1eeea81c88867911fc3fee710d02"
+    },
+    {
+      "file": "japan-minus-100m.geojson",
+      "bytes": 1656022,
+      "sha256": "e66e34eaa4cec34d67b2051d0fbf373e992cb71674e6da5ceb8d0a779d85bcb3"
+    },
+    {
+      "file": "japan-minus-100m.png",
+      "bytes": 205146,
+      "sha256": "a5a98a59beecca7a513932825cdd28dfaddf18cfa05bbc6cedd2ccfaf7104a15"
+    },
+    {
+      "file": "japan-minus-120m.geojson",
+      "bytes": 1517790,
+      "sha256": "e1273cb9c1943e1287589ba3f9c54c402e886b49bfe831dc79b7d82750ad4647"
+    },
+    {
+      "file": "japan-minus-120m.png",
+      "bytes": 204256,
+      "sha256": "e4f204ba4290a7d5ade94463eadc63b69f36791caaa8fa81891e147fc0565dc5"
+    },
+    {
+      "file": "japan-minus-140m.geojson",
+      "bytes": 1490434,
+      "sha256": "97c89e75d9f5a559420432c8ff4113633fe10b95ae4a5cc63a899585a11cab1d"
+    },
+    {
+      "file": "japan-minus-140m.png",
+      "bytes": 204369,
+      "sha256": "4f73ad9de126a00ea853a08cf8b036d42a4ea9bb3bdd06d80a704d71316e835c"
+    },
+    {
+      "file": "japan-minus-80m.geojson",
+      "bytes": 1643302,
+      "sha256": "787ad5900502840782561add3b7c9397f63265b94e6f106214030e9a21b94699"
+    },
+    {
+      "file": "japan-minus-80m.png",
+      "bytes": 201803,
+      "sha256": "2033d4b85a25e826a24a0ba7ef99096e7aa127649582c77256035c87adce2e17"
+    },
+    {
+      "file": "lgm-japan-sea-level-comparison.png",
+      "bytes": 572129,
+      "sha256": "f23f0bbebbd83ac6713e87337e21cd2b3f67d2b112014fa10604a6cb6c00295d"
+    },
+    {
+      "file": "lgm-tokai-sea-level-comparison.png",
+      "bytes": 328411,
+      "sha256": "808984e9ace53110ade73d0ff9857cff4178c1c49ec5541d55c0888fe1587d60"
+    },
+    {
+      "file": "model-statistics.csv",
+      "bytes": 1442,
+      "sha256": "e96496e421e73558f90d94e59d7e54a7756efc320f7927f0a0964038bcb4c85d"
+    },
+    {
+      "file": "model-statistics.json",
+      "bytes": 6185,
+      "sha256": "fe4193c3b2a31787a637830864b5b72f222e928548236db4ec030546aa6f58bd"
+    },
+    {
+      "file": "shape-qa.json",
+      "bytes": 747,
+      "sha256": "66d26f9c01e95b6a6893d76ff772e4cbf35f2f4b0cf5dca937b5ce3f78e09862"
+    },
+    {
+      "file": "tokai-minus-100m.geojson",
+      "bytes": 126320,
+      "sha256": "2110c6e2fb2482b9b55b08a324748ee24e0598018435a452d690d5f54ed180c9"
+    },
+    {
+      "file": "tokai-minus-100m.png",
+      "bytes": 129494,
+      "sha256": "2cbbde73d64aac7206f6b079fc13ca9ea396e25a7b1589e0456ac3da6ec4588b"
+    },
+    {
+      "file": "tokai-minus-120m.geojson",
+      "bytes": 123312,
+      "sha256": "204e61ad73f417fd831dbf00971dfbcd653cfe9831dcd80b45dd1720f799df57"
+    },
+    {
+      "file": "tokai-minus-120m.png",
+      "bytes": 129554,
+      "sha256": "cd6a28816c69797b325539996e4d426915912890d66b3889c69dddeda9ce36bd"
+    },
+    {
+      "file": "tokai-minus-140m.geojson",
+      "bytes": 124812,
+      "sha256": "930061a263bfdc9fdb0ab89be8312e5383e01b1b3efc3b0c9a7eae063a41a94c"
+    },
+    {
+      "file": "tokai-minus-140m.png",
+      "bytes": 130103,
+      "sha256": "74cdd7bb813b5dad5869b1b77b3b74a5401cb8ec1290e82ae0bef437779932cb"
+    },
+    {
+      "file": "tokai-minus-80m.geojson",
+      "bytes": 130920,
+      "sha256": "6c90776920754c2dda6e8fb6e4d4c2ac6df707c7ee932c257f4019798deba85c"
+    },
+    {
+      "file": "tokai-minus-80m.png",
+      "bytes": 130132,
+      "sha256": "4eeddf1292467c86c09a41fab1cf6ead00ea72589cdd3821fea43e85165945a7"
+    }
+  ]
+}

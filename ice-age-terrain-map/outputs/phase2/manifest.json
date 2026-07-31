@@ -1,0 +1,105 @@
+{
+  "schema_version": "1.0",
+  "manifest_type": "artifact-manifest",
+  "phase": "2",
+  "dataset": "GEBCO_2026 Grid",
+  "metadata": {
+    "sea_levels_m": [
+      -140,
+      -135,
+      -130,
+      -125,
+      -120,
+      -115,
+      -110,
+      -105,
+      -100,
+      -95,
+      -90,
+      -85,
+      -80
+    ],
+    "delivery_format": "PMTiles v3 / MVT",
+    "raw_geojson_directory": "outputs/phase2/raw",
+    "raw_geojson_git_policy": "local-only; ignored",
+    "json_encoding": "UTF-8",
+    "ensure_ascii": false
+  },
+  "artifacts": [
+    {
+      "file": "app/public/data/terrain/index.json",
+      "bytes": 2149,
+      "sha256": "a49c6c15d309a8dbd81195ff9798fc8b094da8837190648ce9af489bb3cfd794"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-100m.pmtiles",
+      "bytes": 522288,
+      "sha256": "6deda2b096f9d194f8a8bc62f69484217b850481ab82a99633727cebd2ac5cae"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-105m.pmtiles",
+      "bytes": 523337,
+      "sha256": "246e40299d7137f34f500d71b1f713efc02bf35d447e1a98490a4e0c1b68f40a"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-110m.pmtiles",
+      "bytes": 511302,
+      "sha256": "1584014438bafa87265a31678a55ae0e457cae94a38daeca34437e95c4824df6"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-115m.pmtiles",
+      "bytes": 486102,
+      "sha256": "43e1fedd554eee89f838c982846083a4cb887052f97b211e80c456482853320e"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-120m.pmtiles",
+      "bytes": 492057,
+      "sha256": "824eebe353f077552aa81818b7dc84ad534c5988197ba9497d57d8557fa00b2f"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-125m.pmtiles",
+      "bytes": 491504,
+      "sha256": "7c1466392ab46beb48d7b682f2cffc2085e537467341120cb7ba0e9a424c554e"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-130m.pmtiles",
+      "bytes": 482999,
+      "sha256": "b4bc91d413e47fd363b813b2a02b109796050eb8d30c3f9b53c0f4d6b874a365"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-135m.pmtiles",
+      "bytes": 462341,
+      "sha256": "52cbfcde60bc400612aa8313c03fb015ad6a409ca11f9f2d648774ff463216f6"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-140m.pmtiles",
+      "bytes": 472351,
+      "sha256": "71b52663a6b96ff64d780ff0e7691395fb50d3483f25e937cb949a36d0555a8d"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-80m.pmtiles",
+      "bytes": 539671,
+      "sha256": "7bad514b8d668b74cfe7ece21733a37112c6e962523d2b5a1f9108882c237bc6"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-85m.pmtiles",
+      "bytes": 511075,
+      "sha256": "cfedeb8a3b9e58c772d8d80807f745117bc3e62ff838ed9aa7c4834c8a134a3f"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-90m.pmtiles",
+      "bytes": 510266,
+      "sha256": "644c55059dc2ff98ade3c96a30f1a14c808f2da143698e7dab9c8fe0f9a7ff73"
+    },
+    {
+      "file": "app/public/data/terrain/japan-minus-95m.pmtiles",
+      "bytes": 509356,
+      "sha256": "b74c0a5fe91c286b06ece92bb462fefa80ae50e92e296c501d657f15099d8601"
+    },
+    {
+      "file": "outputs/phase2/data-statistics.json",
+      "bytes": 4840,
+      "sha256": "b997f620cf5f59620de20958dc92683e51b7fb8370d6234935328cdede1bb554"
+    }
+  ]
+}

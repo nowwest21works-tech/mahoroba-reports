@@ -1,0 +1,26 @@
+{
+  "japan": {
+    "method": "Four measured levels averaged, then multiplied by 13",
+    "levels_measured": 4,
+    "levels_projected": 13,
+    "unsimplified_geojson_bytes_13_layers": 126263816,
+    "simplified_geojson_bytes_13_layers": 20499531,
+    "unsimplified_gzip_bytes_13_layers": 11037533,
+    "simplified_gzip_bytes_13_layers": 2602002,
+    "pmtiles_estimate_bytes_13_layers_low": 1821401,
+    "pmtiles_estimate_bytes_13_layers_high": 2862202,
+    "pmtiles_note": "Planning range only: 0.7-1.1 x measured simplified gzip. Exact size requires a fixed tippecanoe/PMTiles tiling configuration."
+  },
+  "tokai": {
+    "method": "Four measured levels averaged, then multiplied by 13",
+    "levels_measured": 4,
+    "levels_projected": 13,
+    "unsimplified_geojson_bytes_13_layers": 4285252,
+    "simplified_geojson_bytes_13_layers": 1642433,
+    "unsimplified_gzip_bytes_13_layers": 400117,
+    "simplified_gzip_bytes_13_layers": 202920,
+    "pmtiles_estimate_bytes_13_layers_low": 142044,
+    "pmtiles_estimate_bytes_13_layers_high": 223212,
+    "pmtiles_note": "Planning range only: 0.7-1.1 x measured simplified gzip. Exact size requires a fixed tippecanoe/PMTiles tiling configuration."
+  }
+}

@@ -1,0 +1,22 @@
+{
+  "dataset": "GEBCO_2026 Grid",
+  "checks": {
+    "expected_crs": "EPSG:4326",
+    "longitude_latitude_order": true,
+    "dateline_crossing": false,
+    "foreign_or_non_japan_land_in_japan_bbox": true
+  },
+  "focus_narrow_channel_candidates_at_minus_120m": {
+    "tokyo-bay": 2,
+    "ise-mikawa-bay": 0,
+    "seto-inland-sea": 6,
+    "tsushima-strait": 30,
+    "tsugaru-strait": 18,
+    "soya-strait": 31
+  },
+  "notes": [
+    "The Japan review bbox intentionally contains Korean, Russian, Chinese, and Taiwanese land.",
+    "Foreign land is useful for connectivity QA but must be clipped or separated before a Japan-only web layer.",
+    "One-cell channel counts are visual-review indicators, not automatic errors."
+  ]
+}

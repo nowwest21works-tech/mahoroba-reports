@@ -1,0 +1,174 @@
+{
+  "measured_at": "2026-07-31T04:20:42.994Z",
+  "environment": "local Vite production preview, Chromium, 1440x900",
+  "url": "http://127.0.0.1:4174",
+  "run_count": 3,
+  "median_ui_ready_ms": 630.3,
+  "runs": [
+    {
+      "run": 1,
+      "ui_ready_ms": 665.7,
+      "data_responses": [
+        {
+          "url": "http://127.0.0.1:4174/data/reference/cities.geojson",
+          "status": 200,
+          "content_range": null
+        },
+        {
+          "url": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "status": 206,
+          "content_range": "bytes 0-16383/492057"
+        },
+        {
+          "url": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "status": 206,
+          "content_range": "bytes 1002-1253/492057"
+        }
+      ],
+      "dom_content_loaded_ms": 242.7,
+      "load_event_ms": 242.7,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:4174/assets/index-Ctzo0wCK.js",
+          "duration_ms": 127.3,
+          "transfer_bytes": 315201,
+          "encoded_body_bytes": 314901
+        },
+        {
+          "name": "http://127.0.0.1:4174/assets/index-BTx-ozwa.css",
+          "duration_ms": 21.1,
+          "transfer_bytes": 12478,
+          "encoded_body_bytes": 12178
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/reference/cities.geojson",
+          "duration_ms": 6.3,
+          "transfer_bytes": 2444,
+          "encoded_body_bytes": 2144
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "duration_ms": 5.3,
+          "transfer_bytes": 16684,
+          "encoded_body_bytes": 16384
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "duration_ms": 6.1,
+          "transfer_bytes": 552,
+          "encoded_body_bytes": 252
+        }
+      ]
+    },
+    {
+      "run": 2,
+      "ui_ready_ms": 600,
+      "data_responses": [
+        {
+          "url": "http://127.0.0.1:4174/data/reference/cities.geojson",
+          "status": 200,
+          "content_range": null
+        },
+        {
+          "url": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "status": 206,
+          "content_range": "bytes 0-16383/492057"
+        },
+        {
+          "url": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "status": 206,
+          "content_range": "bytes 1002-1253/492057"
+        }
+      ],
+      "dom_content_loaded_ms": 208.4,
+      "load_event_ms": 208.5,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:4174/assets/index-Ctzo0wCK.js",
+          "duration_ms": 114.8,
+          "transfer_bytes": 315201,
+          "encoded_body_bytes": 314901
+        },
+        {
+          "name": "http://127.0.0.1:4174/assets/index-BTx-ozwa.css",
+          "duration_ms": 18.3,
+          "transfer_bytes": 12478,
+          "encoded_body_bytes": 12178
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/reference/cities.geojson",
+          "duration_ms": 4.5,
+          "transfer_bytes": 2444,
+          "encoded_body_bytes": 2144
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "duration_ms": 3.4,
+          "transfer_bytes": 16684,
+          "encoded_body_bytes": 16384
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "duration_ms": 3.7,
+          "transfer_bytes": 552,
+          "encoded_body_bytes": 252
+        }
+      ]
+    },
+    {
+      "run": 3,
+      "ui_ready_ms": 630.3,
+      "data_responses": [
+        {
+          "url": "http://127.0.0.1:4174/data/reference/cities.geojson",
+          "status": 200,
+          "content_range": null
+        },
+        {
+          "url": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "status": 206,
+          "content_range": "bytes 0-16383/492057"
+        },
+        {
+          "url": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "status": 206,
+          "content_range": "bytes 1002-1253/492057"
+        }
+      ],
+      "dom_content_loaded_ms": 166.2,
+      "load_event_ms": 166.3,
+      "resources": [
+        {
+          "name": "http://127.0.0.1:4174/assets/index-Ctzo0wCK.js",
+          "duration_ms": 74.7,
+          "transfer_bytes": 315201,
+          "encoded_body_bytes": 314901
+        },
+        {
+          "name": "http://127.0.0.1:4174/assets/index-BTx-ozwa.css",
+          "duration_ms": 16.4,
+          "transfer_bytes": 12478,
+          "encoded_body_bytes": 12178
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/reference/cities.geojson",
+          "duration_ms": 4.2,
+          "transfer_bytes": 2444,
+          "encoded_body_bytes": 2144
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "duration_ms": 3.2,
+          "transfer_bytes": 16684,
+          "encoded_body_bytes": 16384
+        },
+        {
+          "name": "http://127.0.0.1:4174/data/terrain/japan-minus-120m.pmtiles",
+          "duration_ms": 3,
+          "transfer_bytes": 552,
+          "encoded_body_bytes": 252
+        }
+      ]
+    }
+  ]
+}

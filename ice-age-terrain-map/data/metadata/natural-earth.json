@@ -1,0 +1,47 @@
+{
+  "classification": "DATA",
+  "provider": "Natural Earth",
+  "terms_url": "https://www.naturalearthdata.com/about/terms-of-use/",
+  "datasets": [
+    {
+      "id": "coastline",
+      "version": "4.1.0",
+      "source_url": "https://naturalearth.s3.amazonaws.com/10m_physical/ne_10m_coastline.zip",
+      "local_shapefile": "data/raw/natural-earth/coastline/ne_10m_coastline.shp",
+      "archive_bytes": 3069451,
+      "archive_sha256": "bfa04cdbcbef07ef90dfca1dabb48062eca29900a113df0f389303e255484017",
+      "license": "Public domain",
+      "credit": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com."
+    },
+    {
+      "id": "minor_islands_coastline",
+      "version": "4.1.0",
+      "source_url": "https://naturalearth.s3.amazonaws.com/10m_physical/ne_10m_minor_islands_coastline.zip",
+      "local_shapefile": "data/raw/natural-earth/minor_islands_coastline/ne_10m_minor_islands_coastline.shp",
+      "archive_bytes": 310455,
+      "archive_sha256": "fa1d68b486b3a3ea2f625517d54b36d7544880b388170891b53a065e826ebd3e",
+      "license": "Public domain",
+      "credit": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com."
+    },
+    {
+      "id": "rivers_lake_centerlines",
+      "version": "5.0.0",
+      "source_url": "https://naturalearth.s3.amazonaws.com/10m_physical/ne_10m_rivers_lake_centerlines.zip",
+      "local_shapefile": "data/raw/natural-earth/rivers_lake_centerlines/ne_10m_rivers_lake_centerlines.shp",
+      "archive_bytes": 2079507,
+      "archive_sha256": "ded71b01870855ccfe19b51f2ec14c9bb48fae23c0e9f3c11974d426433b5c38",
+      "license": "Public domain",
+      "credit": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com."
+    },
+    {
+      "id": "populated_places",
+      "version": "5.1.2",
+      "source_url": "https://naturalearth.s3.amazonaws.com/10m_cultural/ne_10m_populated_places.zip",
+      "local_shapefile": "data/raw/natural-earth/populated_places/ne_10m_populated_places.shp",
+      "archive_bytes": 2811199,
+      "archive_sha256": "cd149186f03d2603e0410da399b980a4357d0ac32d3a2305a49ed3dffcc41d7b",
+      "license": "Public domain",
+      "credit": "Made with Natural Earth. Free vector and raster map data @ naturalearthdata.com."
+    }
+  ]
+}

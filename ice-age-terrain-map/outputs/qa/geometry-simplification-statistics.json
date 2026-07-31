@@ -1,0 +1,90 @@
+[
+  {
+    "region": "japan",
+    "sea_level_m": -140.0,
+    "simplify_tolerance_degrees": 0.02,
+    "vertices_before": 254245,
+    "vertices_after": 39804,
+    "bytes_before": 9349082,
+    "bytes_after": 1490434,
+    "gzip_bytes_before": 820028,
+    "gzip_bytes_after": 190322
+  },
+  {
+    "region": "tokai",
+    "sea_level_m": -140.0,
+    "simplify_tolerance_degrees": 0.004,
+    "vertices_before": 9145,
+    "vertices_after": 3474,
+    "bytes_before": 326795,
+    "bytes_after": 124812,
+    "gzip_bytes_before": 30628,
+    "gzip_bytes_after": 15234
+  },
+  {
+    "region": "japan",
+    "sea_level_m": -120.0,
+    "simplify_tolerance_degrees": 0.02,
+    "vertices_before": 258550,
+    "vertices_after": 40496,
+    "bytes_before": 9515277,
+    "bytes_after": 1517790,
+    "gzip_bytes_before": 833466,
+    "gzip_bytes_after": 194215
+  },
+  {
+    "region": "tokai",
+    "sea_level_m": -120.0,
+    "simplify_tolerance_degrees": 0.004,
+    "vertices_before": 9081,
+    "vertices_after": 3437,
+    "bytes_before": 324293,
+    "bytes_after": 123312,
+    "gzip_bytes_before": 30561,
+    "gzip_bytes_after": 15197
+  },
+  {
+    "region": "japan",
+    "sea_level_m": -100.0,
+    "simplify_tolerance_degrees": 0.02,
+    "vertices_before": 270198,
+    "vertices_after": 44011,
+    "bytes_before": 9977981,
+    "bytes_after": 1656022,
+    "gzip_bytes_before": 869744,
+    "gzip_bytes_after": 208557
+  },
+  {
+    "region": "tokai",
+    "sea_level_m": -100.0,
+    "simplify_tolerance_degrees": 0.004,
+    "vertices_before": 9266,
+    "vertices_after": 3525,
+    "bytes_before": 330744,
+    "bytes_after": 126320,
+    "gzip_bytes_before": 30889,
+    "gzip_bytes_after": 15495
+  },
+  {
+    "region": "japan",
+    "sea_level_m": -80.0,
+    "simplify_tolerance_degrees": 0.02,
+    "vertices_before": 271691,
+    "vertices_after": 43818,
+    "bytes_before": 10008065,
+    "bytes_after": 1643302,
+    "gzip_bytes_before": 872926,
+    "gzip_bytes_after": 207522
+  },
+  {
+    "region": "tokai",
+    "sea_level_m": -80.0,
+    "simplify_tolerance_degrees": 0.004,
+    "vertices_before": 9423,
+    "vertices_after": 3653,
+    "bytes_before": 336707,
+    "bytes_after": 130920,
+    "gzip_bytes_before": 31035,
+    "gzip_bytes_after": 16511
+  }
+]

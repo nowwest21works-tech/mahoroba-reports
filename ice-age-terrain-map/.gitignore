@@ -1,0 +1,24 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.pyc
+
+# Regenerable source and intermediate terrain data
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+# Temporary download archives
+*.zip
+
+# Web application dependencies and generated test/build artifacts
+app/node_modules/
+app/dist/
+app/playwright-report/
+app/test-results/
+app/output/playwright/
+app/*.log
+
+# Phase 2 local-only unsimplified/intermediate vectors
+outputs/phase2/raw/

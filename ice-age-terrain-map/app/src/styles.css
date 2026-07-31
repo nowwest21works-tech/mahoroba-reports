@@ -1,0 +1,621 @@
+:root {
+  color: #17242a;
+  background: #163d50;
+  font-family:
+    "Noto Sans JP", "Hiragino Kaku Gothic ProN", "Yu Gothic", system-ui, sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root,
+.app {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  color: inherit;
+}
+
+.app {
+  position: relative;
+  min-width: 320px;
+  isolation: isolate;
+}
+
+.map-shell,
+.map {
+  position: absolute;
+  inset: 0;
+}
+
+.map-shell {
+  background: #163d50;
+}
+
+.map-status,
+.map-error {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  max-width: min(82vw, 32rem);
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  color: #f9f3e7;
+  background: rgb(15 35 44 / 88%);
+  transform: translate(-50%, -50%);
+  box-shadow: 0 0.5rem 2rem rgb(0 0 0 / 20%);
+}
+
+.map-error {
+  border-radius: 0.75rem;
+  color: #fff5ed;
+  background: rgb(117 43 28 / 94%);
+}
+
+.brand {
+  position: absolute;
+  top: 1rem;
+  left: 1rem;
+  z-index: 3;
+  max-width: min(34rem, calc(100vw - 2rem));
+  padding: 0.85rem 1rem 0.9rem;
+  border: 1px solid rgb(255 255 255 / 46%);
+  border-radius: 0.9rem;
+  background: rgb(248 243 230 / 92%);
+  box-shadow: 0 0.75rem 2.5rem rgb(0 0 0 / 16%);
+  backdrop-filter: blur(12px);
+}
+
+.brand__eyebrow {
+  margin: 0 0 0.25rem;
+  color: #9b541c;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+}
+
+.brand__preview {
+  display: inline-block;
+  margin: 0 0 0.35rem;
+  padding: 0.2rem 0.45rem;
+  border: 1px solid #a75b1e;
+  border-radius: 999px;
+  color: #6f3914;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  background: #fff3d9;
+}
+
+.brand h1 {
+  margin: 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: clamp(1.15rem, 2vw, 1.65rem);
+  line-height: 1.25;
+}
+
+.brand > p:last-child {
+  margin: 0.35rem 0 0;
+  color: #42535b;
+  font-size: 0.75rem;
+}
+
+.controls {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  z-index: 4;
+  width: min(17.5rem, calc(100vw - 2rem));
+  border: 1px solid rgb(255 255 255 / 42%);
+  border-radius: 0.9rem;
+  background: rgb(248 243 230 / 94%);
+  box-shadow: 0 0.75rem 2.5rem rgb(0 0 0 / 18%);
+  backdrop-filter: blur(12px);
+}
+
+.controls__toggle {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 0;
+  border-radius: 0.9rem;
+  color: #f9f3e7;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: left;
+  background: #193641;
+  cursor: pointer;
+}
+
+.controls--open .controls__toggle {
+  border-radius: 0.9rem 0.9rem 0 0;
+}
+
+.controls__body {
+  max-height: calc(100vh - 12rem);
+  padding: 0.75rem 0.85rem 0.9rem;
+  overflow-y: auto;
+}
+
+.preset {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.1rem 0.75rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid #cabfa9;
+}
+
+.preset span,
+.preset small {
+  color: #5c686d;
+  font-size: 0.7rem;
+}
+
+.preset strong {
+  grid-row: span 2;
+  align-self: center;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+
+fieldset {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0.65rem 0;
+  padding: 0;
+  border: 0;
+}
+
+legend {
+  margin-bottom: 0.25rem;
+  font-size: 0.73rem;
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+fieldset label {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: 1.7rem;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+fieldset input {
+  width: 1.05rem;
+  height: 1.05rem;
+  margin: 0;
+  accent-color: #a75b1e;
+}
+
+.legend {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.6rem 0;
+  border-top: 1px solid #cabfa9;
+  color: #425158;
+  font-size: 0.68rem;
+}
+
+.legend span {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.legend__swatch,
+.legend__line {
+  display: inline-block;
+  flex: 0 0 1.5rem;
+  height: 0.7rem;
+}
+
+.legend__swatch--current {
+  border: 1px solid #a99874;
+  background: #d8c9a8;
+}
+
+.legend__swatch--shelf {
+  border: 1px solid #6c461d;
+  background: rgb(214 143 47 / 76%);
+}
+
+.legend__line {
+  height: 0;
+  border-top: 2px solid #101f26;
+}
+
+.legend__line--model {
+  border-top-color: #b3874d;
+  border-top-style: dashed;
+}
+
+.text-button {
+  padding: 0.3rem 0;
+  border: 0;
+  color: #824719;
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-decoration: underline;
+  background: transparent;
+  cursor: pointer;
+}
+
+.sea-control {
+  position: absolute;
+  right: 50%;
+  bottom: 1rem;
+  z-index: 5;
+  width: min(42rem, calc(100vw - 2rem));
+  padding: 0.75rem 1rem 0.55rem;
+  border: 1px solid rgb(255 255 255 / 48%);
+  border-radius: 1rem;
+  background: rgb(249 244 231 / 96%);
+  box-shadow: 0 0.75rem 2.5rem rgb(0 0 0 / 22%);
+  transform: translateX(50%);
+  backdrop-filter: blur(12px);
+}
+
+.sea-control > div:first-child {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: end;
+}
+
+.sea-control span,
+.sea-control small {
+  color: #536168;
+  font-size: 0.7rem;
+}
+
+.sea-control output {
+  grid-row: span 2;
+  color: #9f5219;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+  font-size: clamp(1.45rem, 3vw, 2rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.sea-control input {
+  width: 100%;
+  height: 2.3rem;
+  margin: 0.25rem 0 0;
+  cursor: ew-resize;
+  accent-color: #b66322;
+  touch-action: pan-x;
+}
+
+.sea-control__range {
+  display: flex;
+  justify-content: space-between;
+  margin-top: -0.45rem;
+}
+
+.notice-access {
+  position: absolute;
+  bottom: 1rem;
+  left: 1rem;
+  z-index: 4;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid rgb(255 255 255 / 45%);
+  border-radius: 999px;
+  color: #f9f3e7;
+  font-size: 0.7rem;
+  font-weight: 700;
+  background: rgb(20 47 59 / 92%);
+  cursor: pointer;
+}
+
+.credits {
+  position: absolute;
+  right: 0.6rem;
+  bottom: 0.2rem;
+  z-index: 4;
+  color: rgb(255 255 255 / 85%);
+  font-size: 0.55rem;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 80%);
+}
+
+.city-marker {
+  padding: 0.13rem 0.28rem;
+  border-left: 3px solid #21333a;
+  color: #17272d;
+  font-size: 0.65rem;
+  font-weight: 800;
+  white-space: nowrap;
+  background: rgb(248 243 230 / 75%);
+  box-shadow: 0 1px 5px rgb(0 0 0 / 14%);
+}
+
+.point-marker {
+  display: grid;
+  width: 1.75rem;
+  height: 1.75rem;
+  padding: 0;
+  place-items: center;
+  border: 2px solid #f9f3e7;
+  border-radius: 50%;
+  color: #fff;
+  font-weight: 900;
+  background: #a75b1e;
+  box-shadow: 0 0.2rem 0.8rem rgb(0 0 0 / 35%);
+  cursor: pointer;
+}
+
+.point-marker--uncertainty {
+  border-radius: 0.35rem;
+  background: #674e78;
+  transform: rotate(45deg);
+}
+
+.point-marker--uncertainty::first-letter {
+  transform: rotate(-45deg);
+}
+
+.point-marker--story {
+  background: #396e64;
+}
+
+.point-marker--selected {
+  outline: 3px solid #fff1a8;
+  outline-offset: 2px;
+}
+
+.info-sheet {
+  position: absolute;
+  top: 50%;
+  right: 1rem;
+  z-index: 7;
+  width: min(24rem, calc(100vw - 2rem));
+  max-height: min(43rem, calc(100vh - 2rem));
+  padding: 1.2rem;
+  overflow-y: auto;
+  border: 1px solid rgb(255 255 255 / 55%);
+  border-radius: 1rem;
+  background: rgb(249 245 234 / 97%);
+  box-shadow: 0 1rem 4rem rgb(0 0 0 / 32%);
+  transform: translateY(-50%);
+}
+
+.info-sheet__close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.65rem;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  place-items: center;
+  border: 1px solid #b6aa94;
+  border-radius: 50%;
+  background: #fffaf0;
+  cursor: pointer;
+}
+
+.info-sheet__category {
+  margin: 0 2rem 0.2rem 0;
+  color: #7d4d2a;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.info-sheet h2,
+.notice-modal h2 {
+  margin: 0 2rem 0.8rem 0;
+  font-family: "Yu Mincho", "Hiragino Mincho ProN", serif;
+}
+
+.info-block {
+  margin: 0.65rem 0;
+  padding: 0.65rem 0.75rem;
+  border-left: 4px solid;
+  background: #fffaf0;
+}
+
+.info-block h3 {
+  margin: 0 0 0.2rem;
+  font-size: 0.65rem;
+  letter-spacing: 0.14em;
+}
+
+.info-block p {
+  margin: 0;
+  font-size: 0.78rem;
+  line-height: 1.7;
+}
+
+.info-block--data {
+  border-color: #356c7c;
+}
+
+.info-block--model {
+  border-color: #c4752d;
+}
+
+.info-block--story {
+  border-color: #53796a;
+}
+
+.uncertainty-note {
+  padding: 0.65rem;
+  border: 1px dashed #725d7e;
+  color: #4e3c59;
+  font-size: 0.72rem;
+  line-height: 1.6;
+  background: #f2edf5;
+}
+
+.confidence {
+  display: flex;
+  gap: 0.5rem;
+  margin: 0.75rem 0;
+}
+
+.confidence div {
+  flex: 1;
+  padding: 0.4rem 0.55rem;
+  border-radius: 0.35rem;
+  background: #e9e1cf;
+}
+
+.confidence dt {
+  font-size: 0.62rem;
+}
+
+.confidence dd {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.info-sheet details,
+.info-sheet details a {
+  color: #4c5c63;
+  font-size: 0.68rem;
+}
+
+.info-sheet ul {
+  padding-left: 1.1rem;
+}
+
+.modal-backdrop {
+  position: absolute;
+  inset: 0;
+  z-index: 10;
+  display: grid;
+  padding: 1rem;
+  place-items: center;
+  background: rgb(9 26 34 / 70%);
+}
+
+.notice-modal {
+  position: relative;
+  width: min(38rem, 100%);
+  max-height: calc(100vh - 2rem);
+  padding: 1.4rem;
+  overflow-y: auto;
+  border-radius: 1rem;
+  background: #faf5e9;
+  box-shadow: 0 1.5rem 5rem rgb(0 0 0 / 40%);
+}
+
+.notice-modal p {
+  color: #39484f;
+  font-size: 0.8rem;
+  line-height: 1.75;
+}
+
+.notice-modal h3 {
+  margin-top: 1.2rem;
+  font-size: 0.85rem;
+}
+
+.maplibregl-ctrl-bottom-right {
+  bottom: 5.8rem;
+}
+
+@media (max-width: 800px) {
+  .brand {
+    top: 0.6rem;
+    left: 0.6rem;
+    max-width: calc(100vw - 8.5rem);
+    padding: 0.65rem 0.75rem;
+  }
+
+  .brand > p:last-child {
+    display: none;
+  }
+
+  .controls {
+    top: 0.6rem;
+    right: 0.6rem;
+    width: 7.2rem;
+  }
+
+  .controls--open {
+    width: min(17rem, calc(100vw - 1.2rem));
+  }
+
+  .controls__body {
+    max-height: calc(100vh - 13.5rem);
+  }
+
+  .sea-control {
+    bottom: 0.55rem;
+    width: calc(100vw - 1.2rem);
+  }
+
+  .notice-access {
+    bottom: 7rem;
+    left: 0.6rem;
+  }
+
+  .credits {
+    display: none;
+  }
+
+  .info-sheet {
+    top: auto;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    max-height: 72vh;
+    border-radius: 1.1rem 1.1rem 0 0;
+    transform: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .brand {
+    max-width: calc(100vw - 7.9rem);
+  }
+
+  .brand h1 {
+    font-size: 0.98rem;
+  }
+
+  .brand__eyebrow {
+    font-size: 0.55rem;
+  }
+
+  .controls {
+    width: 6.8rem;
+  }
+
+  .controls--open {
+    width: calc(100vw - 1.2rem);
+  }
+
+  .sea-control output {
+    font-size: 1.45rem;
+  }
+
+  .maplibregl-ctrl-bottom-right {
+    bottom: 6.8rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition: none !important;
+  }
+}

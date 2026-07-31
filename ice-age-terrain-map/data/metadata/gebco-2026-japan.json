@@ -1,0 +1,24 @@
+{
+  "classification": "DATA",
+  "dataset": "GEBCO_2026 Grid",
+  "citation": "GEBCO Bathymetric Compilation Group 2026 (2026). The GEBCO_2026 Grid - a continuous terrain model for oceans and land at 15 arc-second intervals. doi:10.5285/4f68d5c7-45eb-f999-e063-7086abc036fa",
+  "source_page": "https://www.gebco.net/data-products/gridded-bathymetry-data",
+  "download_api": "https://download.gebco.net/",
+  "basket_id": "GEBCO_31_Jul_2026_28578fdfc733",
+  "bbox_wgs84": [
+    120.0,
+    20.0,
+    150.0,
+    50.0
+  ],
+  "grid_id": 1,
+  "data_source_id": 1,
+  "format": "GeoTIFF",
+  "downloaded_at": "2026-07-31T01:48:05.602480+00:00",
+  "status_response": {
+    "status": "finished"
+  },
+  "local_file": "data/raw/gebco_2026_japan.tif",
+  "bytes": 103731024,
+  "sha256": "afd8cb07c1bbe87a3a4ee5393f624a1a9209914fd0bea0cd98cb8053c956c038"
+}
