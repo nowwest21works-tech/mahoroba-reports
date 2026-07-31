@@ -19,6 +19,7 @@ app/playwright-report/
 app/test-results/
 app/output/playwright/
 app/*.log
+.vercel/
 
 # Phase 2 local-only unsimplified/intermediate vectors
 outputs/phase2/raw/
