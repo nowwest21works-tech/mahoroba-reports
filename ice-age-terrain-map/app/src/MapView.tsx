@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import * as maplibregl from "maplibre-gl";
 import type { Map as MapLibreMap, StyleSpecification } from "maplibre-gl";
+import maplibreWorkerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?worker&url";
 import { Protocol } from "pmtiles";
 import "maplibre-gl/dist/maplibre-gl.css";
 
@@ -25,6 +26,7 @@ const pmtilesProtocol = new Protocol({ metadata: true });
 
 const ensureProtocol = () => {
   if (protocolRegistered) return;
+  maplibregl.setWorkerUrl(maplibreWorkerUrl);
   maplibregl.addProtocol("pmtiles", pmtilesProtocol.tile);
   protocolRegistered = true;
 };
