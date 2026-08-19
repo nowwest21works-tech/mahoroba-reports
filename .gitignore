@@ -2,3 +2,10 @@ node_modules/
 playwright-report/
 test-results/
 debug.log
+
+# Privacy guard: this Public repository is for reusable/public apps only.
+# Do not commit customer-specific reports, screenshots, exports, or PII.
+reports/
+*-sama*/
+*client-report*/
+*customer-report*/
