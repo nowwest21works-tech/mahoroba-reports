@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>まほろば白地図キャンバス（Area Canvas）v0.1</title>
+<link rel="icon" href="data:,">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Shippori+Mincho:wght@500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<link rel="stylesheet" href="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.css" />
+<link rel="stylesheet" href="./styles/tokens.css">
+<link rel="stylesheet" href="./styles/layout.css">
+<link rel="stylesheet" href="./styles/components.css">
+</head>
+<body>
+
+<div id="panel">
+  <div class="panel-header">
+    <h1>まほろば白地図キャンバス</h1>
+    <div class="subtitle">AREA CANVAS · HEARING MAP MODE v0.1</div>
+  </div>
+
+  <!-- 顧客・案件別ローカル保存 -->
+  <div class="section project-section">
+    <h2>顧客・案件の地図</h2>
+    <div class="project-fields">
+      <label for="household-code">顧客コード</label>
+      <input type="text" id="household-code" value="HH-001" autocomplete="off" />
+      <label for="journey-name">案件名</label>
+      <input type="text" id="journey-name" value="土地探し 第1回" autocomplete="off" />
+      <label for="map-project-name">地図名</label>
+      <input type="text" id="map-project-name" value="通勤圏・優先エリア整理" autocomplete="off" />
+    </div>
+    <div class="project-actions project-actions-primary">
+      <button id="new-project" class="ghost">新しい地図</button>
+      <button id="save-project">保存</button>
+    </div>
+    <label class="select-label" for="saved-projects">このブラウザの保存済み地図</label>
+    <select id="saved-projects">
+      <option value="">保存済み地図はありません</option>
+    </select>
+    <div class="project-actions">
+      <button id="open-project" class="ghost">開く</button>
+      <button id="duplicate-project" class="ghost">複製</button>
+    </div>
+    <div class="project-actions">
+      <button id="export-project" class="ghost">JSON書出し</button>
+      <button id="import-project" class="ghost">JSON読込</button>
+      <input
+        type="file"
+        id="import-file"
+        accept=".json,.mahoroba-map.json,application/json"
+        hidden
+      />
+    </div>
+    <div class="map-export">
+      <div class="map-export-heading">表示中の地図を書き出す</div>
+      <div class="project-actions">
+        <button id="export-map-png" type="button">PNG画像を保存</button>
+        <button id="export-map-pdf" type="button" class="ghost">PDFとして保存</button>
+      </div>
+      <p class="map-export-help">
+        現在の表示範囲を画像化します。PDFは印刷画面で「PDFに保存」を選択してください。
+      </p>
+      <div id="map-export-state" class="map-export-state" aria-live="polite">
+        書き出しの準備ができています
+      </div>
+    </div>
+    <div id="project-state" class="project-state" aria-live="polite">保存状態を確認中</div>
+    <div class="privacy-note">
+      実顧客情報は入力しないでください。顧客名、連絡先、正確な自宅住所、勤務先、収入・借入情報は保存対象外です。
+      保存先はこのブラウザ内だけで、自動保存はされません。
+    </div>
+  </div>
+
+  <!-- 表示モード切替（MapModeSwitcher） -->
+  <div class="section map-mode-section">
+    <h2>表示モード</h2>
+    <div class="map-mode-buttons" id="map-mode-buttons" role="group" aria-label="表示モード">
+      <button type="button" class="mode-btn active" data-mode="real" aria-pressed="true">
+        <span class="label">通常地図</span><span class="desc">場所の確認用</span>
+      </button>
+      <button type="button" class="mode-btn" data-mode="white" aria-pressed="false">
+        <span class="label">白地図</span><span class="desc">顧客提示用</span>
+      </button>
+      <button type="button" class="mode-btn" data-mode="rail" aria-pressed="false">
+        <span class="label">路線重視</span><span class="desc">鉄道を強調</span>
+      </button>
+      <button type="button" class="mode-btn" data-mode="road" aria-pressed="false">
+        <span class="label">車移動重視</span><span class="desc">道路を強調</span>
+      </button>
+    </div>
+    <div class="opacity-control">
+      <label for="basemap-opacity">背景地図の不透明度</label>
+      <input type="range" id="basemap-opacity" min="10" max="100" value="100" />
+      <span class="opacity-val" id="basemap-opacity-val">100%</span>
+    </div>
+    <label class="grayscale-toggle-row">
+      <input type="checkbox" id="basemap-grayscale" />
+      <span>背景地図をモノトーン化する</span>
+    </label>
+    <div id="map-mode-state" class="map-mode-state" aria-live="polite">
+      通常地図：背景地図をそのまま表示中
+    </div>
+    <p class="hint">
+      「白地図」「路線重視」「車移動重視」はワンタップの組み合わせプリセットです。不透明度スライダーとモノトーンは個別にも調整できます。ワンタップで「通常地図」に戻せます。
+    </p>
+  </div>
+
+  <!-- 地理データレイヤー（MapLayerToggle） -->
+  <div class="section base-layer-section">
+    <h2>地理データを重ねる</h2>
+    <div class="base-layer-list" id="base-layer-list">
+      <label class="base-layer-row">
+        <input type="checkbox" data-base-layer="administrative-boundary" />
+        <span class="base-layer-color" style="background:#8a8a86"></span>
+        <span class="base-layer-name">市区町村・区の境界</span>
+      </label>
+      <div class="base-layer-state" data-base-layer-state="administrative-boundary" aria-live="polite">未読込：OFF</div>
+
+      <label class="base-layer-row">
+        <input type="checkbox" data-base-layer="railway" />
+        <span class="base-layer-color" style="background:#2c3e50"></span>
+        <span class="base-layer-name">鉄道路線・主要駅</span>
+      </label>
+      <div class="base-layer-state" data-base-layer-state="railway" aria-live="polite">未読込：OFF</div>
+
+      <label class="base-layer-row">
+        <input type="checkbox" data-base-layer="road" />
+        <span class="base-layer-color" style="background:#c8443a"></span>
+        <span class="base-layer-name">国道・主要県道</span>
+      </label>
+      <div class="base-layer-state" data-base-layer-state="road" aria-live="polite">未読込：OFF</div>
+
+      <label class="base-layer-row">
+        <input type="checkbox" data-base-layer="river" />
+        <span class="base-layer-color" style="background:#4a90d9"></span>
+        <span class="base-layer-name">河川・水域（Internalのみ）</span>
+      </label>
+      <div class="base-layer-state" data-base-layer-state="river" aria-live="polite">Public版：データ未提供（OFF）</div>
+    </div>
+    <p class="hint">
+      Public版は行政界・鉄道・道路を配布します。W05河川はInternal / Local QA専用で、Public版ではrequestせず安全にOFFとします。生成手順は<code>data/README.md</code>を参照してください。
+    </p>
+  </div>
+
+  <!-- 国道・県道の手動ラベル -->
+  <div class="section road-label-section">
+    <h2>道路名ラベル（手動登録）</h2>
+    <div id="road-label-state" class="road-label-state" aria-live="polite">登録ラベル：0件</div>
+    <p class="hint">
+      国道・県道の路線名は国土数値情報の道路属性に含まれないため、現地確認済みの地点だけ<code>data/road/route-labels.json</code>へ手動登録します。未登録の間はラベルを表示しません。
+    </p>
+  </div>
+
+  <!-- エリアプリセット（AreaPresetSelector） -->
+  <div class="section area-preset-section">
+    <h2>エリアプリセット</h2>
+    <div class="area-preset-buttons" id="area-preset-buttons">
+      <button type="button" class="ghost" data-area="aichi">愛知県全域</button>
+      <button type="button" class="ghost" data-area="nagoya">名古屋市</button>
+      <button type="button" class="ghost" data-area="owari">尾張</button>
+      <button type="button" class="ghost" data-area="chita">知多</button>
+      <button type="button" class="ghost" data-area="nishimikawa">西三河</button>
+    </div>
+    <p class="hint">表示範囲の目安です。正式な行政界そのものを示すものではありません。</p>
+  </div>
+
+  <!-- 図形操作ガイド -->
+  <div class="section operation-guide" aria-label="図形操作ガイド">
+    <h2>図形の操作</h2>
+    <p><strong>形を変える：</strong>［形を編集］→ 頂点を動かす</p>
+    <p><strong>場所を変える：</strong>［全体を移動］→ 図形を動かす</p>
+    <p><strong>消す：</strong>［削除する］→ 対象を選ぶ</p>
+  </div>
+
+  <!-- 地図メモ -->
+  <div class="section map-note-section">
+    <h2>地図メモ</h2>
+    <label class="map-note-label" for="map-note-input">メモ内容</label>
+    <textarea
+      id="map-note-input"
+      rows="4"
+      maxlength="120"
+      placeholder="例：駅徒歩圏。交通量と騒音を現地確認"
+      aria-describedby="map-note-guide map-note-privacy map-note-state"
+    ></textarea>
+    <div id="map-note-counter" class="map-note-counter">0 / 120</div>
+    <div class="map-note-actions">
+      <button id="place-map-note" type="button" aria-pressed="false">
+        メモを地図に置く
+      </button>
+      <button id="update-map-note" type="button" class="ghost" disabled>
+        選択中のメモを更新
+      </button>
+    </div>
+    <p id="map-note-guide" class="map-note-guide">
+      「メモを地図に置く」を押した後、地図上の配置したい場所をクリックしてください。
+    </p>
+    <p id="map-note-privacy" class="map-note-privacy">
+      個人名、電話番号、正確な自宅住所、勤務先などの個人情報を入力しないでください。
+    </p>
+    <div id="map-note-state" class="map-note-state" aria-live="polite">
+      メモは選択されていません
+    </div>
+  </div>
+
+  <!-- 住所検索 -->
+  <div class="section">
+    <h2>場所を探す</h2>
+    <div class="input-row">
+      <input type="text" id="search-input" placeholder="例：名古屋駅 / 千種区 / 〒〇〇〇..." />
+      <button id="search-btn">検索</button>
+    </div>
+    <div class="hint">地名・駅名・住所で地図移動。地図上を直接クリックでも円を置けます。</div>
+  </div>
+
+  <!-- 半径 -->
+  <div class="section">
+    <h2>半径を選ぶ</h2>
+    <div class="preset-grid">
+      <button class="preset-btn" data-radius="500"><span class="label">500m</span><span class="desc">徒歩6分</span></button>
+      <button class="preset-btn active" data-radius="800"><span class="label">800m</span><span class="desc">徒歩10分</span></button>
+      <button class="preset-btn" data-radius="1000"><span class="label">1km</span><span class="desc">徒歩13分</span></button>
+      <button class="preset-btn" data-radius="2000"><span class="label">2km</span><span class="desc">自転車8分</span></button>
+      <button class="preset-btn" data-radius="3000"><span class="label">3km</span><span class="desc">学区目安</span></button>
+      <button class="preset-btn" data-radius="5000"><span class="label">5km</span><span class="desc">商圏目安</span></button>
+    </div>
+    <div class="input-row">
+      <input type="number" id="custom-radius" placeholder="カスタム半径 (m)" min="50" max="50000" />
+      <button id="apply-custom" class="ghost">適用</button>
+    </div>
+  </div>
+
+  <!-- 色とラベル -->
+  <div class="section">
+    <h2>色とラベル</h2>
+    <div class="color-palette" id="color-palette">
+      <div class="color-swatch active" data-color="#c8443a" style="background:#c8443a"></div>
+      <div class="color-swatch" data-color="#2c3e50" style="background:#2c3e50"></div>
+      <div class="color-swatch" data-color="#3a8c5f" style="background:#3a8c5f"></div>
+      <div class="color-swatch" data-color="#d4a017" style="background:#d4a017"></div>
+      <div class="color-swatch" data-color="#7a4e9c" style="background:#7a4e9c"></div>
+      <div class="color-swatch" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+    </div>
+    <input type="text" id="label-input" placeholder="ラベル（例：最寄り駅 / 候補物件A）" />
+  </div>
+
+  <!-- ハザードマップ -->
+  <div class="section urban-area-section">
+    <h2>都市計画情報を重ねる</h2>
+    <label class="urban-area-toggle-row">
+      <input
+        type="checkbox"
+        id="urban-area-classification-toggle"
+        aria-describedby="urban-area-classification-state urban-area-classification-caution"
+      />
+      <span class="urban-area-toggle-swatch" aria-hidden="true"></span>
+      <span class="urban-area-toggle-name">市街化区域・市街化調整区域</span>
+      <span class="urban-area-toggle-tag">区域区分</span>
+    </label>
+    <div
+      id="urban-area-classification-state"
+      class="urban-area-state"
+      aria-live="polite"
+    >市街化区域・市街化調整区域：OFF</div>
+    <p id="urban-area-classification-caution" class="urban-area-caution">
+      この表示は参考情報です。建築可否、開発許可、都市計画上の正式な区域は、各自治体の担当窓口で必ず確認してください。
+      非線引き都市計画区域および都市計画区域外は、このレイヤーでは判定・表示していません。
+    </p>
+    <p class="urban-area-source">
+      出典：国土交通省 不動産情報ライブラリ「都市計画決定GISデータ（令和7年度）」XKT001を加工
+    </p>
+    <p class="urban-area-api-credit">
+      このサービスは、国土交通省の不動産情報ライブラリのAPI機能を使用していますが、提供情報の最新性、正確性、完全性等が保証されたものではありません。
+    </p>
+  </div>
+
+  <!-- ハザードマップ -->
+  <div class="section">
+    <h2>ハザード情報を重ねる</h2>
+    <div class="hazard-list" id="hazard-list">
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="flood" />
+        <span class="hazard-color" style="background:#4a90d9"></span>
+        <span class="hazard-name">洪水浸水想定区域</span>
+        <span class="hazard-tag">想定最大規模</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="landslide" />
+        <span class="hazard-color" style="background:#a06040"></span>
+        <span class="hazard-name">土砂災害警戒区域</span>
+        <span class="hazard-tag">土石流</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="hightide" />
+        <span class="hazard-color" style="background:#5fb6c4"></span>
+        <span class="hazard-name">高潮浸水想定区域</span>
+        <span class="hazard-tag">想定最大規模</span>
+      </label>
+      <label class="hazard-row">
+        <input type="checkbox" data-hazard="tsunami" />
+        <span class="hazard-color" style="background:#9b6db5"></span>
+        <span class="hazard-name">津波浸水想定区域</span>
+        <span class="hazard-tag">最大クラス</span>
+      </label>
+    </div>
+    <div class="opacity-control">
+      <label>透明度</label>
+      <input type="range" id="hazard-opacity" min="10" max="100" value="60" />
+      <span class="opacity-val" id="hazard-opacity-val">60%</span>
+    </div>
+    <div class="hint" style="margin-top:8px">
+      出典：<strong>国土交通省 ハザードマップポータルサイト</strong>。AIが構造的に苦手な「土地の温度感」の最初の手がかり。必ず現地確認・自治体公表資料との突合をしてください。
+    </div>
+  </div>
+
+  <!-- 円リスト -->
+  <div class="section">
+    <h2>配置した円<span id="count-badge" style="margin-left:auto;font-size:11px;color:var(--ink-soft);font-family:'Shippori Mincho',serif;letter-spacing:0;"></span></h2>
+    <div id="circle-list" class="circle-list"></div>
+  </div>
+
+  <!-- 操作 -->
+  <details>
+    <summary>使い方ヒント</summary>
+    <div style="padding: 14px 24px 18px; font-size: 12px; color: var(--ink-soft); line-height: 1.7;">
+      <strong style="color:var(--ink);">▸ 円を置く</strong><br>
+      地図上をクリック、または住所検索後その地点に追加されます。<br><br>
+      <strong style="color:var(--ink);">▸ 不動産業務での使い方</strong><br>
+      ・候補物件から徒歩10分圏（800m）を可視化<br>
+      ・複数候補駅の徒歩圏が重なるエリアを発見<br>
+      ・学区・商圏・通勤圏の重なりを目視<br><br>
+      <strong style="color:var(--ink);">▸ 円の編集</strong><br>
+      リストの「⊕」でその円にズーム、「✕」で削除。
+    </div>
+  </details>
+
+  <div style="padding: 12px 24px;">
+    <button id="clear-all" class="ghost" style="width:100%">すべての円を削除</button>
+  </div>
+
+  <div class="footer-note">
+    OpenStreetMap contributors · 国土数値情報（国土交通省） · まほろば不動産戦略室
+  </div>
+</div>
+
+<div class="map-wrap" id="map-wrap">
+  <button id="toggle-panel" title="パネル開閉">☰</button>
+  <div id="map"></div>
+  <aside
+    id="urban-area-classification-legend"
+    class="urban-area-legend"
+    aria-label="市街化区域・市街化調整区域の凡例"
+    hidden
+  >
+    <div class="urban-area-legend-title">市街化区域・市街化調整区域</div>
+    <div><span class="legend-swatch promotion"></span>市街化区域</div>
+    <div><span class="legend-swatch control"></span>市街化調整区域</div>
+  </aside>
+  <div id="status"></div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" defer></script>
+<script src="https://unpkg.com/@geoman-io/leaflet-geoman-free@2.20.0/dist/leaflet-geoman.js" defer></script>
+<script
+  src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"
+  crossorigin="anonymous"
+  referrerpolicy="no-referrer"
+  defer
+></script>
+<script src="./js/config.js" defer></script>
+<script src="./js/domain.js" defer></script>
+<script src="./js/memory-store.js" defer></script>
+<script src="./js/project-schema.js" defer></script>
+<script src="./js/indexeddb-store.js" defer></script>
+<script src="./js/geojson-adapter.js" defer></script>
+<script src="./js/map.js" defer></script>
+<script src="./js/circles.js" defer></script>
+<script src="./js/ui.js" defer></script>
+<script src="./js/geocoder.js" defer></script>
+<script src="./js/hazards.js" defer></script>
+<script src="./js/urban-area-classification-domain.js" defer></script>
+<script src="./js/urban-area-classification-layer.js" defer></script>
+<script src="./js/geometry-editor.js" defer></script>
+<script src="./js/map-notes.js" defer></script>
+<script src="./js/project-manager.js" defer></script>
+<script src="./js/map-export.js" defer></script>
+<script src="./js/mode-switcher.js" defer></script>
+<script src="./js/base-layers.js" defer></script>
+<script src="./js/road-labels.js" defer></script>
+<script src="./js/area-preset.js" defer></script>
+<script src="./js/app.js" defer></script>
+</body>
+</html>

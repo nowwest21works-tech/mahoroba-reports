@@ -4,17 +4,29 @@
   "private": true,
   "scripts": {
     "data:urban-area": "node scripts/generate-urban-area-classification.cjs",
-    "test:maps": "npm run test:map-circles && npm run test:journey-map",
+    "test:maps": "npm run test:map-circles && npm run test:journey-map && npm run test:area-canvas",
     "test:map-circles": "playwright test --config=playwright.config.js",
     "test:map-circles:report": "playwright show-report playwright-report/map-circles",
     "test:journey-map": "npm run test:journey-map:domain && npm run test:journey-map:e2e",
     "test:journey-map:domain": "node --test tests/journey-map/domain/*.node.cjs",
     "test:journey-map:e2e": "playwright test --config=playwright.journey-map.config.js",
-    "test:journey-map:report": "playwright show-report playwright-report/journey-map"
+    "test:journey-map:report": "playwright show-report playwright-report/journey-map",
+    "test:area-canvas": "npm run test:area-canvas:domain && npm run check:area-canvas-public && npm run test:area-canvas:e2e",
+    "test:area-canvas:domain": "node --test tests/area-canvas/*.node.cjs",
+    "test:area-canvas:e2e": "playwright test --config=playwright.area-canvas.config.js",
+    "test:area-canvas:report": "playwright show-report playwright-report/area-canvas",
+    "check:area-canvas-public": "node scripts/check-area-canvas-public.cjs",
+    "data:administrative-boundary": "node scripts/generate-administrative-boundary.cjs",
+    "data:railway": "node scripts/generate-railway.cjs",
+    "data:road": "node scripts/generate-road.cjs",
+    "data:river": "node scripts/generate-river.cjs",
+    "data:area-canvas:public": "npm run data:administrative-boundary && npm run data:railway && npm run data:road",
+    "data:area-canvas": "npm run data:area-canvas:public && npm run data:river"
   },
   "devDependencies": {
     "@geoman-io/leaflet-geoman-free": "2.20.0",
     "@playwright/test": "1.58.2",
-    "leaflet": "1.9.4"
+    "leaflet": "1.9.4",
+    "mapshaper": "^0.6.0"
   }
 }
