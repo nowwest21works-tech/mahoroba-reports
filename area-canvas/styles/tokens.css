@@ -1,0 +1,13 @@
+:root {
+  --bg: #f5f1eb;
+  --panel: #fafaf7;
+  --ink: #1a1a1a;
+  --ink-soft: #4a4a48;
+  --line: #d8d2c4;
+  --accent: #c8443a;
+  --accent-soft: #e8a89f;
+  --indigo: #2c3e50;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; font-family: 'Noto Sans JP', sans-serif; color: var(--ink); background: var(--bg); }
+body { display: flex; overflow: hidden; }

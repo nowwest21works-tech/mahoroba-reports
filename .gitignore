@@ -9,3 +9,7 @@ reports/
 *-sama*/
 *client-report*/
 *customer-report*/
+
+# W05 river data is licensed for non-commercial use and is local-QA only.
+# Keep the generator and documentation public, but never commit the generated data.
+/area-canvas/data/river/aichi.geojson
