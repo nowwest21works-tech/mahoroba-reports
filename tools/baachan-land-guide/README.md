@@ -73,4 +73,4 @@ Notion（正本・人が更新）
 
 ## Sites
 
-`.openai/hosting.json` の `project_id` が独立したSitesプロジェクトを示します。公開・外部共有・既存サイトの置換はHuman Gate対象です。
+`.openai/hosting.json` の `project_id` が独立したSitesプロジェクトを示します。2026-09-18にこの「まほろばあちゃん」Sites単体の一般公開が承認されました。PRのReady化・マージ、main反映、既存道具箱の置換、他Sitesの公開や公開範囲変更は引き続きHuman Gate対象です。
