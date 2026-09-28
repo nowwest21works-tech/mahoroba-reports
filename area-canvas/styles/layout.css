@@ -11,10 +11,23 @@
 #panel.collapsed { margin-left: -360px; }
 
 .panel-header {
+  position: relative;
   padding: 20px 24px 16px;
   border-bottom: 1px solid var(--line);
   background: linear-gradient(to bottom, #fafaf7, #f5f1eb);
 }
+#close-panel {
+  position: absolute;
+  top: 14px;
+  right: 12px;
+  width: 44px;
+  padding: 0;
+  background: transparent;
+  color: var(--ink);
+  border-color: var(--line);
+  font-size: 20px;
+}
+#close-panel:hover { color: var(--panel); }
 .panel-header h1 {
   font-family: 'Shippori Mincho', serif;
   font-size: 22px;
@@ -30,20 +43,66 @@
 }
 
 .section { padding: 18px 24px; border-bottom: 1px solid var(--line); }
-.section h2 {
-  font-family: 'Shippori Mincho', serif;
-  font-size: 13px;
-  letter-spacing: 0.2em;
-  color: var(--ink-soft);
-  margin-bottom: 12px;
+.panel-section { padding: 0; }
+.panel-section > summary {
   display: flex;
   align-items: center;
-  gap: 8px;
+  min-height: 48px;
+  padding: 10px 24px;
+  color: var(--ink-soft);
+  border-bottom: 0;
+  list-style: none;
+  font-family: 'Shippori Mincho', serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
 }
-.section h2::before {
-  content: ''; display: inline-block;
-  width: 16px; height: 1px; background: var(--accent);
+.panel-section > summary::-webkit-details-marker { display: none; }
+.panel-section > summary::before {
+  content: '';
+  width: 16px;
+  height: 1px;
+  margin-right: 8px;
+  background: var(--accent);
+  flex: none;
 }
+.panel-section > summary::after {
+  content: '⌄';
+  margin-left: auto;
+  font-family: sans-serif;
+  font-size: 18px;
+  line-height: 1;
+  transform: rotate(-90deg);
+}
+.panel-section[open] > summary::after { transform: none; }
+.panel-section > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: -3px; }
+.panel-section .section-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; }
+.panel-section .section-title small { display: block; font-family: 'Noto Sans JP', sans-serif; font-size: 10px; font-weight: 400; letter-spacing: 0.03em; }
+.deep-time-section .section-title { display: block; }
+.panel-section .section-content { padding: 0 24px 18px; }
+.panel-section[open] > summary { color: var(--ink); }
+.research-subsection + .research-subsection {
+  margin-top: 15px;
+  padding-top: 13px;
+  border-top: 1px solid var(--line);
+}
+.research-subsection-heading {
+  margin: 0 0 9px;
+  color: var(--ink-soft);
+  font-family: 'Shippori Mincho', serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+.research-subsection-title {
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-family: 'Shippori Mincho', serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.research-subsection .section-content { padding: 0; }
 
 
 /* ========== マップ ========== */

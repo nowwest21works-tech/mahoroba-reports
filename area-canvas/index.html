@@ -20,12 +20,87 @@
   <div class="panel-header">
     <h1>まほろば白地図キャンバス</h1>
     <div class="subtitle">AREA CANVAS · HEARING MAP MODE v0.1</div>
+    <button id="close-panel" type="button" aria-label="パネルを閉じる" title="パネルを閉じる">×</button>
   </div>
 
   <!-- 顧客・案件別ローカル保存 -->
-  <div class="section project-section">
-    <h2>顧客・案件の地図</h2>
-    <div class="project-fields">
+    <details class="section panel-section" data-panel-section="radius" open>
+    <summary><span class="section-title">半径を選ぶ</span></summary>
+    <div class="section-content">
+<div class="preset-grid">
+      <button class="preset-btn" data-radius="500"><span class="label">500m</span><span class="desc">徒歩6分</span></button>
+      <button class="preset-btn active" data-radius="800"><span class="label">800m</span><span class="desc">徒歩10分</span></button>
+      <button class="preset-btn" data-radius="1000"><span class="label">1km</span><span class="desc">徒歩13分</span></button>
+      <button class="preset-btn" data-radius="2000"><span class="label">2km</span><span class="desc">自転車8分</span></button>
+      <button class="preset-btn" data-radius="3000"><span class="label">3km</span><span class="desc">学区目安</span></button>
+      <button class="preset-btn" data-radius="5000"><span class="label">5km</span><span class="desc">商圏目安</span></button>
+    </div>
+    <div class="input-row">
+      <input type="number" id="custom-radius" placeholder="カスタム半径 (m)" min="50" max="50000" />
+      <button id="apply-custom" class="ghost">適用</button>
+    </div>
+    </div>
+  </details>
+
+  <details class="section panel-section" data-panel-section="color-label" open>
+    <summary><span class="section-title">色とラベル</span></summary>
+    <div class="section-content">
+<div class="color-palette" id="color-palette">
+      <div class="color-swatch active" data-color="#c8443a" style="background:#c8443a"></div>
+      <div class="color-swatch" data-color="#2c3e50" style="background:#2c3e50"></div>
+      <div class="color-swatch" data-color="#3a8c5f" style="background:#3a8c5f"></div>
+      <div class="color-swatch" data-color="#d4a017" style="background:#d4a017"></div>
+      <div class="color-swatch" data-color="#7a4e9c" style="background:#7a4e9c"></div>
+      <div class="color-swatch" data-color="#1a1a1a" style="background:#1a1a1a"></div>
+    </div>
+    <input type="text" id="label-input" placeholder="ラベル（例：最寄り駅 / 候補物件A）" />
+    </div>
+  </details>
+
+  <details class="section map-note-section panel-section" data-panel-section="map-notes" open>
+    <summary><span class="section-title">地図メモ</span></summary>
+    <div class="section-content">
+<label class="map-note-label" for="map-note-input">メモ内容</label>
+    <textarea
+      id="map-note-input"
+      rows="4"
+      maxlength="120"
+      placeholder="例：駅徒歩圏。交通量と騒音を現地確認"
+      aria-describedby="map-note-guide map-note-privacy map-note-state"
+    ></textarea>
+    <div id="map-note-counter" class="map-note-counter">0 / 120</div>
+    <div class="map-note-actions">
+      <button id="place-map-note" type="button" aria-pressed="false">
+        メモを地図に置く
+      </button>
+      <button id="update-map-note" type="button" class="ghost" disabled>
+        選択中のメモを更新
+      </button>
+    </div>
+    <p id="map-note-guide" class="map-note-guide">
+      「メモを地図に置く」を押した後、地図上の配置したい場所をクリックしてください。
+    </p>
+    <p id="map-note-privacy" class="map-note-privacy">
+      個人名、電話番号、正確な自宅住所、勤務先などの個人情報を入力しないでください。
+    </p>
+    <div id="map-note-state" class="map-note-state" aria-live="polite">
+      メモは選択されていません
+    </div>
+    </div>
+  </details>
+
+  <details class="section panel-section" data-panel-section="circles" open>
+    <summary><span class="section-title">配置した円<span id="count-badge" style="margin-left:auto;font-size:11px;color:var(--ink-soft);font-family:'Shippori Mincho',serif;letter-spacing:0;"></span></span></summary>
+    <div class="section-content">
+<div id="circle-list" class="circle-list"></div>
+    <button id="clear-all" class="ghost clear-all-circles">すべての円を削除</button>
+    </div>
+  </details>
+
+  <details class="section project-section panel-section" data-panel-section="project" open>
+    <summary><span class="section-title">顧客・案件の地図</span></summary>
+    <div class="section-content">
+<div class="project-fields">
       <label for="household-code">顧客コード</label>
       <input type="text" id="household-code" value="HH-001" autocomplete="off" />
       <label for="journey-name">案件名</label>
@@ -73,12 +148,38 @@
       実顧客情報は入力しないでください。顧客名、連絡先、正確な自宅住所、勤務先、収入・借入情報は保存対象外です。
       保存先はこのブラウザ内だけで、自動保存はされません。
     </div>
-  </div>
+    </div>
+  </details>
 
-  <!-- 表示モード切替（MapModeSwitcher） -->
-  <div class="section map-mode-section">
-    <h2>表示モード</h2>
-    <div class="map-mode-buttons" id="map-mode-buttons" role="group" aria-label="表示モード">
+  <details class="section panel-section" data-panel-section="search">
+    <summary><span class="section-title">場所を探す</span></summary>
+    <div class="section-content">
+      <section class="research-subsection" aria-labelledby="place-search-heading">
+        <h3 id="place-search-heading" class="research-subsection-heading">場所検索</h3>
+<div class="input-row">
+      <input type="text" id="search-input" placeholder="例：名古屋駅 / 千種区 / 〒〇〇〇..." />
+      <button id="search-btn">検索</button>
+    </div>
+    <div class="hint">地名・駅名・住所で地図移動。地図上を直接クリックでも円を置けます。</div>
+      </section>
+      <section class="research-subsection" aria-labelledby="area-preset-heading">
+        <h3 id="area-preset-heading" class="research-subsection-heading">エリアプリセット</h3>
+<div class="area-preset-buttons" id="area-preset-buttons">
+      <button type="button" class="ghost" data-area="aichi">愛知県全域</button>
+      <button type="button" class="ghost" data-area="nagoya">名古屋市</button>
+      <button type="button" class="ghost" data-area="owari">尾張</button>
+      <button type="button" class="ghost" data-area="chita">知多</button>
+      <button type="button" class="ghost" data-area="nishimikawa">西三河</button>
+    </div>
+    <p class="hint">表示範囲の目安です。正式な行政界そのものを示すものではありません。</p>
+      </section>
+    </div>
+  </details>
+
+  <details class="section map-mode-section panel-section" data-panel-section="map-mode">
+    <summary><span class="section-title">表示モード</span></summary>
+    <div class="section-content">
+<div class="map-mode-buttons" id="map-mode-buttons" role="group" aria-label="表示モード">
       <button type="button" class="mode-btn active" data-mode="real" aria-pressed="true">
         <span class="label">通常地図</span><span class="desc">場所の確認用</span>
       </button>
@@ -107,12 +208,15 @@
     <p class="hint">
       「白地図」「路線重視」「車移動重視」はワンタップの組み合わせプリセットです。不透明度スライダーとモノトーンは個別にも調整できます。ワンタップで「通常地図」に戻せます。
     </p>
-  </div>
+    </div>
+  </details>
 
-  <!-- 地理データレイヤー（MapLayerToggle） -->
-  <div class="section base-layer-section">
-    <h2>地理データを重ねる</h2>
-    <div class="base-layer-list" id="base-layer-list">
+  <details class="section base-layer-section panel-section" data-panel-section="geography">
+    <summary><span class="section-title">地理データを重ねる</span></summary>
+    <div class="section-content">
+      <section class="research-subsection" aria-labelledby="base-geography-heading">
+        <h3 id="base-geography-heading" class="research-subsection-heading">基本地理データ</h3>
+<div class="base-layer-list" id="base-layer-list">
       <label class="base-layer-row">
         <input type="checkbox" data-base-layer="administrative-boundary" />
         <span class="base-layer-color" style="background:#8a8a86"></span>
@@ -144,114 +248,10 @@
     <p class="hint">
       Public版は行政界・鉄道・道路を配布します。W05河川はInternal / Local QA専用で、Public版ではrequestせず安全にOFFとします。生成手順は<code>data/README.md</code>を参照してください。
     </p>
-  </div>
-
-  <!-- 国道・県道の手動ラベル -->
-  <div class="section road-label-section">
-    <h2>道路名ラベル（手動登録）</h2>
-    <div id="road-label-state" class="road-label-state" aria-live="polite">登録ラベル：0件</div>
-    <p class="hint">
-      国道・県道の路線名は国土数値情報の道路属性に含まれないため、現地確認済みの地点だけ<code>data/road/route-labels.json</code>へ手動登録します。未登録の間はラベルを表示しません。
-    </p>
-  </div>
-
-  <!-- エリアプリセット（AreaPresetSelector） -->
-  <div class="section area-preset-section">
-    <h2>エリアプリセット</h2>
-    <div class="area-preset-buttons" id="area-preset-buttons">
-      <button type="button" class="ghost" data-area="aichi">愛知県全域</button>
-      <button type="button" class="ghost" data-area="nagoya">名古屋市</button>
-      <button type="button" class="ghost" data-area="owari">尾張</button>
-      <button type="button" class="ghost" data-area="chita">知多</button>
-      <button type="button" class="ghost" data-area="nishimikawa">西三河</button>
-    </div>
-    <p class="hint">表示範囲の目安です。正式な行政界そのものを示すものではありません。</p>
-  </div>
-
-  <!-- 図形操作ガイド -->
-  <div class="section operation-guide" aria-label="図形操作ガイド">
-    <h2>図形の操作</h2>
-    <p><strong>形を変える：</strong>［形を編集］→ 頂点を動かす</p>
-    <p><strong>場所を変える：</strong>［全体を移動］→ 図形を動かす</p>
-    <p><strong>消す：</strong>［削除する］→ 対象を選ぶ</p>
-  </div>
-
-  <!-- 地図メモ -->
-  <div class="section map-note-section">
-    <h2>地図メモ</h2>
-    <label class="map-note-label" for="map-note-input">メモ内容</label>
-    <textarea
-      id="map-note-input"
-      rows="4"
-      maxlength="120"
-      placeholder="例：駅徒歩圏。交通量と騒音を現地確認"
-      aria-describedby="map-note-guide map-note-privacy map-note-state"
-    ></textarea>
-    <div id="map-note-counter" class="map-note-counter">0 / 120</div>
-    <div class="map-note-actions">
-      <button id="place-map-note" type="button" aria-pressed="false">
-        メモを地図に置く
-      </button>
-      <button id="update-map-note" type="button" class="ghost" disabled>
-        選択中のメモを更新
-      </button>
-    </div>
-    <p id="map-note-guide" class="map-note-guide">
-      「メモを地図に置く」を押した後、地図上の配置したい場所をクリックしてください。
-    </p>
-    <p id="map-note-privacy" class="map-note-privacy">
-      個人名、電話番号、正確な自宅住所、勤務先などの個人情報を入力しないでください。
-    </p>
-    <div id="map-note-state" class="map-note-state" aria-live="polite">
-      メモは選択されていません
-    </div>
-  </div>
-
-  <!-- 住所検索 -->
-  <div class="section">
-    <h2>場所を探す</h2>
-    <div class="input-row">
-      <input type="text" id="search-input" placeholder="例：名古屋駅 / 千種区 / 〒〇〇〇..." />
-      <button id="search-btn">検索</button>
-    </div>
-    <div class="hint">地名・駅名・住所で地図移動。地図上を直接クリックでも円を置けます。</div>
-  </div>
-
-  <!-- 半径 -->
-  <div class="section">
-    <h2>半径を選ぶ</h2>
-    <div class="preset-grid">
-      <button class="preset-btn" data-radius="500"><span class="label">500m</span><span class="desc">徒歩6分</span></button>
-      <button class="preset-btn active" data-radius="800"><span class="label">800m</span><span class="desc">徒歩10分</span></button>
-      <button class="preset-btn" data-radius="1000"><span class="label">1km</span><span class="desc">徒歩13分</span></button>
-      <button class="preset-btn" data-radius="2000"><span class="label">2km</span><span class="desc">自転車8分</span></button>
-      <button class="preset-btn" data-radius="3000"><span class="label">3km</span><span class="desc">学区目安</span></button>
-      <button class="preset-btn" data-radius="5000"><span class="label">5km</span><span class="desc">商圏目安</span></button>
-    </div>
-    <div class="input-row">
-      <input type="number" id="custom-radius" placeholder="カスタム半径 (m)" min="50" max="50000" />
-      <button id="apply-custom" class="ghost">適用</button>
-    </div>
-  </div>
-
-  <!-- 色とラベル -->
-  <div class="section">
-    <h2>色とラベル</h2>
-    <div class="color-palette" id="color-palette">
-      <div class="color-swatch active" data-color="#c8443a" style="background:#c8443a"></div>
-      <div class="color-swatch" data-color="#2c3e50" style="background:#2c3e50"></div>
-      <div class="color-swatch" data-color="#3a8c5f" style="background:#3a8c5f"></div>
-      <div class="color-swatch" data-color="#d4a017" style="background:#d4a017"></div>
-      <div class="color-swatch" data-color="#7a4e9c" style="background:#7a4e9c"></div>
-      <div class="color-swatch" data-color="#1a1a1a" style="background:#1a1a1a"></div>
-    </div>
-    <input type="text" id="label-input" placeholder="ラベル（例：最寄り駅 / 候補物件A）" />
-  </div>
-
-  <!-- ハザードマップ -->
-  <div class="section urban-area-section">
-    <h2>都市計画情報を重ねる</h2>
-    <label class="urban-area-toggle-row">
+      </section>
+      <section class="research-subsection" aria-labelledby="urban-planning-heading">
+        <h3 id="urban-planning-heading" class="research-subsection-heading">都市計画</h3>
+<label class="urban-area-toggle-row">
       <input
         type="checkbox"
         id="urban-area-classification-toggle"
@@ -276,12 +276,10 @@
     <p class="urban-area-api-credit">
       このサービスは、国土交通省の不動産情報ライブラリのAPI機能を使用していますが、提供情報の最新性、正確性、完全性等が保証されたものではありません。
     </p>
-  </div>
-
-  <!-- ハザードマップ -->
-  <div class="section">
-    <h2>ハザード情報を重ねる</h2>
-    <div class="hazard-list" id="hazard-list">
+      </section>
+      <section class="research-subsection" aria-labelledby="hazard-heading">
+        <h3 id="hazard-heading" class="research-subsection-heading">ハザード</h3>
+<div class="hazard-list" id="hazard-list">
       <label class="hazard-row">
         <input type="checkbox" data-hazard="flood" />
         <span class="hazard-color" style="background:#4a90d9"></span>
@@ -315,19 +313,44 @@
     <div class="hint" style="margin-top:8px">
       出典：<strong>国土交通省 ハザードマップポータルサイト</strong>。AIが構造的に苦手な「土地の温度感」の最初の手がかり。必ず現地確認・自治体公表資料との突合をしてください。
     </div>
-  </div>
+      </section>
+      <section class="research-subsection" aria-labelledby="deep-time-heading">
+        <h3 id="deep-time-heading" class="research-subsection-heading">地歴マップ</h3>
+<h4 class="research-subsection-title">Deep Time Map</h4>
+<label class="deep-time-master"><input type="checkbox" id="deep-time-enabled" /> Deep Time Mapを使う</label>
+      <div id="deep-time-state" class="deep-time-state" role="status" aria-live="polite">OFF · データ未接続</div>
+      <fieldset id="deep-time-controls" disabled>
+        <legend>時代を選ぶ</legend>
+        <label class="deep-time-option"><input type="radio" name="deep-time-era" value="present" checked /> 現在</label>
+        <label class="deep-time-option"><input type="radio" name="deep-time-era" value="jomon" /> 縄文海進期 <small>約7,000年前 · 復元データ準備中</small></label>
+        <label class="deep-time-option"><input type="radio" name="deep-time-era" value="lgm" /> 最終氷期 <small>約20,000年前 · 復元データ準備中</small></label>
+        <div class="deep-time-subheading">補助レイヤー</div>
+        <div id="deep-time-overlays"></div>
+        <div class="opacity-control"><label for="deep-time-opacity">不透明度</label><input type="range" id="deep-time-opacity" min="10" max="100" value="60" /><span class="opacity-val" id="deep-time-opacity-val">60%</span></div>
+      </fieldset>
+      <p class="deep-time-caution">過去地形は研究成果に基づく推定復元を含みます。境界は参考表示であり、建築・防災・法的判断の確定情報ではありません。原典・自治体資料・地盤調査を確認してください。</p>
+      </section>
+      <div hidden aria-hidden="true">
+<div id="road-label-state" class="road-label-state" aria-live="polite">登録ラベル：0件</div>
+    <p class="hint">
+      国道・県道の路線名は国土数値情報の道路属性に含まれないため、現地確認済みの地点だけ<code>data/road/route-labels.json</code>へ手動登録します。未登録の間はラベルを表示しません。
+    </p>
+      </div>
+    </div>
+  </details>
 
-  <!-- 円リスト -->
-  <div class="section">
-    <h2>配置した円<span id="count-badge" style="margin-left:auto;font-size:11px;color:var(--ink-soft);font-family:'Shippori Mincho',serif;letter-spacing:0;"></span></h2>
-    <div id="circle-list" class="circle-list"></div>
-  </div>
-
-  <!-- 操作 -->
-  <details>
-    <summary>使い方ヒント</summary>
-    <div style="padding: 14px 24px 18px; font-size: 12px; color: var(--ink-soft); line-height: 1.7;">
-      <strong style="color:var(--ink);">▸ 円を置く</strong><br>
+  <details class="section panel-section" data-panel-section="help">
+    <summary><span class="section-title">使い方ヒント</span></summary>
+    <div class="section-content">
+      <section class="research-subsection" aria-labelledby="drawing-guide-heading">
+        <h3 id="drawing-guide-heading" class="research-subsection-heading">図形の操作</h3>
+<p><strong>形を変える：</strong>［形を編集］→ 頂点を動かす</p>
+    <p><strong>場所を変える：</strong>［全体を移動］→ 図形を動かす</p>
+    <p><strong>消す：</strong>［削除する］→ 対象を選ぶ</p>
+      </section>
+      <section class="research-subsection" aria-labelledby="other-hints-heading">
+        <h3 id="other-hints-heading" class="research-subsection-heading">その他のヒント</h3>
+<strong style="color:var(--ink);">▸ 円を置く</strong><br>
       地図上をクリック、または住所検索後その地点に追加されます。<br><br>
       <strong style="color:var(--ink);">▸ 不動産業務での使い方</strong><br>
       ・候補物件から徒歩10分圏（800m）を可視化<br>
@@ -335,12 +358,9 @@
       ・学区・商圏・通勤圏の重なりを目視<br><br>
       <strong style="color:var(--ink);">▸ 円の編集</strong><br>
       リストの「⊕」でその円にズーム、「✕」で削除。
+      </section>
     </div>
   </details>
-
-  <div style="padding: 12px 24px;">
-    <button id="clear-all" class="ghost" style="width:100%">すべての円を削除</button>
-  </div>
 
   <div class="footer-note">
     OpenStreetMap contributors · 国土数値情報（国土交通省） · まほろば不動産戦略室
@@ -348,7 +368,7 @@
 </div>
 
 <div class="map-wrap" id="map-wrap">
-  <button id="toggle-panel" title="パネル開閉">☰</button>
+  <button id="toggle-panel" type="button" aria-label="パネルを開く" title="パネルを開く">☰</button>
   <div id="map"></div>
   <aside
     id="urban-area-classification-legend"
@@ -392,6 +412,10 @@
 <script src="./js/base-layers.js" defer></script>
 <script src="./js/road-labels.js" defer></script>
 <script src="./js/area-preset.js" defer></script>
+<script src="./js/panel-sections.js" defer></script>
+<script src="./js/deep-time-domain.js" defer></script>
+<script src="./js/deep-time-layers.js" defer></script>
+<script src="./js/deep-time-ui.js" defer></script>
 <script src="./js/app.js" defer></script>
 </body>
 </html>

@@ -198,6 +198,7 @@ button:disabled, select:disabled {
 
 /* ========== 円リスト ========== */
 .circle-list { display: flex; flex-direction: column; gap: 8px; }
+.clear-all-circles { width: 100%; margin-top: 10px; }
 .circle-item {
   display: flex; align-items: center; gap: 10px;
   padding: 10px 12px;
@@ -454,6 +455,31 @@ button:disabled, select:disabled {
 .base-layer-state[data-kind="loading"] { color: #8a671c; }
 .base-layer-state[data-kind="success"] { color: #28714f; }
 .base-layer-state[data-kind="error"] { color: var(--accent); }
+
+/* Deep Time controls remain readable even while every dataset is unconnected. */
+.deep-time-master,
+.deep-time-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  font-size: 12px;
+}
+.deep-time-master input,
+.deep-time-option input { width: 16px; height: 16px; accent-color: var(--accent); flex: none; }
+.deep-time-option small { color: var(--ink-soft); font-size: 10px; }
+.deep-time-state,
+.deep-time-caution,
+.deep-time-layer-state { color: var(--ink-soft); font-size: 10px; line-height: 1.6; }
+.deep-time-state { margin: 4px 0 12px; }
+.deep-time-caution { margin-top: 12px; padding: 8px 10px; border-left: 2px solid var(--accent); background: rgba(200, 68, 58, 0.06); }
+#deep-time-controls { border: 0; min-width: 0; }
+#deep-time-controls legend,
+.deep-time-subheading { margin: 8px 0 4px; color: var(--ink); font-family: 'Shippori Mincho', serif; font-size: 12px; font-weight: 700; }
+#deep-time-controls:disabled { opacity: 0.6; }
+.deep-time-layer { padding: 5px 0 8px; border-top: 1px solid var(--line); }
+.deep-time-layer label { display: flex; align-items: center; gap: 8px; font-size: 12px; }
+.deep-time-layer input { width: 16px; height: 16px; flex: none; }
 
 /* ========== 道路名ラベル（手動登録） ========== */
 .road-label-state {

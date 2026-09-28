@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "datasets": [
+    { "id": "jomon", "title": "縄文海進期", "period": "jomon", "authority": null, "sourceOrg": null, "sourceTitle": null, "license": null, "publicAllowed": null, "status": "unconnected" },
+    { "id": "lgm", "title": "最終氷期", "period": "lgm", "authority": null, "sourceOrg": null, "sourceTitle": null, "license": null, "publicAllowed": null, "status": "unconnected" },
+    { "id": "buried-valley", "title": "古木曽川埋没谷", "period": null, "authority": null, "sourceOrg": null, "sourceTitle": null, "license": null, "publicAllowed": null, "status": "unconnected" },
+    { "id": "alluvial-base", "title": "沖積層基底・深度", "period": null, "authority": null, "sourceOrg": null, "sourceTitle": null, "license": null, "publicAllowed": null, "status": "unconnected" },
+    { "id": "landform", "title": "地形分類", "period": null, "authority": null, "sourceOrg": null, "sourceTitle": null, "license": null, "publicAllowed": null, "status": "unconnected" },
+    { "id": "geology", "title": "地質", "period": null, "authority": null, "sourceOrg": null, "sourceTitle": null, "license": null, "publicAllowed": null, "status": "unconnected" },
+    { "id": "active-faults", "title": "活断層・活構造", "period": null, "authority": null, "sourceOrg": null, "sourceTitle": null, "license": null, "publicAllowed": null, "status": "unconnected" }
+  ]
+}

@@ -17,6 +17,10 @@ document.getElementById('toggle-panel').addEventListener('click', () => {
   document.getElementById('panel').classList.toggle('collapsed');
   setTimeout(() => map.invalidateSize(), 320);
 });
+document.getElementById('close-panel').addEventListener('click', () => {
+  document.getElementById('panel').classList.add('collapsed');
+  setTimeout(() => map.invalidateSize(), 320);
+});
 
 // ========== 初期化 ==========
 renderList();
