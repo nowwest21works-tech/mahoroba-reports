@@ -260,9 +260,26 @@
       <section class="research-subsection public-research-section" aria-labelledby="terrain-research-heading">
         <h3 id="terrain-research-heading" class="research-subsection-heading">土地の成り立ち</h3>
         <div id="research-layer-list" class="research-layer-list"></div>
+        <section class="research-subsection relief-subsection" aria-labelledby="relief-heading">
+          <h4 id="relief-heading" class="research-subsection-subheading">高低差</h4>
+          <div id="research-relief-layer-list" class="research-layer-list"></div>
+        </section>
+        <section class="research-subsection land-use-subsection" aria-labelledby="modern-land-use-heading">
+          <h4 id="modern-land-use-heading" class="research-subsection-subheading">近現代の土地利用</h4>
+          <div id="research-land-use-layer-list" class="research-layer-list"></div>
+          <label for="chubu-land-use-year" class="land-use-year-label">年代</label>
+          <select id="chubu-land-use-year" disabled aria-describedby="chubu-land-use-caution">
+            <option value="1977">1977</option>
+            <option value="1982">1982</option>
+            <option value="1987">1987</option>
+            <option value="1991">1991</option>
+            <option value="1997" selected>1997</option>
+          </select>
+          <p id="chubu-land-use-caution" class="research-layer-caution">各時点の土地利用状況を確認する資料。現在の土地利用を示すものではありません。</p>
+        </section>
         <p class="research-layer-state" id="research-layers-state" role="status" aria-live="polite">レイヤー定義を確認しています。</p>
         <div class="research-opacity-control">
-          <label for="research-opacity">土地の成り立ちレイヤーの不透明度</label>
+          <label for="research-opacity">Research Layerの不透明度</label>
           <input type="range" id="research-opacity" min="10" max="100" value="65" disabled />
           <span id="research-opacity-value">65%</span>
         </div>
@@ -446,6 +463,8 @@
 <script src="./js/research-layers-domain.js?v=20260929-health" defer></script>
 <script src="./js/terrain-identify-domain.js?v=20260929-inspector-1" defer></script>
 <script src="./js/terrain-identify.js?v=20260929-inspector-1" defer></script>
+<script src="./js/elevation-identify-domain.js?v=20260929-pack02-1" defer></script>
+<script src="./js/elevation-identify.js?v=20260929-pack02-1" defer></script>
 <script src="./js/research-layers.js?v=20260929-inspector-1" defer></script>
 <script src="./js/app.js?v=20260929-identify" defer></script>
 </body>

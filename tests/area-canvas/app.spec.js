@@ -1,4 +1,5 @@
 const { test, expect } = require('@playwright/test');
+const { deflateSync } = require('node:zlib');
 const {
   APP_ORIGIN,
   installNetworkSandbox,
@@ -14,6 +15,41 @@ const EMPTY_FEATURE_COLLECTION = JSON.stringify({
   type: 'FeatureCollection',
   features: [],
 });
+
+function pngChunk(type, data) {
+  const typeBuffer = Buffer.from(type);
+  const length = Buffer.alloc(4);
+  length.writeUInt32BE(data.length);
+  const crcInput = Buffer.concat([typeBuffer, data]);
+  let crc = 0xffffffff;
+  for (const byte of crcInput) {
+    crc ^= byte;
+    for (let bit = 0; bit < 8; bit += 1) crc = (crc >>> 1) ^ ((crc & 1) ? 0xedb88320 : 0);
+  }
+  const crcBuffer = Buffer.alloc(4);
+  crcBuffer.writeUInt32BE((crc ^ 0xffffffff) >>> 0);
+  return Buffer.concat([length, typeBuffer, data, crcBuffer]);
+}
+
+function solidRgbaPng(red, green, blue, alpha = 255) {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(256, 0);
+  header.writeUInt32BE(256, 4);
+  header[8] = 8;
+  header[9] = 6;
+  const pixel = Buffer.from([red, green, blue, alpha]);
+  const raw = Buffer.alloc(256 * (1 + 256 * 4));
+  for (let y = 0; y < 256; y += 1) {
+    const start = y * (1 + 256 * 4);
+    for (let x = 0; x < 256; x += 1) pixel.copy(raw, start + 1 + x * 4);
+  }
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    pngChunk('IHDR', header),
+    pngChunk('IDAT', deflateSync(raw)),
+    pngChunk('IEND', Buffer.alloc(0)),
+  ]);
+}
 
 async function openAreaCanvas(page, {
   emptyData = false, expandSections = true, networkOptions = {},
@@ -44,6 +80,27 @@ async function openAreaCanvas(page, {
       return;
     }
     await route.abort('failed');
+  });
+  await page.route(/^https:\/\/cyberjapandata\.gsi\.go\.jp\/xyz\/(?:hillshademap|relief|slopemap|lum4bl_chubu\d+)\//, async (route) => {
+    audit.researchTileRequests.push(route.request().url());
+    if (sandboxOptions.holdResearchTiles) {
+      await new Promise((resolve) => pendingResearchReleases.push(async () => {
+        await route.abort('failed').catch(() => {});
+        resolve();
+      }));
+      return;
+    }
+    await route.abort('failed');
+  });
+  audit.demRequests = [];
+  await page.route(/^https:\/\/cyberjapandata\.gsi\.go\.jp\/xyz\/(?:dem1a_png|dem5a_png|dem5b_png|dem5c_png|dem_png)\//, async (route) => {
+    audit.demRequests.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: 'image/png',
+      headers: { 'access-control-allow-origin': '*' },
+      body: solidRgbaPng(0, 0, 123),
+    });
   });
   audit.terrainVectorRequests = [];
   await page.route(/^https:\/\/cyberjapandata\.gsi\.go\.jp\/xyz\/experimental_landformclassification[12]\//, async (route) => {
@@ -243,7 +300,7 @@ test('破損したDeep Time manifestは安全に無効化される', async ({ pa
   await expect(page.locator('#map.leaflet-container')).toBeVisible();
 });
 
-test('Public Research Layer UIは公式情報を示し、3レイヤーを独立制御する', async ({ page }) => {
+test('Public Research Layer UIは公式情報を示し、7レイヤーを独立制御する', async ({ page }) => {
   await page.addInitScript(() => {
     let renderer;
     Object.defineProperty(window, 'html2canvas', {
@@ -266,23 +323,27 @@ test('Public Research Layer UIは公式情報を示し、3レイヤーを独立�
   });
   await openPanelSection(page, 'geography');
   const checkboxes = page.locator('[data-research-layer]');
-  await expect(checkboxes).toHaveCount(3);
+  await expect(checkboxes).toHaveCount(7);
   expect(await checkboxes.evaluateAll((items) => items.every((item) => !item.checked))).toBe(true);
   await expect(page.locator('#research-layers-state')).toContainText('レイヤーは個別にON');
   await expect(page.locator('.research-future-layer')).toContainText('活断層図');
   await expect(page.locator('.research-future-layer')).toContainText('公式タイル未接続');
-  await expect(page.locator('.research-layer-info:not(.research-layer-legend)')).toHaveCount(3);
-  await expect(page.locator('.research-layer-legend')).toHaveCount(3);
-  await expect(page.locator('.research-layer-legend > summary')).toHaveText(['凡例を見る', '凡例を見る', '凡例を見る']);
+  await expect(page.locator('.research-layer-info:not(.research-layer-legend)')).toHaveCount(7);
+  await expect(page.locator('.research-layer-legend')).toHaveCount(7);
+  await expect(page.locator('.research-layer-legend > summary')).toHaveText(Array(7).fill('凡例を見る'));
   await page.locator('.research-layer-legend').first().locator('summary').click();
   await expect(page.locator('.research-layer-legend-list').first()).toContainText('扇状地');
   await page.locator('.research-layer-legend').nth(1).locator('summary').click();
   await expect(page.locator('.research-layer-legend-list').nth(1)).toContainText('泥地');
   await page.locator('.research-layer-legend').nth(2).locator('summary').click();
   await expect(page.locator('.research-layer-legend-list').nth(2)).toContainText('堆積岩');
-  await expect(page.locator('.research-layer-source-link')).toHaveCount(3);
-  await expect(page.locator('.research-layer-terms-link')).toHaveCount(3);
-  await expect(page.locator('.research-layer-authority')).toHaveText(['EVIDENCE候補', 'EVIDENCE候補', 'EVIDENCE候補']);
+  await expect(page.locator('.research-layer-source-link')).toHaveCount(7);
+  await expect(page.locator('.research-layer-terms-link')).toHaveCount(7);
+  await expect(page.locator('.research-layer-authority')).toHaveText(Array(7).fill('EVIDENCE候補'));
+  await expect(page.locator('#relief-heading')).toHaveText('高低差');
+  await expect(page.locator('#modern-land-use-heading')).toHaveText('近現代の土地利用');
+  await expect(page.locator('#chubu-land-use-year')).toHaveValue('1997');
+  await expect(page.locator('#chubu-land-use-caution')).toContainText('現在の土地利用を示すものではありません');
   await expect(page.locator('[data-research-layer="meiji-lowland"]')
     .locator('xpath=ancestor::div[contains(@class,"research-layer-item")]'))
     .toContainText('現在の災害危険区域を示すものではありません');
@@ -370,6 +431,67 @@ test('GSJ is upscaled above native zoom 13 with a precision caution', async ({ p
   expect(options.maxZoom).toBe(18);
 });
 
+test('Pack 02 terrain overlays share opacity and keep partial failures enabled', async ({ page }) => {
+  await openAreaCanvas(page, { expandSections: false });
+  await openPanelSection(page, 'geography');
+  const hillshade = page.locator('[data-research-layer="gsi-hillshade"]');
+  const relief = page.locator('[data-research-layer="gsi-relief"]');
+  const slope = page.locator('[data-research-layer="gsi-slope"]');
+  await hillshade.check();
+  await relief.check();
+  await slope.check();
+  await expect(hillshade).toBeChecked();
+  await expect(relief).toBeChecked();
+  await expect(slope).toBeChecked();
+  await page.locator('#research-opacity').fill('42');
+  await expect.poll(async () => {
+    return page.evaluate(() => {
+      const layers = [];
+      map.eachLayer((layer) => { if (layer.options?.exportRole === 'research') layers.push(layer.options.opacity); });
+      return layers.length === 3 && layers.every((opacity) => opacity === 0.42);
+    });
+  }).toBeTruthy();
+  await expect(page.locator('.research-layer-legend')).toHaveCount(7);
+});
+
+test('Chubu land-use year selector permits only listed years and swaps a single layer', async ({ page }) => {
+  const { audit } = await openAreaCanvas(page, { expandSections: false });
+  await openPanelSection(page, 'geography');
+  const year = page.locator('#chubu-land-use-year');
+  const toggle = page.locator('[data-research-layer="chubu-land-use"]');
+  await expect(year.locator('option')).toHaveText(['1977', '1982', '1987', '1991', '1997']);
+  await expect(toggle).not.toBeChecked();
+  await year.selectOption('1977');
+  await toggle.check();
+  await expect(toggle).toBeChecked();
+  await expect.poll(() => audit.researchTileRequests.some((url) => url.includes('/lum4bl_chubu1977/'))).toBe(true);
+  await year.selectOption('1982');
+  await expect.poll(() => audit.researchTileRequests.some((url) => url.includes('/lum4bl_chubu1982/'))).toBe(true);
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).active).toBe(1);
+  expect(audit.researchTileRequests.some((url) => url.includes('/lum4bl_chubu1987/'))).toBe(false);
+  await year.selectOption('1997');
+  await expect.poll(() => audit.researchTileRequests.some((url) => url.includes('/lum4bl_chubu1997/'))).toBe(true);
+  await toggle.uncheck();
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).active).toBe(0);
+  expect(audit.unexpectedExternal).toEqual([]);
+});
+
+test('Pack 02 E2E overlay health reports partial state without disabling', async ({ page }) => {
+  await openAreaCanvas(page, { expandSections: false });
+  let tileCount = 0;
+  await page.route('https://cyberjapandata.gsi.go.jp/xyz/hillshademap/**', async (route) => {
+    tileCount += 1;
+    if (tileCount === 1) return route.abort('failed');
+    return route.fulfill({ status: 200, contentType: 'image/png', body: Buffer.from(
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7y8AAAAASUVORK5CYII=', 'base64') });
+  });
+  await openPanelSection(page, 'geography');
+  const toggle = page.locator('[data-research-layer="gsi-hillshade"]');
+  await toggle.check();
+  await expect.poll(() => page.locator('[data-research-state="gsi-hillshade"]').getAttribute('data-kind')).toBe('warning');
+  await expect(toggle).toBeChecked();
+});
+
 test('公式タイル全件失敗はUNAVAILABLE表示でも選択を保持する', async ({ page }) => {
   const { audit } = await openAreaCanvas(page, { expandSections: false });
   await openPanelSection(page, 'geography');
@@ -406,7 +528,7 @@ test('一部の地理院タイルだけ失敗した場合はPARTIALのままON�
 });
 
 test('共通Map Inspector is opt-in, reports GSI terrain and GSJ fields, and preserves default circle click', async ({ page }) => {
-  await openAreaCanvas(page, { expandSections: false });
+  const { audit } = await openAreaCanvas(page, { expandSections: false });
   await page.route(/^https:\/\/cyberjapandata\.gsi\.go\.jp\/xyz\/experimental_landformclassification[12]\//, (route) => {
     audit.terrainVectorRequests.push(route.request().url());
     return route.fulfill({ status: 200, contentType: 'application/geo+json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({
@@ -435,7 +557,10 @@ test('共通Map Inspector is opt-in, reports GSI terrain and GSJ fields, and pre
   await expect(page.locator('#geology-identify-result')).toContainText('地質年代：新生代 第四紀');
   await expect(page.locator('#geology-identify-result')).toContainText('公式凡例タイトル');
   await expect(page.locator('#geology-identify-result')).toContainText('出典：産総研GSJ');
+  await expect(page.locator('#geology-identify-result')).toContainText('標高：約 1.23 m');
+  await expect(page.locator('#geology-identify-result')).toContainText('DEM種別：DEM1A');
   expect(audit.terrainVectorRequests).toHaveLength(2);
+  expect(audit.demRequests.some((url) => url.includes('/dem1a_png/17/'))).toBe(true);
   expect(await page.locator('.circle-item').count()).toBe(circlesBefore);
   await page.locator('[data-research-layer="seamless-geology"]').uncheck();
   await expect(page.locator('#geology-identify-mode')).toBeChecked();

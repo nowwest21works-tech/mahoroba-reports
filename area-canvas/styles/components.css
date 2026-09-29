@@ -474,6 +474,9 @@ button:disabled, select:disabled {
 .research-layer-state[data-kind="error"] { color: var(--accent); }
 .research-layer-state[data-kind="success"] { color: #28714f; }
 .research-layer-state[data-kind="warning"] { color: #8a5a00; }
+.land-use-year-label { display: block; margin-top: 8px; color: var(--ink-soft); font-size: 10px; }
+#chubu-land-use-year { width: 100%; min-height: 36px; margin-top: 3px; padding: 5px 8px; border: 1px solid var(--line); background: white; color: var(--ink); font: inherit; }
+#chubu-land-use-year:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .research-layer-resolution-note { margin: 4px 0 0; padding-left: 1em; color: #8a5a00; font-size: .78rem; }
 .research-identify-control { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
 .research-identify-control > label { display: flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600; }

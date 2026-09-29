@@ -1,7 +1,7 @@
 ((globalThis) => {
   const PANE_NAME = 'public-research-pane';
   const MANIFEST_URL = './data/research-layers/manifest.json';
-  const state = { layers: [], map: null, opacity: 0.65, overlays: new Map(), identifyMode: false };
+  const state = { layers: [], map: null, opacity: 0.65, overlays: new Map(), identifyMode: false, landUseYear: 1997 };
   const LEGENDS = Object.freeze({
     'landform-classification': {
       url: 'https://www.gsi.go.jp/bousaichiri/fc_index.html',
@@ -30,6 +30,22 @@
         '縮尺は20万分の1です。敷地境界レベルの判定には使用しません。',
       ],
     },
+    'gsi-hillshade': {
+      url: 'https://maps.gsi.go.jp/help/intro/looklist/3-hyoko.html', source: '国土地理院「陰影起伏図」',
+      lines: ['標高タイルから作成した地形の陰影表現です。', '陰影は地形の見え方を助ける資料で、標高値そのものではありません。'],
+    },
+    'gsi-relief': {
+      url: 'https://maps.gsi.go.jp/help/intro/looklist/3-hyoko.html', source: '国土地理院「色別標高図」',
+      lines: ['公式の色別標高表現を表示します。', '地点標高は色から読まず、「この地点を調べる」で公式DEMを照会してください。'],
+    },
+    'gsi-slope': {
+      url: 'https://www.gsi.go.jp/bousaichiri/slopemap.html', source: '国土地理院「傾斜量図」',
+      lines: ['基盤地図情報数値標高モデル由来の地表傾斜表現です。', '傾斜量図は斜面災害の危険度判定ではありません。'],
+    },
+    'chubu-land-use': {
+      url: 'https://maps.gsi.go.jp/development/ichiran.html', source: '国土地理院「細密数値情報（宅地利用動向調査）」',
+      lines: ['中部圏の1977・1982・1987・1991・1997年を単一選択で表示します。', '各時点の土地利用状況を確認する資料です。現在の土地利用や用途地域を示しません。'],
+    },
   });
 
   function addExternalLink(parent, url, text, className) {
@@ -55,6 +71,12 @@
       input.checked = false;
       input.disabled = true;
     });
+    const yearSelect = document.getElementById('chubu-land-use-year');
+    if (yearSelect) yearSelect.disabled = true;
+    const opacity = document.getElementById('research-opacity');
+    if (opacity) opacity.disabled = true;
+    const identify = document.getElementById('geology-identify-mode');
+    if (identify) identify.disabled = true;
     const stateElement = document.getElementById('research-layers-state');
     if (stateElement) {
       stateElement.textContent = message;
@@ -62,8 +84,8 @@
     }
   }
 
-  function renderRows(layers) {
-    const container = document.getElementById('research-layer-list');
+  function renderRows(layers, containerId = 'research-layer-list') {
+    const container = document.getElementById(containerId);
     if (!container) return false;
     container.replaceChildren();
     layers.forEach((layer) => {
@@ -152,6 +174,12 @@
   function removeOverlay(id) {
     const overlay = state.overlays.get(id);
     if (overlay && state.map.hasLayer(overlay.layer)) state.map.removeLayer(overlay.layer);
+  }
+
+  function tileUrlFor(layer) {
+    return layer.id === 'chubu-land-use'
+      ? ResearchLayersDomain.tileUrlForYear(layer, state.landUseYear)
+      : layer.tileUrl;
   }
 
   function updateHealth(id) {
@@ -261,10 +289,31 @@
     return { title: '地形分類（国土地理院・ベクトル資料）', lines: [message], link: source };
   }
 
+  async function identifyElevation(latlng) {
+    const sourceLink = {
+      url: 'https://maps.gsi.go.jp/development/elevation.html',
+      label: '出典：国土地理院 基盤地図情報数値標高モデル',
+    };
+    const result = await ElevationIdentify.identify(state.map, latlng);
+    if (result.value === null) {
+      const message = result.status === 'NO_DATA'
+        ? 'この地点の標高値を確認できませんでした。公式DEMの値なし・提供範囲外等の可能性があり、地点の状態は判定できません。'
+        : 'この地点の標高タイルを取得できず、値を確認できませんでした。';
+      return { title: '地点標高（国土地理院DEM）', lines: [message], link: sourceLink };
+    }
+    const lines = [
+      `標高：約 ${result.value.toFixed(result.dem.decimals)} m`,
+      `DEM種別：${result.dem.id}`,
+      `元データ：${result.dem.source}`,
+    ];
+    if (result.status === 'PARTIAL') lines.push('高解像度候補を一部取得できず、取得できたDEM値を表示しています。');
+    return { title: '地点標高（国土地理院DEM）', lines, link: sourceLink };
+  }
+
   async function identifyPoint(latlng) {
     identifyResult('この地点の資料を確認しています…', []);
     const geologyInput = document.querySelector('[data-research-layer="seamless-geology"]');
-    const tasks = [identifyTerrain(latlng)];
+    const tasks = [identifyTerrain(latlng), identifyElevation(latlng)];
     if (geologyInput?.checked) tasks.push(identifyGeology(latlng));
     const sections = await Promise.all(tasks);
     identifyResult('', sections);
@@ -279,7 +328,9 @@
   function addOverlay(layer) {
     let overlay = state.overlays.get(layer.id);
     if (!overlay) {
-      const tileLayer = L.tileLayer(layer.tileUrl, {
+      const url = tileUrlFor(layer);
+      if (!url) return false;
+      const tileLayer = L.tileLayer(url, {
         attribution: layer.attribution,
         crossOrigin: true,
         maxNativeZoom: layer.maxZoom,
@@ -361,7 +412,9 @@
       return false;
     }
 
-    if (!renderRows(state.layers)) return false;
+    if (!renderRows(state.layers.filter((layer) => layer.group === 'terrain'))) return false;
+    if (!renderRows(state.layers.filter((layer) => layer.group === 'relief'), 'research-relief-layer-list')) return false;
+    if (!renderRows(state.layers.filter((layer) => layer.group === 'modern-land-use'), 'research-land-use-layer-list')) return false;
     state.map.createPane(PANE_NAME);
     state.map.getPane(PANE_NAME).style.zIndex = '280';
     state.layers.forEach((layer) => {
@@ -391,6 +444,28 @@
         }
       });
     });
+
+    const landUseYear = document.getElementById('chubu-land-use-year');
+    if (landUseYear) {
+      landUseYear.value = String(state.landUseYear);
+      landUseYear.disabled = false;
+      landUseYear.addEventListener('change', () => {
+        const layer = ResearchLayersDomain.findLayer(state.layers, 'chubu-land-use');
+        const selected = Number(landUseYear.value);
+        if (!layer || !ResearchLayersDomain.tileUrlForYear(layer, selected)) {
+          landUseYear.value = String(state.landUseYear);
+          return;
+        }
+        state.landUseYear = selected;
+        const toggle = document.querySelector('[data-research-layer="chubu-land-use"]');
+        if (toggle?.checked && inRange(layer)) {
+          removeOverlay(layer.id);
+          state.overlays.delete(layer.id);
+          addOverlay(layer);
+          setStatus(layer.id, `読み込み中…（${state.landUseYear}年）`, 'normal');
+        }
+      });
+    }
 
     const slider = document.getElementById('research-opacity');
     slider.value = String(Math.round(state.layers[0].opacityDefault * 100));

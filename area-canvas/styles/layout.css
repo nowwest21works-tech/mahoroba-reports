@@ -94,6 +94,13 @@
   font-weight: 700;
   letter-spacing: 0.08em;
 }
+.research-subsection-subheading {
+  margin: 10px 0 6px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
 .research-subsection-title {
   margin: 0 0 8px;
   color: var(--ink);

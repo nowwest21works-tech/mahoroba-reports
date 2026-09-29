@@ -3,22 +3,44 @@
     'landform-classification',
     'meiji-lowland',
     'seamless-geology',
+    'gsi-hillshade',
+    'gsi-relief',
+    'gsi-slope',
+    'chubu-land-use',
   ];
   const TILE_URLS = {
     'landform-classification': 'https://cyberjapandata.gsi.go.jp/xyz/lcmfc2/{z}/{x}/{y}.png',
     'meiji-lowland': 'https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png',
     'seamless-geology': 'https://gbank.gsj.jp/seamless/v2/api/1.3.1/tiles/{z}/{y}/{x}.png?layer=g',
+    'gsi-hillshade': 'https://cyberjapandata.gsi.go.jp/xyz/hillshademap/{z}/{x}/{y}.png',
+    'gsi-relief': 'https://cyberjapandata.gsi.go.jp/xyz/relief/{z}/{x}/{y}.png',
+    'gsi-slope': 'https://cyberjapandata.gsi.go.jp/xyz/slopemap/{z}/{x}/{y}.png',
+    'chubu-land-use': 'https://cyberjapandata.gsi.go.jp/xyz/lum4bl_chubu{year}/{z}/{x}/{y}.png',
   };
   const SOURCE_HOSTS = {
     'landform-classification': 'www.gsi.go.jp',
     'meiji-lowland': 'svd1-web1.gsi.go.jp',
     'seamless-geology': 'gbank.gsj.jp',
+    'gsi-hillshade': 'maps.gsi.go.jp',
+    'gsi-relief': 'maps.gsi.go.jp',
+    'gsi-slope': 'maps.gsi.go.jp',
+    'chubu-land-use': 'maps.gsi.go.jp',
   };
   const TERMS_HOSTS = {
     'landform-classification': 'web1.gsi.go.jp',
     'meiji-lowland': 'web1.gsi.go.jp',
     'seamless-geology': 'gbank.gsj.jp',
+    'gsi-hillshade': 'maps.gsi.go.jp',
+    'gsi-relief': 'maps.gsi.go.jp',
+    'gsi-slope': 'maps.gsi.go.jp',
+    'chubu-land-use': 'maps.gsi.go.jp',
   };
+  const LAND_USE_YEARS = Object.freeze([1977, 1982, 1987, 1991, 1997]);
+  const GROUPS = Object.freeze({
+    'landform-classification': 'terrain', 'meiji-lowland': 'terrain', 'seamless-geology': 'terrain',
+    'gsi-hillshade': 'relief', 'gsi-relief': 'relief', 'gsi-slope': 'relief',
+    'chubu-land-use': 'modern-land-use',
+  });
 
   function fail(message) {
     throw new TypeError(message);
@@ -31,7 +53,7 @@
   function validateLayer(layer) {
     if (!layer || typeof layer !== 'object' || Array.isArray(layer)) fail('Layer must be an object');
     if (!REQUIRED_IDS.includes(layer.id)) fail('Unknown research layer');
-    if (!isNonEmptyString(layer.title) || layer.group !== 'terrain') fail('Invalid layer title or group');
+    if (!isNonEmptyString(layer.title) || layer.group !== GROUPS[layer.id]) fail('Invalid layer title or group');
     if (layer.authority !== 'EVIDENCE') fail('Invalid authority');
     if (!isNonEmptyString(layer.sourceOrg) || !isNonEmptyString(layer.sourceTitle)) fail('Missing source identity');
     let source;
@@ -41,6 +63,10 @@
     try { terms = new URL(layer.termsUrl); } catch { fail('Invalid terms URL'); }
     if (terms.protocol !== 'https:' || terms.hostname !== TERMS_HOSTS[layer.id]) fail('Untrusted terms URL');
     if (layer.tileUrl !== TILE_URLS[layer.id]) fail('Invalid tile endpoint');
+    if (layer.id === 'chubu-land-use') {
+      if (!Array.isArray(layer.years) || layer.years.length !== LAND_USE_YEARS.length
+        || layer.years.some((year, index) => year !== LAND_USE_YEARS[index])) fail('Invalid land-use years');
+    } else if (Object.hasOwn(layer, 'years')) fail('Unexpected layer years');
     if (!Number.isInteger(layer.minZoom) || !Number.isInteger(layer.maxZoom)
       || layer.minZoom < 0 || layer.maxZoom > 22 || layer.minZoom > layer.maxZoom) fail('Invalid zoom range');
     if (!isNonEmptyString(layer.attribution) || /[<>]/.test(layer.attribution)) fail('Invalid attribution');
@@ -71,6 +97,12 @@
     try { return candidate ? validateLayer(candidate) : null; } catch { return null; }
   }
 
+  function tileUrlForYear(layer, year) {
+    if (!layer || layer.id !== 'chubu-land-use' || !Number.isInteger(year) || !LAND_USE_YEARS.includes(year)
+      || !Array.isArray(layer.years) || !layer.years.includes(year)) return null;
+    return layer.tileUrl.replace('{year}', String(year));
+  }
+
   function supportsZoom(layer, zoom) {
     return Boolean(layer && Number.isFinite(zoom)
       && Number.isInteger(layer.minZoom) && Number.isInteger(layer.maxZoom)
@@ -95,7 +127,7 @@
     return 'LOADING';
   }
 
-  const api = Object.freeze({ canDisplayAtZoom, findLayer, summarizeTileHealth, supportsZoom, validateLayer, validateManifest });
+  const api = Object.freeze({ canDisplayAtZoom, findLayer, summarizeTileHealth, supportsZoom, tileUrlForYear, validateLayer, validateManifest });
   globalThis.ResearchLayersDomain = api;
   if (typeof module !== 'undefined' && module.exports) module.exports = api;
 })(globalThis);
