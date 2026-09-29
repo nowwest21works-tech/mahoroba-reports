@@ -1,5 +1,6 @@
 // ========== マップクリック ==========
 map.on('click', (e) => {
+  if (ResearchLayers.handleMapClick(e)) return;
   if (JourneyMapNotes.handleMapClick(e.latlng)) return;
   if (
     map.pm.globalDrawModeEnabled()
@@ -29,4 +30,5 @@ JourneyMapExport.initialize({
   mapInstance: map,
   renderMap: globalThis.html2canvas,
 });
+ResearchLayers.initialize({ mapInstance: map });
 showStatus('地図上をクリックして円を配置できます');

@@ -179,6 +179,14 @@
   <details class="section map-mode-section panel-section" data-panel-section="map-mode">
     <summary><span class="section-title">表示モード</span></summary>
     <div class="section-content">
+<div class="basemap-control">
+  <label for="basemap-select">背景地図</label>
+  <select id="basemap-select" aria-describedby="basemap-help">
+    <option value="gsiPale" selected>地理院淡色（標準）</option>
+    <option value="osm">OpenStreetMap（任意）</option>
+  </select>
+  <p id="basemap-help" class="hint">地理院淡色は国土地理院タイルをリアルタイム表示します。OSMは通信状況により利用できない場合があります。</p>
+</div>
 <div class="map-mode-buttons" id="map-mode-buttons" role="group" aria-label="表示モード">
       <button type="button" class="mode-btn active" data-mode="real" aria-pressed="true">
         <span class="label">通常地図</span><span class="desc">場所の確認用</span>
@@ -248,6 +256,25 @@
     <p class="hint">
       Public版は行政界・鉄道・道路を配布します。W05河川はInternal / Local QA専用で、Public版ではrequestせず安全にOFFとします。生成手順は<code>data/README.md</code>を参照してください。
     </p>
+      </section>
+      <section class="research-subsection public-research-section" aria-labelledby="terrain-research-heading">
+        <h3 id="terrain-research-heading" class="research-subsection-heading">土地の成り立ち</h3>
+        <div id="research-layer-list" class="research-layer-list"></div>
+        <p class="research-layer-state" id="research-layers-state" role="status" aria-live="polite">レイヤー定義を確認しています。</p>
+        <div class="research-opacity-control">
+          <label for="research-opacity">土地の成り立ちレイヤーの不透明度</label>
+          <input type="range" id="research-opacity" min="10" max="100" value="65" disabled />
+          <span id="research-opacity-value">65%</span>
+        </div>
+        <div class="research-identify-control">
+          <label><input type="checkbox" id="geology-identify-mode" disabled /> この地点を調べる</label>
+          <p class="research-identify-hint">地形分類は別の公式ベクトル資料から取得します。地質図がONの場合はGSJの地点別凡例も表示します。</p>
+          <div class="research-identify-result" id="geology-identify-result" role="status" aria-live="polite" hidden></div>
+          <p class="research-layer-source">出典：産総研 地質調査総合センター「20万分の1日本シームレス地質図V2」</p>
+        </div>
+        <div class="research-future-layer" aria-label="活断層図は準備中">
+          <span>活断層図</span><small>準備中 · 公式タイル未接続</small>
+        </div>
       </section>
       <section class="research-subsection" aria-labelledby="urban-planning-heading">
         <h3 id="urban-planning-heading" class="research-subsection-heading">都市計画</h3>
@@ -363,7 +390,7 @@
   </details>
 
   <div class="footer-note">
-    OpenStreetMap contributors · 国土数値情報（国土交通省） · まほろば不動産戦略室
+    背景地図の出典は地図右下に表示 · 国土数値情報（国土交通省） · まほろば不動産戦略室
   </div>
 </div>
 
@@ -416,6 +443,10 @@
 <script src="./js/deep-time-domain.js" defer></script>
 <script src="./js/deep-time-layers.js" defer></script>
 <script src="./js/deep-time-ui.js" defer></script>
-<script src="./js/app.js" defer></script>
+<script src="./js/research-layers-domain.js?v=20260929-health" defer></script>
+<script src="./js/terrain-identify-domain.js?v=20260929-inspector-1" defer></script>
+<script src="./js/terrain-identify.js?v=20260929-inspector-1" defer></script>
+<script src="./js/research-layers.js?v=20260929-inspector-1" defer></script>
+<script src="./js/app.js?v=20260929-identify" defer></script>
 </body>
 </html>

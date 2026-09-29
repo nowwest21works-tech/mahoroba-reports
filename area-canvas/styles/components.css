@@ -456,6 +456,40 @@ button:disabled, select:disabled {
 .base-layer-state[data-kind="success"] { color: #28714f; }
 .base-layer-state[data-kind="error"] { color: var(--accent); }
 
+/* Public Research layers share one compact opacity control and keep source notes closed. */
+.research-layer-list { display: flex; flex-direction: column; gap: 7px; }
+.research-layer-item { padding: 7px 9px; background: white; border: 1px solid var(--line); }
+.research-layer-row { display: flex; align-items: center; gap: 9px; min-height: 30px; font-size: 12px; cursor: pointer; }
+.research-layer-row input { width: 16px; height: 16px; flex: none; accent-color: var(--accent); }
+.research-layer-title { flex: 1; font-weight: 500; }
+.research-layer-authority { color: var(--ink-soft); font-size: 9px; white-space: nowrap; }
+.research-layer-info { margin: 2px 0 0 25px; }
+.research-layer-info > summary { padding: 2px 0; border: 0; font-size: 10px; letter-spacing: 0.04em; }
+.research-layer-legend-list { margin: 3px 0 4px; padding-left: 1.15em; color: var(--ink-soft); font-size: 10px; line-height: 1.5; }
+.research-layer-legend-list li + li { margin-top: 3px; }
+.research-layer-legend .research-layer-source { margin-top: 3px; }
+.research-layer-caution, .research-layer-source, .research-layer-state {
+  margin: 5px 0 0; color: var(--ink-soft); font-size: 10px; line-height: 1.55;
+}
+.research-layer-state[data-kind="error"] { color: var(--accent); }
+.research-layer-state[data-kind="success"] { color: #28714f; }
+.research-layer-state[data-kind="warning"] { color: #8a5a00; }
+.research-layer-resolution-note { margin: 4px 0 0; padding-left: 1em; color: #8a5a00; font-size: .78rem; }
+.research-identify-control { margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--line); }
+.research-identify-control > label { display: flex; align-items: center; gap: 6px; font-size: .85rem; font-weight: 600; }
+.research-identify-hint { margin: 4px 0; color: var(--ink-soft); font-size: 10px; line-height: 1.5; }
+.research-identify-result { margin: 6px 0; padding: 7px; background: #f5f4ef; font-size: .76rem; line-height: 1.5; }
+.research-identify-result p { margin: 2px 0; overflow-wrap: anywhere; }
+.map-inspector-result-group + .map-inspector-result-group { margin-top: 8px; padding-top: 7px; border-top: 1px solid var(--line); }
+.map-inspector-result-group h4 { margin: 0 0 4px; font-size: .78rem; }
+.research-layer-source a { color: inherit; text-decoration: underline; }
+.research-opacity-control { display: grid; grid-template-columns: minmax(0, 1fr) 42px; align-items: center; gap: 5px 10px; margin-top: 9px; font-size: 10px; color: var(--ink-soft); }
+.research-opacity-control label { grid-column: 1 / -1; }
+.research-opacity-control input { width: 100%; accent-color: var(--accent); }
+.research-opacity-control span { text-align: right; }
+.research-future-layer { display: flex; justify-content: space-between; gap: 8px; margin-top: 8px; padding: 7px 9px; border: 1px dashed var(--line); color: var(--ink-soft); font-size: 11px; }
+.research-future-layer small { font-size: 10px; }
+
 /* Deep Time controls remain readable even while every dataset is unconnected. */
 .deep-time-master,
 .deep-time-option {
@@ -509,3 +543,8 @@ button:disabled, select:disabled {
   margin-bottom: 4px;
 }
 .area-preset-buttons button { flex: 1 1 auto; min-width: 76px; }
+
+.basemap-control { display: grid; gap: 6px; margin-bottom: 14px; }
+.basemap-control > label { font-size: 11px; color: var(--ink-soft); letter-spacing: 0.05em; }
+.basemap-control select { width: 100%; min-height: 40px; padding: 7px 10px; border: 1px solid var(--line); border-radius: 6px; background: var(--panel); color: var(--ink); font: inherit; }
+.basemap-control .hint { margin: 0; }

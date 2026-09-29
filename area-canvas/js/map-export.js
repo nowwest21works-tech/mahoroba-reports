@@ -105,7 +105,7 @@
       if (
         layer instanceof L.TileLayer
         && layer._map === mapInstance
-        && ['base', 'hazard'].includes(layer.options.exportRole)
+        && ['base', 'hazard', 'research'].includes(layer.options.exportRole)
       ) {
         layers.push(layer);
       }
@@ -279,6 +279,7 @@
       throw new Error('画像生成機能を読み込めませんでした。ページを再読み込みしてください。');
     }
 
+    const researchExcluded = readActiveResearchLayers();
     const readiness = await waitForVisibleTiles(
       mapElement,
       TILE_WAIT_TIMEOUT_MS,
@@ -290,9 +291,22 @@
         && (!tile.loaded || tile.failed || tile.missing)
       ))
       .map(({ tile }) => tile);
+    const skippedResearchTiles = inspectTiles(mapInstance, mapElement).tiles
+      .filter((tile) => tile.role === 'research' && tile.visible)
+      .map(({ tile }) => tile);
+    const researchContainers = Array.from(
+      mapElement.querySelectorAll('.public-research-layer-container'),
+    );
+    const previousResearchVisibility = researchContainers.map((container) => container.style.visibility);
     skippedHazardTiles.forEach((tile) => {
       tile.classList.add('map-export-skip-tile');
     });
+    skippedResearchTiles.forEach((tile) => {
+      tile.classList.add('map-export-skip-tile');
+    });
+    if (researchExcluded.length > 0) {
+      researchContainers.forEach((container) => { container.style.visibility = 'hidden'; });
+    }
     mapElement.classList.add('map-export-capturing');
     try {
       await nextPaint();
@@ -312,7 +326,8 @@
       ) {
         throw new Error('地図画像の生成結果が空でした。');
       }
-      return { canvas, readiness };
+      if (researchExcluded.length > 0) drawResearchExportNotice(canvas, researchExcluded);
+      return { canvas, readiness: { ...readiness, researchExcluded } };
     } catch (error) {
       if (
         error instanceof Error
@@ -328,8 +343,40 @@
       skippedHazardTiles.forEach((tile) => {
         tile.classList.remove('map-export-skip-tile');
       });
+      skippedResearchTiles.forEach((tile) => {
+        tile.classList.remove('map-export-skip-tile');
+      });
+      researchContainers.forEach((container, index) => {
+        container.style.visibility = previousResearchVisibility[index];
+      });
       mapElement.classList.remove('map-export-capturing');
     }
+  }
+
+  function readActiveResearchLayers() {
+    return Array.from(document.querySelectorAll('[data-research-layer]:checked'))
+      .map((input) => input.closest('.research-layer-row')?.querySelector('.research-layer-title')?.textContent)
+      .filter(Boolean);
+  }
+
+  function drawResearchExportNotice(canvas, layerNames) {
+    const context = canvas.getContext('2d');
+    if (!context) return;
+    const ratio = Math.max(1, window.devicePixelRatio || 1);
+    const height = Math.round(34 * ratio);
+    context.save();
+    context.fillStyle = 'rgba(26, 26, 26, 0.88)';
+    context.fillRect(0, canvas.height - height, canvas.width, height);
+    context.fillStyle = '#fffdf7';
+    context.font = `${Math.round(12 * ratio)}px sans-serif`;
+    context.textBaseline = 'middle';
+    context.fillText(
+      `Public Research Layerは画像に含まれていません：${layerNames.join('、')}`,
+      Math.round(10 * ratio),
+      canvas.height - Math.round(height / 2),
+      Math.max(1, canvas.width - Math.round(20 * ratio)),
+    );
+    context.restore();
   }
 
   function canvasToPngBlob(canvas) {
@@ -533,6 +580,7 @@
     counts,
     hazards,
     metadata,
+    researchExcluded,
     printWindow,
   }) {
     const { document } = printWindow;
@@ -590,8 +638,17 @@
       cautionBlock,
       'p',
       '地図・ハザード情報は参考資料です。必ず現地確認と自治体公表資料との照合を行ってください。'
-      + ' 地図 © OpenStreetMap contributors ／ ハザード情報 © 国土交通省',
+      + (baseTileLayer === BASEMAP_LAYERS.gsiPale
+        ? ' 地図出典：国土地理院 / 地理院タイル ／ ハザード情報 © 国土交通省'
+        : ' 地図 © OpenStreetMap contributors ／ ハザード情報 © 国土交通省'),
     );
+    if (researchExcluded.length > 0) {
+      appendTextElement(
+        cautionBlock,
+        'p',
+        `Public Research Layerは出力画像に含めていません：${researchExcluded.join('、')}。画面上の表示とは異なるため、元の地図画面で確認してください。`,
+      );
+    }
     footer.append(cautionBlock);
     sheet.append(footer);
     document.body.append(sheet);
@@ -674,9 +731,12 @@
         await validatePngBlob(blob);
         const fileName = createPngFileName(readMetadata(elements));
         downloadBlob(blob, fileName);
-        const warning = readiness.hazardPartial
-          ? '（一部のハザードタイルは提供範囲外のため省略）'
-          : '';
+        const warnings = [];
+        if (readiness.hazardPartial) warnings.push('一部のハザードタイルは省略');
+        if (readiness.researchExcluded.length > 0) {
+          warnings.push(`Public Research Layerは画像に含まれていません：${readiness.researchExcluded.join('、')}`);
+        }
+        const warning = warnings.length > 0 ? `（${warnings.join('。')}）` : '';
         setState(`PNG画像を保存しました：${fileName}${warning}`, 'success');
       });
     });
@@ -708,12 +768,18 @@
             counts: countFeatures(state.featureCollection),
             hazards: readActiveHazards(),
             metadata: readMetadata(elements),
+            researchExcluded: readiness.researchExcluded,
             printWindow,
           });
           setState('印刷画面を開きました。保存先で「PDFに保存」を選んでください。', 'success');
-          if (readiness.hazardPartial) {
+          if (readiness.hazardPartial || readiness.researchExcluded.length > 0) {
+            const warnings = [];
+            if (readiness.hazardPartial) warnings.push('一部のハザードタイルは提供範囲外のため省略しています');
+            if (readiness.researchExcluded.length > 0) {
+              warnings.push(`Public Research Layerは出力画像に含めていません：${readiness.researchExcluded.join('、')}`);
+            }
             setState(
-              '印刷画面を開きました。一部のハザードタイルは提供範囲外のため省略しています。',
+              `印刷画面を開きました。${warnings.join('。')}`,
               'success',
             );
           }

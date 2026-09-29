@@ -18,13 +18,58 @@ const EMPTY_FEATURE_COLLECTION = JSON.stringify({
 async function openAreaCanvas(page, {
   emptyData = false, expandSections = true, networkOptions = {},
 } = {}) {
-  const audit = await installNetworkSandbox(page, networkOptions);
+  const { researchManifestResponse, ...sandboxOptions } = networkOptions;
+  const audit = await installNetworkSandbox(page, sandboxOptions);
+  audit.basemapRequests = [];
+  const transparentPng = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7y8AAAAASUVORK5CYII=',
+    'base64',
+  );
+  await page.route(/^https:\/\/(?:cyberjapandata\.gsi\.go\.jp\/xyz\/pale|tile\.openstreetmap\.org)\//, async (route) => {
+    audit.basemapRequests.push(route.request().url());
+    await route.fulfill({ body: transparentPng, contentType: 'image/png', headers: { 'access-control-allow-origin': '*' }, status: 200 });
+  });
+  const pendingResearchReleases = [];
+  audit.researchTileRequests = [];
+  audit.releaseResearchTiles = async () => {
+    await Promise.all(pendingResearchReleases.map((release) => release()));
+  };
+  await page.route(/^https:\/\/(?:cyberjapandata\.gsi\.go\.jp\/xyz\/(?:lcmfc2|swale)\/|gbank\.gsj\.jp\/seamless\/v2\/api\/1\.3\.1\/tiles\/)/, async (route) => {
+    audit.researchTileRequests.push(route.request().url());
+    if (sandboxOptions.holdResearchTiles) {
+      await new Promise((resolve) => pendingResearchReleases.push(async () => {
+        await route.abort('failed').catch(() => {});
+        resolve();
+      }));
+      return;
+    }
+    await route.abort('failed');
+  });
+  audit.terrainVectorRequests = [];
+  await page.route(/^https:\/\/cyberjapandata\.gsi\.go\.jp\/xyz\/experimental_landformclassification[12]\//, async (route) => {
+    audit.terrainVectorRequests.push(route.request().url());
+    await route.fulfill({
+      status: 200,
+      contentType: 'application/geo+json; charset=utf-8',
+      headers: { 'access-control-allow-origin': '*' },
+      body: JSON.stringify({ type: 'FeatureCollection', features: [] }),
+    });
+  });
   const riverRequests = [];
 
   await page.route(`${APP_ORIGIN}${APP_PATH}data/river/aichi.geojson`, (route) => {
     riverRequests.push(route.request().url());
     return route.fulfill({ body: '', status: 404 });
   });
+
+  if (researchManifestResponse) {
+    await page.route(`${APP_ORIGIN}${APP_PATH}data/research-layers/manifest.json`, (route) =>
+      route.fulfill({
+        body: researchManifestResponse.body,
+        contentType: 'application/json; charset=utf-8',
+        status: researchManifestResponse.status || 200,
+      }));
+  }
 
   if (emptyData) {
     for (const key of Object.keys(PUBLIC_LAYERS)) {
@@ -41,6 +86,7 @@ async function openAreaCanvas(page, {
 
   await page.goto(APP_PATH);
   await page.locator('#map.leaflet-container').waitFor();
+  await expect(page.locator('#research-layers-state')).not.toHaveText('レイヤー定義を確認しています。');
   if (expandSections) {
     await page.locator('#panel details[data-panel-section]').evaluateAll((sections) => {
       sections.forEach((section) => { section.open = true; });
@@ -55,6 +101,19 @@ async function openPanelSection(page, key) {
     await section.locator(':scope > summary').click();
   }
   return section;
+}
+
+async function getResearchLayerMetrics(page) {
+  return page.evaluate(() => {
+    const active = [];
+    map.eachLayer((layer) => {
+      if (layer.options?.exportRole === 'research') active.push(layer);
+    });
+    return {
+      active: active.length,
+      opacities: active.map((layer) => layer.options.opacity),
+    };
+  });
 }
 
 test('9つのTop-level順序、既定値、統合内容と独立開閉', async ({ page }) => {
@@ -184,6 +243,218 @@ test('破損したDeep Time manifestは安全に無効化される', async ({ pa
   await expect(page.locator('#map.leaflet-container')).toBeVisible();
 });
 
+test('Public Research Layer UIは公式情報を示し、3レイヤーを独立制御する', async ({ page }) => {
+  await page.addInitScript(() => {
+    let renderer;
+    Object.defineProperty(window, 'html2canvas', {
+      configurable: true,
+      get: () => renderer,
+      set: (value) => {
+        renderer = async (element, options) => {
+          const containers = Array.from(element.querySelectorAll('.public-research-layer-container'));
+          window.__areaCanvasResearchExport = {
+            hiddenContainers: containers.filter((container) => getComputedStyle(container).visibility === 'hidden').length,
+          };
+          return value(element, options);
+        };
+      },
+    });
+  });
+  const { audit } = await openAreaCanvas(page, {
+    expandSections: false,
+    networkOptions: { holdResearchTiles: true },
+  });
+  await openPanelSection(page, 'geography');
+  const checkboxes = page.locator('[data-research-layer]');
+  await expect(checkboxes).toHaveCount(3);
+  expect(await checkboxes.evaluateAll((items) => items.every((item) => !item.checked))).toBe(true);
+  await expect(page.locator('#research-layers-state')).toContainText('レイヤーは個別にON');
+  await expect(page.locator('.research-future-layer')).toContainText('活断層図');
+  await expect(page.locator('.research-future-layer')).toContainText('公式タイル未接続');
+  await expect(page.locator('.research-layer-info:not(.research-layer-legend)')).toHaveCount(3);
+  await expect(page.locator('.research-layer-legend')).toHaveCount(3);
+  await expect(page.locator('.research-layer-legend > summary')).toHaveText(['凡例を見る', '凡例を見る', '凡例を見る']);
+  await page.locator('.research-layer-legend').first().locator('summary').click();
+  await expect(page.locator('.research-layer-legend-list').first()).toContainText('扇状地');
+  await page.locator('.research-layer-legend').nth(1).locator('summary').click();
+  await expect(page.locator('.research-layer-legend-list').nth(1)).toContainText('泥地');
+  await page.locator('.research-layer-legend').nth(2).locator('summary').click();
+  await expect(page.locator('.research-layer-legend-list').nth(2)).toContainText('堆積岩');
+  await expect(page.locator('.research-layer-source-link')).toHaveCount(3);
+  await expect(page.locator('.research-layer-terms-link')).toHaveCount(3);
+  await expect(page.locator('.research-layer-authority')).toHaveText(['EVIDENCE候補', 'EVIDENCE候補', 'EVIDENCE候補']);
+  await expect(page.locator('[data-research-layer="meiji-lowland"]')
+    .locator('xpath=ancestor::div[contains(@class,"research-layer-item")]'))
+    .toContainText('現在の災害危険区域を示すものではありません');
+  await expect(page.locator('[data-research-layer="landform-classification"]')
+    .locator('xpath=ancestor::div[contains(@class,"research-layer-item")]'))
+    .toContainText('安全または該当地形なしとは判断できません');
+  await expect(page.locator('#research-opacity')).toHaveValue('65');
+
+  await page.evaluate(() => map.setZoom(13));
+  await page.locator('[data-research-layer="landform-classification"]').check();
+  await page.locator('[data-research-layer="meiji-lowland"]').check();
+  await page.locator('[data-research-layer="seamless-geology"]').check();
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).active).toBe(3);
+  await expect(page.locator('#map .leaflet-control-attribution')).toContainText('国土地理院');
+  await expect(page.locator('#map .leaflet-control-attribution')).toContainText('産業技術総合研究所');
+  expect(await page.evaluate(() => map.getPane('public-research-pane').style.zIndex)).toBe('280');
+  await expect.poll(() => audit.researchTileRequests.some((url) => url.includes('/tiles/')))
+    .toBe(true);
+  expect(audit.researchTileRequests.some((url) => url.includes('/xyz/swale/'))).toBe(true);
+  expect(audit.researchTileRequests.some((url) => url.includes('/xyz/lcmfc2/'))).toBe(true);
+
+  await page.evaluate(async () => {
+    const baseTilesLoaded = new Promise((resolve) => baseTileLayer.once('load', resolve));
+    map.setZoom(14);
+    await baseTilesLoaded;
+  });
+  await page.locator('#export-map-png').click();
+  await expect(page.locator('#map-export-state')).toContainText('Public Research Layerは画像に含まれていません');
+  expect(await page.evaluate(() => window.__areaCanvasResearchExport.hiddenContainers)).toBeGreaterThan(0);
+  const printPopupPromise = page.waitForEvent('popup');
+  await page.locator('#export-map-pdf').click();
+  const printPopup = await printPopupPromise;
+  await expect(printPopup.locator('.print-footer')).toContainText('Public Research Layerは出力画像に含めていません');
+
+  await page.locator('#research-opacity').fill('45');
+  await expect.poll(async () => {
+    const opacities = (await getResearchLayerMetrics(page)).opacities;
+    return opacities.length >= 2 && opacities.every((opacity) => opacity === 0.45);
+  }).toBe(true);
+  await page.evaluate(() => map.setZoom(13));
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).active).toBe(3);
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).opacities)
+    .toEqual([0.45, 0.45, 0.45]);
+  await page.locator('[data-research-layer="meiji-lowland"]').uncheck();
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).active).toBe(2);
+
+  await audit.releaseResearchTiles();
+  await expect(page.locator('[data-research-layer="landform-classification"]')).toBeChecked();
+  await expect(page.locator('[data-research-layer="seamless-geology"]')).toBeChecked();
+  await expect(page.locator('[data-research-state="landform-classification"]'))
+    .toContainText('タイルを取得できませんでした');
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).active).toBe(2);
+  expect(audit.unexpectedExternal).toEqual([]);
+  await page.reload();
+  await expect(page.locator('#research-layers-state')).not.toHaveText('レイヤー定義を確認しています。');
+  expect(await page.locator('[data-research-layer]').evaluateAll((items) => items.every((item) => !item.checked))).toBe(true);
+});
+
+test('unsupported zoom and invalid Public Research manifest fail closed', async ({ page }) => {
+  await openAreaCanvas(page, {
+    expandSections: false,
+    networkOptions: { researchManifestResponse: {
+      body: '{broken',
+    } },
+  });
+  await openPanelSection(page, 'geography');
+  await expect(page.locator('#research-layers-state')).toContainText('レイヤー定義を確認できません');
+  await expect(page.locator('[data-research-layer]')).toHaveCount(0);
+});
+
+test('GSJ is upscaled above native zoom 13 with a precision caution', async ({ page }) => {
+  await openAreaCanvas(page, { expandSections: false });
+  await openPanelSection(page, 'geography');
+  await page.evaluate(() => map.setZoom(14));
+  const geology = page.locator('[data-research-layer="seamless-geology"]');
+  await geology.click();
+  await expect(geology).toBeChecked();
+  await expect(page.locator('[data-research-resolution="seamless-geology"]')).toContainText('敷地境界レベルの精密判定には使用しません');
+  const options = await page.evaluate(() => {
+    const layers = [];
+    map.eachLayer((layer) => { if (layer.options?.researchLayerId === 'seamless-geology') layers.push(layer.options); });
+    return layers[0];
+  });
+  expect(options.maxNativeZoom).toBe(13);
+  expect(options.maxZoom).toBe(18);
+});
+
+test('公式タイル全件失敗はUNAVAILABLE表示でも選択を保持する', async ({ page }) => {
+  const { audit } = await openAreaCanvas(page, { expandSections: false });
+  await openPanelSection(page, 'geography');
+  const layer = page.locator('[data-research-layer="meiji-lowland"]');
+  await layer.check();
+  await expect(page.locator('[data-research-state="meiji-lowland"]'))
+    .toContainText('表示できません／未確認');
+  await expect(layer).toBeChecked();
+  await expect.poll(() => page.locator('[data-research-state="meiji-lowland"]').getAttribute('data-kind'))
+    .toBe('error');
+  await expect.poll(async () => (await getResearchLayerMetrics(page)).active).toBe(1);
+  expect(audit.researchTileRequests.some((url) => url.includes('/xyz/swale/'))).toBe(true);
+  expect(audit.unexpectedExternal).toEqual([]);
+});
+
+test('一部の地理院タイルだけ失敗した場合はPARTIALのままONを保つ', async ({ page }) => {
+  const { audit } = await openAreaCanvas(page, { expandSections: false });
+  let requestCount = 0;
+  const transparentPng = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+j7y8AAAAASUVORK5CYII=', 'base64');
+  await page.route('https://cyberjapandata.gsi.go.jp/xyz/lcmfc2/**', async (route) => {
+    requestCount += 1;
+    if (requestCount === 1) return route.abort('failed');
+    return route.fulfill({ status: 200, contentType: 'image/png', body: transparentPng });
+  });
+  await openPanelSection(page, 'geography');
+  const layer = page.locator('[data-research-layer="landform-classification"]');
+  await layer.check();
+  await expect(page.locator('[data-research-state="landform-classification"]'))
+    .toContainText('一部範囲では表示できない場合があります');
+  await expect(layer).toBeChecked();
+  expect(requestCount).toBeGreaterThan(1);
+  expect(audit.unexpectedExternal).toEqual([]);
+});
+
+test('共通Map Inspector is opt-in, reports GSI terrain and GSJ fields, and preserves default circle click', async ({ page }) => {
+  await openAreaCanvas(page, { expandSections: false });
+  await page.route(/^https:\/\/cyberjapandata\.gsi\.go\.jp\/xyz\/experimental_landformclassification[12]\//, (route) => {
+    audit.terrainVectorRequests.push(route.request().url());
+    return route.fulfill({ status: 200, contentType: 'application/geo+json', headers: { 'access-control-allow-origin': '*' }, body: JSON.stringify({
+      type: 'FeatureCollection', features: [{ type: 'Feature', properties: { code: 10503 }, geometry: {
+        type: 'Polygon', coordinates: [[[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]]],
+      } }],
+    }) });
+  });
+  await page.route('https://gbank.gsj.jp/seamless/v2/api/1.3.1/legend.json?point=*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({
+      formationAge_ja: '新生代 第四紀', group_ja: '堆積岩', lithology_ja: '砂礫', title: '公式凡例タイトル',
+    }) }));
+  await openPanelSection(page, 'geography');
+  await expect(page.locator('#geology-identify-mode')).not.toBeChecked();
+  await page.locator('[data-research-layer="seamless-geology"]').check();
+  await page.locator('#map').click({ position: { x: 420, y: 340 } });
+  expect(audit.terrainVectorRequests).toHaveLength(0);
+  await page.locator('#geology-identify-mode').check();
+  const circlesBefore = await page.locator('.circle-item').count();
+  await page.locator('#map').click({ position: { x: 420, y: 340 } });
+  await expect(page.locator('#geology-identify-result')).toContainText('地形分類：自然堤防');
+  await expect(page.locator('#geology-identify-result')).toContainText('土地の成り立ち：');
+  await expect(page.locator('#geology-identify-result')).toContainText('一般的な自然災害リスク：');
+  await expect(page.locator('#geology-identify-result')).toContainText('個別地点の危険度判定ではありません');
+  await expect(page.locator('#geology-identify-result')).toContainText('出典：国土地理院 ベクトルタイル');
+  await expect(page.locator('#geology-identify-result')).toContainText('地質年代：新生代 第四紀');
+  await expect(page.locator('#geology-identify-result')).toContainText('公式凡例タイトル');
+  await expect(page.locator('#geology-identify-result')).toContainText('出典：産総研GSJ');
+  expect(audit.terrainVectorRequests).toHaveLength(2);
+  expect(await page.locator('.circle-item').count()).toBe(circlesBefore);
+  await page.locator('[data-research-layer="seamless-geology"]').uncheck();
+  await expect(page.locator('#geology-identify-mode')).toBeChecked();
+  await page.locator('#geology-identify-mode').uncheck();
+  await page.locator('#map').click({ position: { x: 420, y: 340 } });
+  await expect(page.locator('.circle-item')).toHaveCount(circlesBefore + 1);
+});
+
+test('GSJ Identify failure and empty response fail closed', async ({ page }) => {
+  await openAreaCanvas(page, { expandSections: false });
+  await page.route('https://gbank.gsj.jp/seamless/v2/api/1.3.1/legend.json?point=*', (route) =>
+    route.fulfill({ status: 200, contentType: 'application/json', body: '{}' }));
+  await openPanelSection(page, 'geography');
+  await page.locator('[data-research-layer="seamless-geology"]').check();
+  await page.locator('#geology-identify-mode').check();
+  await page.locator('#map').click({ position: { x: 420, y: 340 } });
+  await expect(page.locator('#geology-identify-result')).toContainText('この地点の地質情報を確認できませんでした');
+});
+
 test('既存の検索、エリアプリセット、地図メモと書き出し導線を維持する', async ({ page }) => {
   const { audit } = await openAreaCanvas(page, {
     expandSections: false,
@@ -269,6 +540,49 @@ test('公式実データ4レイヤーを読込み、路線／車移動モード�
   expect(audit.unexpectedExternal).toEqual([]);
 });
 
+test('地理院淡色が標準背景で、OSMは明示選択時のみ切り替わる', async ({ page }) => {
+  const { audit } = await openAreaCanvas(page);
+  const initial = await page.evaluate(() => ({
+    url: baseTileLayer._url,
+    activeBaseLayers: (() => {
+      const layers = [];
+      map.eachLayer((layer) => {
+        if (layer instanceof L.TileLayer && layer.options.exportRole === 'base' && layer._map === map) {
+          layers.push(layer._url);
+        }
+      });
+      return layers;
+    })(),
+  }));
+  expect(initial.url).toBe('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png');
+  expect(initial.activeBaseLayers).toEqual([initial.url]);
+  await expect(page.locator('.footer-note')).not.toContainText('OpenStreetMap contributors');
+  await expect(page.locator('#basemap-select')).toHaveValue('gsiPale');
+  await expect(page.locator('.leaflet-control-attribution')).toContainText('国土地理院 / 地理院タイル');
+  await expect(page.locator('.leaflet-control-attribution a[href="https://maps.gsi.go.jp/development/ichiran.html"]')).toBeVisible();
+
+  await page.locator('#basemap-select').selectOption('osm');
+  await expect.poll(() => page.evaluate(() => baseTileLayer._url))
+    .toBe('https://tile.openstreetmap.org/{z}/{x}/{y}.png');
+  await expect(page.locator('.leaflet-control-attribution')).toContainText('OpenStreetMap contributors');
+  const selectedBaseLayers = await page.evaluate(() => {
+    const layers = [];
+    map.eachLayer((layer) => {
+      if (layer instanceof L.TileLayer && layer.options.exportRole === 'base' && layer._map === map) {
+        layers.push(layer._url);
+      }
+    });
+    return layers;
+  });
+  expect(selectedBaseLayers).toEqual(['https://tile.openstreetmap.org/{z}/{x}/{y}.png']);
+
+  await page.locator('#basemap-select').selectOption('gsiPale');
+  await expect.poll(() => page.evaluate(() => baseTileLayer._url))
+    .toBe('https://cyberjapandata.gsi.go.jp/xyz/pale/{z}/{x}/{y}.png');
+  expect(audit.basemapRequests.some((url) => url.startsWith('https://cyberjapandata.gsi.go.jp/xyz/pale/'))).toBe(true);
+  expect(audit.basemapRequests.some((url) => url.startsWith('https://tile.openstreetmap.org/'))).toBe(true);
+  expect(audit.unexpectedExternal).toEqual([]);
+});
 test('1366x1024でLeaflet、Geoman、IndexedDB保存を維持する', async ({ page }) => {
   await page.setViewportSize({ width: 1366, height: 1024 });
   await openAreaCanvas(page, { emptyData: true });

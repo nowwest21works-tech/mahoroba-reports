@@ -1,10 +1,9 @@
 // ========== 表示モード切替（MapModeSwitcher） ==========
-// 「通常地図」は場所確認用の実写タイルそのまま。
-// 「白地図」「路線重視」「車移動重視」は、データソースを切り替えるのではなく、
-// 同じ実写タイルの不透明度を下げてモノトーン化することで背景を後景化させる。
-// これにより行政界・鉄道・道路・河川のベクターレイヤーと、手書き注釈（Marker/Circle/
-// Line/Polygon・付箋）が背景と競合せず前に出る。
+// 表示モードは選択中の背景タイルに適用する。
+// 「白地図」「路線重視」「車移動重視」は背景タイルの不透明度を下げて
+// モノトーン化し、地理データと手書き注釈を前に出す。
 (() => {
+  const basemapSelect = document.getElementById('basemap-select');
   const modeButtons = document.querySelectorAll('#map-mode-buttons .mode-btn');
   const opacitySlider = document.getElementById('basemap-opacity');
   const opacityVal = document.getElementById('basemap-opacity-val');
@@ -83,6 +82,18 @@
     stateEl.textContent = preset.label;
     showStatus(preset.label.split('：')[0] + 'に切り替えました');
   }
+
+  basemapSelect.addEventListener('change', () => {
+    const nextLayer = BASEMAP_LAYERS[basemapSelect.value];
+    if (!nextLayer || nextLayer === baseTileLayer) return;
+    const opacity = Number(opacitySlider.value) / 100;
+    map.removeLayer(baseTileLayer);
+    baseTileLayer = nextLayer;
+    baseTileLayer.setOpacity(opacity);
+    baseTileLayer.addTo(map);
+    const label = basemapSelect.value === 'gsiPale' ? '地理院淡色' : 'OpenStreetMap';
+    stateEl.textContent = `背景地図：${label}`;
+  });
 
   modeButtons.forEach((btn) => {
     btn.addEventListener('click', () => activateMode(btn.dataset.mode));

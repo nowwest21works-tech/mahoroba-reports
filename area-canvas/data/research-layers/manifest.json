@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "layers": [
+    {
+      "id": "landform-classification",
+      "title": "治水地形分類図",
+      "group": "terrain",
+      "authority": "EVIDENCE",
+      "sourceOrg": "国土地理院",
+      "sourceTitle": "治水地形分類図",
+      "sourceUrl": "https://www.gsi.go.jp/bousaichiri/fc_index.html",
+      "termsUrl": "https://web1.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+      "tileUrl": "https://cyberjapandata.gsi.go.jp/xyz/lcmfc2/{z}/{x}/{y}.png",
+      "minZoom": 11,
+      "maxZoom": 16,
+      "attribution": "出典：国土地理院（地理院タイル「治水地形分類図」）",
+      "status": "approved-for-pilot",
+      "publicAllowed": true,
+      "caution": "提供範囲外は未確認です。タイルが表示されない場所を、安全または該当地形なしとは判断できません。",
+      "opacityDefault": 0.65
+    },
+    {
+      "id": "meiji-lowland",
+      "title": "明治期の低湿地",
+      "group": "terrain",
+      "authority": "EVIDENCE",
+      "sourceOrg": "国土地理院",
+      "sourceTitle": "明治期の低湿地",
+      "sourceUrl": "https://svd1-web1.gsi.go.jp/bousaichiri/lc_meiji.html",
+      "termsUrl": "https://web1.gsi.go.jp/kikakuchousei/kikakuchousei40182.html",
+      "tileUrl": "https://cyberjapandata.gsi.go.jp/xyz/swale/{z}/{x}/{y}.png",
+      "minZoom": 10,
+      "maxZoom": 16,
+      "attribution": "出典：国土地理院（地理院タイル「明治期の低湿地」）",
+      "status": "approved-for-pilot",
+      "publicAllowed": true,
+      "caution": "明治期の地図から低湿地を抽出した資料です。場所によって位置誤差を含むため、現在の敷地境界との精密照合には使用しないでください。現在の災害危険区域を示すものではありません。",
+      "opacityDefault": 0.65
+    },
+    {
+      "id": "seamless-geology",
+      "title": "20万分の1日本シームレス地質図V2",
+      "group": "terrain",
+      "authority": "EVIDENCE",
+      "sourceOrg": "産業技術総合研究所 地質調査総合センター",
+      "sourceTitle": "20万分の1日本シームレス地質図V2",
+      "sourceUrl": "https://gbank.gsj.jp/seamless/v2/api/1.3.1/",
+      "termsUrl": "https://gbank.gsj.jp/seamless/agreement.html",
+      "tileUrl": "https://gbank.gsj.jp/seamless/v2/api/1.3.1/tiles/{z}/{y}/{x}.png?layer=g",
+      "minZoom": 0,
+      "maxZoom": 13,
+      "attribution": "出典：産業技術総合研究所 地質調査総合センター「20万分の1日本シームレス地質図V2」",
+      "status": "approved-for-pilot",
+      "publicAllowed": true,
+      "caution": "20万分の1の広域地質資料です。ズーム13を超える拡大表示は精密判定に使用しないでください。透明なタイルは情報なしを意味するとは限りません。",
+      "opacityDefault": 0.65
+    }
+  ]
+}
