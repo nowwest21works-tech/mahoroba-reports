@@ -231,6 +231,35 @@
       const heading = document.createElement('h4');
       heading.textContent = group.title;
       section.append(heading);
+      if (group.floodDisplay) {
+        const appendLines = (parent, lines) => lines.forEach((value) => {
+          const line = document.createElement('p');
+          line.textContent = value;
+          parent.append(line);
+        });
+        appendLines(section, [`Status：${group.status}`, ...group.floodDisplay.overview]);
+        const fold = (title, lines) => {
+          const details = document.createElement('details');
+          details.className = 'research-layer-info';
+          const summary = document.createElement('summary');
+          summary.textContent = title;
+          details.append(summary);
+          appendLines(details, lines);
+          section.append(details);
+          return details;
+        };
+        fold('河川ごとの詳細', group.floodDisplay.details.length
+          ? group.floodDisplay.details : ['確認できた該当Featureの詳細はありません。']);
+        const evidence = fold('Evidence・出典・注意事項', group.floodDisplay.evidence);
+        (group.floodSourceLinks || []).forEach((link) => {
+          const source = document.createElement('p');
+          source.className = 'research-layer-source';
+          addExternalLink(source, link.url, link.label);
+          evidence.append(source);
+        });
+        output.append(section);
+        return;
+      }
       group.lines.forEach((value) => {
         const line = document.createElement('p');
         line.textContent = value;
@@ -336,9 +365,10 @@
     if (!state.identifyMode || !state.point || !state.evidence) return;
     const context = displayContext();
     const evidence = state.evidence.map((group) => ({ ...group,
-      lines: [`Status：${DecisionInspectorDomain.normalizeStatus(group.status)}`, ...group.lines], link: null }));
-    const sources = [...state.evidence, ...context].filter((group) => group.link)
-      .map((group) => ({ ...group.link, label: `${group.title}：${group.link.label}` }));
+      lines: [`Status：${DecisionInspectorDomain.normalizeStatus(group.status)}`, ...group.lines], floodSourceLinks: group.floodDisplay ? group.links : null, link: null, links: null }));
+    const sources = [...state.evidence, ...context].flatMap((group) =>
+      (group.floodDisplay ? [] : (group.links || (group.link ? [group.link] : [])))
+        .map((link) => ({ ...link, label: `${group.title}：${link.label}` })));
     identifyResult('', [
       { title: 'Decision Inspector · 地点', lines: [
         `緯度：${state.point.lat.toFixed(6)} / 経度：${state.point.lng.toFixed(6)}`,
@@ -351,7 +381,7 @@
       { title: '注意事項', lines: [
         'READYは資料の取得状態です。安全・危険・購入推奨を意味しません。',
         'NO_DATAは公式資料で値・地形を確認できない状態です。該当なしとは判定しません。',
-        'ハザード・都市計画・宅地利用は表示Contextのみです。ラスター色から意味を判定しません。',
+        '洪水のみXKT026 Vectorで地点照会します。他のハザード・都市計画・宅地利用は表示Contextのみです。ラスター色から意味を判定しません。',
         '地質図は20万分の1の資料です。正式な区域は自治体資料、地盤は現地調査で確認してください。',
         '地形分類・DEM・地質はEVIDENCE。Deep TimeのRECONSTRUCTION / ILLUSTRATIONとは分けて扱います。',
       ] },
@@ -363,10 +393,12 @@
     state.point = { lat: latlng.lat, lng: latlng.lng };
     state.evidence = null;
     identifyResult(`緯度：${latlng.lat.toFixed(6)} / 経度：${latlng.lng.toFixed(6)} · 資料を確認しています…`, []);
-    const sections = await Promise.allSettled([identifyTerrain(latlng), identifyElevation(latlng), identifyGeology(latlng)]);
+    const sections = await Promise.allSettled([identifyTerrain(latlng), identifyElevation(latlng), identifyGeology(latlng), globalThis.FloodIdentify
+      ? FloodIdentify.identify(latlng).then(FloodIdentifyDomain.toGroup)
+      : Promise.resolve({ title: '洪水浸水想定｜想定最大規模', status: 'UNAVAILABLE', lines: ['Local Pilot providerを利用できません。'] })]);
     if (!DecisionInspectorDomain.acceptResult(version, state.requestVersion, state.identifyMode)) return;
     state.evidence = sections.map((result, index) => result.status === 'fulfilled' ? result.value
-      : { title: ['地形分類', '地点標高', '地質'][index], status: 'UNAVAILABLE', lines: ['取得できませんでした。値は補完しません。'] });
+      : { title: ['地形分類', '地点標高', '地質', '洪水浸水想定｜想定最大規模'][index], status: 'UNAVAILABLE', lines: ['取得できませんでした。値は補完しません。'] });
     renderInspector();
   }
 
@@ -529,6 +561,7 @@
     identifyToggle.addEventListener('change', () => {
       state.identifyMode = identifyToggle.checked;
       const output = document.getElementById('geology-identify-result');
+      globalThis.FloodIdentify?.cancel();
       state.requestVersion += 1;
       state.point = null;
       state.evidence = null;

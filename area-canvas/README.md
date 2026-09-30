@@ -119,3 +119,7 @@ Statusは資料の取得状態です。全項目取得はREADY、一部取得・
 Research Layerの選択・表示状態、宅地利用年代（OFF時も選択値を明記）、ハザードの選択、都市計画の表示状態、Deep Timeの選択時代・未接続状態は現在の操作に追従します。Contextは地点Evidenceではなく、ハザードの取得状態・地点該当、都市計画の地点区域、宅地利用の地点分類は判定しません。DEMは既存の公式符号化仕様で照会し、表示色の意味解析は行いません。
 
 連続クリックでは最新地点だけを採用し、OFF後の遅延応答は表示しません。案件保存・DB・dataset・外部APIの追加はありません。外部通信のCORS・実地点での応答、画面操作はHuman Browser Reviewで確認してください。
+
+## Hazard Identify Pilot 01｜Flood（Local）
+
+Decision InspectorにXKT026の公式Vector Evidenceを追加しました。洪水Rasterとは独立して地点照会し、全該当Featureの河川・管理者・公式浸水深ランク・年度根拠・Status・出典を表示します。API KeyはPython proxyの環境変数だけを使用します。通常のStatic ServerではFloodはUNAVAILABLEです。起動・仕様・制約・QA証拠は [Local Pilot手順](docs/hazard-identify-flood-pilot.md) を参照してください。Deep Time・公開設定・DBには変更ありません。
