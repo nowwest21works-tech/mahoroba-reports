@@ -1,7 +1,7 @@
 ((globalThis) => {
   const PANE_NAME = 'public-research-pane';
   const MANIFEST_URL = './data/research-layers/manifest.json';
-  const state = { layers: [], map: null, opacity: 0.65, overlays: new Map(), identifyMode: false, landUseYear: 1997 };
+  const state = { layers: [], map: null, opacity: 0.65, overlays: new Map(), identifyMode: false, landUseYear: 1997, point: null, evidence: null, requestVersion: 0 };
   const LEGENDS = Object.freeze({
     'landform-classification': {
       url: 'https://www.gsi.go.jp/bousaichiri/fc_index.html',
@@ -208,6 +208,7 @@
     if (health === 'PARTIAL') setStatus(id, '一部範囲では表示できない場合があります', 'warning');
     if (health === 'UNAVAILABLE') setStatus(id, 'タイルを取得できませんでした。この表示範囲では地図資料を確認できません', 'error');
     updateResolutionNote(id);
+    renderInspector();
   }
 
   function updateResolutionNote(id) {
@@ -235,19 +236,20 @@
         line.textContent = value;
         section.append(line);
       });
-      if (group.link) {
+      const links = group.links || (group.link ? [group.link] : []);
+      links.forEach((link) => {
         const source = document.createElement('p');
         source.className = 'research-layer-source';
-        addExternalLink(source, group.link.url, group.link.label);
+        addExternalLink(source, link.url, link.label);
         section.append(source);
-      }
+      });
       output.append(section);
     });
   }
 
   async function identifyGeology(latlng) {
     const geologyInput = document.querySelector('[data-research-layer="seamless-geology"]');
-    if (!geologyInput?.checked) return { title: '地質（GSJ）', lines: ['地質図レイヤーがOFFのため照会していません。'] };
+    if (!geologyInput?.checked) return { title: '地質（GSJ）', status: 'UNAVAILABLE', lines: ['地質図レイヤーがOFFのため照会していません。'], link: { url: LEGENDS['seamless-geology'].url, label: 'GSJ公式凡例' } };
     try {
       const point = `${latlng.lat},${latlng.lng}`;
       const url = `https://gbank.gsj.jp/seamless/v2/api/1.3.1/legend.json?point=${encodeURIComponent(point)}`;
@@ -263,11 +265,12 @@
       if (!data || typeof data !== 'object' || Array.isArray(data) || fields.length === 0) throw new Error('unknown legend');
       return {
         title: '地質分類（産総研GSJ・地点別Web API）',
+        status: fields.length === 4 ? 'READY' : 'PARTIAL',
         lines: fields.map(([label, value]) => `${label}：${value}`),
         link: { url: 'https://gbank.gsj.jp/seamless/v2/api/1.3.1/', label: '出典：産総研GSJ Web API' },
       };
     } catch {
-      return { title: '地質分類（産総研GSJ）', lines: ['この地点の地質情報を確認できませんでした。'] };
+      return { title: '地質分類（産総研GSJ）', status: 'UNAVAILABLE', lines: ['この地点の地質情報を確認できませんでした。応答なし・未知の凡例は補完しません。'], link: { url: 'https://gbank.gsj.jp/seamless/v2/api/1.3.1/', label: 'GSJ Web API' } };
     }
   }
 
@@ -281,12 +284,12 @@
       if (item.risk) lines.push(`地形から見た一般的な自然災害リスク：${item.risk}`);
       lines.push('これは地形分類項目ごとの一般的な傾向で、個別地点の危険度判定ではありません。');
       if (result.status === 'PARTIAL') lines.push('自然地形・人工地形タイルの一部を取得できませんでした。表示内容は取得できた公式データに限ります。');
-      return { title: '地形分類（国土地理院・ベクトル資料）', lines, link: source };
+      return { title: '地形分類（国土地理院・ベクトル資料）', status: item.name ? DecisionInspectorDomain.normalizeStatus(result.status) : 'PARTIAL', lines, link: source };
     }
     const message = result.status === 'NO_FEATURE'
       ? 'この地点の地形分類データは見つかりませんでした。未整備・範囲外の可能性があり、安全や該当地形なしを意味しません。'
       : 'この地点の地形分類を確認できませんでした。公式タイルの取得または応答を確認できません。';
-    return { title: '地形分類（国土地理院・ベクトル資料）', lines: [message], link: source };
+    return { title: '地形分類（国土地理院・ベクトル資料）', status: DecisionInspectorDomain.normalizeStatus(result.status), lines: [message], link: source };
   }
 
   async function identifyElevation(latlng) {
@@ -299,7 +302,7 @@
       const message = result.status === 'NO_DATA'
         ? 'この地点の標高値を確認できませんでした。公式DEMの値なし・提供範囲外等の可能性があり、地点の状態は判定できません。'
         : 'この地点の標高タイルを取得できず、値を確認できませんでした。';
-      return { title: '地点標高（国土地理院DEM）', lines: [message], link: sourceLink };
+      return { title: '地点標高（国土地理院DEM）', status: result.status, lines: [message, 'DEM種別：未確認', '元データ：この地点で値を取得できたDEMなし'], link: sourceLink };
     }
     const lines = [
       `標高：約 ${result.value.toFixed(result.dem.decimals)} m`,
@@ -307,16 +310,64 @@
       `元データ：${result.dem.source}`,
     ];
     if (result.status === 'PARTIAL') lines.push('高解像度候補を一部取得できず、取得できたDEM値を表示しています。');
-    return { title: '地点標高（国土地理院DEM）', lines, link: sourceLink };
+    return { title: '地点標高（国土地理院DEM）', status: result.status, lines, link: sourceLink };
+  }
+
+  function displayContext() {
+    const groups = [];
+    const selected = state.layers.filter((layer) =>
+      document.querySelector(`[data-research-layer="${layer.id}"]`)?.checked);
+    groups.push({ title: '現在の表示Context · Research Layer', lines: selected.length
+      ? selected.map((layer) => `${layer.title}：${document.querySelector(`[data-research-state="${layer.id}"]`)?.textContent || '未確認'} · ${layer.authority}候補`)
+      : ['選択なし'] });
+    groups.push({ title: '宅地利用年代', lines: [`選択年代：${state.landUseYear}年 · ${selected.some((layer) => layer.id === 'chubu-land-use') ? 'ON' : 'OFF'}`, '過去の資料です。現在の土地利用・地点分類は判定していません。'] });
+    const hazards = Array.from(document.querySelectorAll('[data-hazard]:checked'));
+    groups.push({ title: 'Hazard Layer', lines: hazards.length
+      ? hazards.map((input) => `${input.closest('label').querySelector('.hazard-name').textContent}（${input.closest('label').querySelector('.hazard-tag').textContent}）：選択ON（取得状況・地点該当は未確認）`)
+      : ['選択なし'], link: { url: 'https://disaportal.gsi.go.jp/', label: 'ハザードマップポータル' } });
+    groups.push({ title: '都市計画Layer', lines: [document.getElementById('urban-area-classification-state').textContent, '参照資料：都市計画決定GISデータ（2025年度）XKT001加工。地点の区域区分は照会していません。'], link: { url: 'https://www.reinfolib.mlit.go.jp/help/apiManual/xkt001/', label: '国土交通省 XKT001資料' } });
+    const era = document.querySelector('[name="deep-time-era"]:checked');
+    groups.push({ title: 'Deep Time state', lines: [document.getElementById('deep-time-state').textContent, `選択時代：${era?.closest('label').textContent.trim() || '未確認'}`, '復元データ・補助レイヤーは未接続。地点Evidenceはありません。'], link: { url: './data/deep-time/README.md', label: 'Deep Time資料・Authority方針' } });
+    selected.forEach((layer) => groups.push({ title: `参照資料：${layer.title}`, lines: [], link: { url: layer.sourceUrl, label: `${layer.sourceOrg}「${layer.sourceTitle}」` } }));
+    return groups;
+  }
+
+  function renderInspector() {
+    if (!state.identifyMode || !state.point || !state.evidence) return;
+    const context = displayContext();
+    const evidence = state.evidence.map((group) => ({ ...group,
+      lines: [`Status：${DecisionInspectorDomain.normalizeStatus(group.status)}`, ...group.lines], link: null }));
+    const sources = [...state.evidence, ...context].filter((group) => group.link)
+      .map((group) => ({ ...group.link, label: `${group.title}：${group.link.label}` }));
+    identifyResult('', [
+      { title: 'Decision Inspector · 地点', lines: [
+        `緯度：${state.point.lat.toFixed(6)} / 経度：${state.point.lng.toFixed(6)}`,
+        `Evidence Status：${DecisionInspectorDomain.summarizeStatus(state.evidence.map((group) => group.status))}`,
+        '以下はこの地点をクリックした時の照会結果です。表示Contextは現在の操作に追従します。',
+      ] },
+      ...evidence,
+      ...context.filter((group) => group.lines.length).map((group) => ({ ...group, link: null })),
+      { title: '出典・参照資料', lines: [], links: sources },
+      { title: '注意事項', lines: [
+        'READYは資料の取得状態です。安全・危険・購入推奨を意味しません。',
+        'NO_DATAは公式資料で値・地形を確認できない状態です。該当なしとは判定しません。',
+        'ハザード・都市計画・宅地利用は表示Contextのみです。ラスター色から意味を判定しません。',
+        '地質図は20万分の1の資料です。正式な区域は自治体資料、地盤は現地調査で確認してください。',
+        '地形分類・DEM・地質はEVIDENCE。Deep TimeのRECONSTRUCTION / ILLUSTRATIONとは分けて扱います。',
+      ] },
+    ]);
   }
 
   async function identifyPoint(latlng) {
-    identifyResult('この地点の資料を確認しています…', []);
-    const geologyInput = document.querySelector('[data-research-layer="seamless-geology"]');
-    const tasks = [identifyTerrain(latlng), identifyElevation(latlng)];
-    if (geologyInput?.checked) tasks.push(identifyGeology(latlng));
-    const sections = await Promise.all(tasks);
-    identifyResult('', sections);
+    const version = ++state.requestVersion;
+    state.point = { lat: latlng.lat, lng: latlng.lng };
+    state.evidence = null;
+    identifyResult(`緯度：${latlng.lat.toFixed(6)} / 経度：${latlng.lng.toFixed(6)} · 資料を確認しています…`, []);
+    const sections = await Promise.allSettled([identifyTerrain(latlng), identifyElevation(latlng), identifyGeology(latlng)]);
+    if (!DecisionInspectorDomain.acceptResult(version, state.requestVersion, state.identifyMode)) return;
+    state.evidence = sections.map((result, index) => result.status === 'fulfilled' ? result.value
+      : { title: ['地形分類', '地点標高', '地質'][index], status: 'UNAVAILABLE', lines: ['取得できませんでした。値は補完しません。'] });
+    renderInspector();
   }
 
   function handleMapClick(event) {
@@ -476,12 +527,18 @@
     const identifyToggle = document.getElementById('geology-identify-mode');
     identifyToggle.disabled = false;
     identifyToggle.addEventListener('change', () => {
-      const geologyInput = document.querySelector('[data-research-layer="seamless-geology"]');
       state.identifyMode = identifyToggle.checked;
       const output = document.getElementById('geology-identify-result');
+      state.requestVersion += 1;
+      state.point = null;
+      state.evidence = null;
       if (!state.identifyMode && output) output.hidden = true;
       if (state.identifyMode) identifyResult('地図上の地点をクリックしてください。地形分類は独立した公式ベクトル資料を照会します。', []);
     });
+    document.getElementById('panel').addEventListener('change', () => globalThis.setTimeout(renderInspector, 0));
+    state.map.on('zoomend layeradd layerremove', () => globalThis.setTimeout(renderInspector, 0));
+    const contextObserver = new MutationObserver(renderInspector);
+    ['urban-area-classification-state', 'deep-time-state'].forEach((id) => contextObserver.observe(document.getElementById(id), { childList: true, characterData: true, subtree: true }));
     const status = document.getElementById('research-layers-state');
     if (status) {
       status.textContent = 'レイヤーは個別にONにしてください。対応zoom外は表示しません。';

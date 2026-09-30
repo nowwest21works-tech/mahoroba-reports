@@ -71,6 +71,7 @@
     });
     featureLayer.on('click', (event) => {
       L.DomEvent.stopPropagation(event.originalEvent);
+      if (root.ResearchLayers?.handleMapClick(event)) featureLayer.closePopup();
     });
   }
 

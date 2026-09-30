@@ -285,7 +285,7 @@
         </div>
         <div class="research-identify-control">
           <label><input type="checkbox" id="geology-identify-mode" disabled /> この地点を調べる</label>
-          <p class="research-identify-hint">地形分類は別の公式ベクトル資料から取得します。地質図がONの場合はGSJの地点別凡例も表示します。</p>
+          <p class="research-identify-hint">地点をクリックすると、座標・地形分類・標高・地質・現在の表示Contextをまとめて確認できます。地質の照会は地質図ON時のみです。</p>
           <div class="research-identify-result" id="geology-identify-result" role="status" aria-live="polite" hidden></div>
           <p class="research-layer-source">出典：産総研 地質調査総合センター「20万分の1日本シームレス地質図V2」</p>
         </div>
@@ -465,7 +465,8 @@
 <script src="./js/terrain-identify.js?v=20260929-inspector-1" defer></script>
 <script src="./js/elevation-identify-domain.js?v=20260929-pack02-1" defer></script>
 <script src="./js/elevation-identify.js?v=20260929-pack02-1" defer></script>
-<script src="./js/research-layers.js?v=20260929-inspector-1" defer></script>
+<script src="./js/decision-inspector-domain.js" defer></script>
+<script src="./js/research-layers.js?v=20260930-decision-inspector" defer></script>
 <script src="./js/app.js?v=20260929-identify" defer></script>
 </body>
 </html>

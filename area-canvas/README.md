@@ -109,3 +109,13 @@ W05を含む内部QA用は`npm run data:area-canvas`で生成します。
 - main反映 / GitHub Pages公開更新
 - 地理データの正本差替え（dataset版・取得元・filter条件の変更）
 - 顧客実利用開始
+
+## Decision Inspector v0.1
+
+「地理データを重ねる」内の「この地点を調べる」をONにし、地点をクリックすると、座標、地形分類、DEM標高・種別・元データ、地質、各取得Status、現在の表示Context、出典、注意事項を同じInspectorへ集約します。9つのTop-level Sectionは維持します。地質照会は従来どおり地質図ON時のみで、OFF時は未照会のUNAVAILABLEです。
+
+Statusは資料の取得状態です。全項目取得はREADY、一部取得・未照会・欠測の混在はPARTIAL、全項目取得不能はUNAVAILABLE、全項目値なしはNO_DATAです。地形のNO_FEATUREはInspectorではNO_DATAに統一し、原典の返却値は変更しません。未知の地質応答はUNAVAILABLEとし、NoDataに推測で変換しません。
+
+Research Layerの選択・表示状態、宅地利用年代（OFF時も選択値を明記）、ハザードの選択、都市計画の表示状態、Deep Timeの選択時代・未接続状態は現在の操作に追従します。Contextは地点Evidenceではなく、ハザードの取得状態・地点該当、都市計画の地点区域、宅地利用の地点分類は判定しません。DEMは既存の公式符号化仕様で照会し、表示色の意味解析は行いません。
+
+連続クリックでは最新地点だけを採用し、OFF後の遅延応答は表示しません。案件保存・DB・dataset・外部APIの追加はありません。外部通信のCORS・実地点での応答、画面操作はHuman Browser Reviewで確認してください。
