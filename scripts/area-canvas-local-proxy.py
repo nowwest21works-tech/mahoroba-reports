@@ -1,4 +1,4 @@
-"""Area Canvas local-only XKT026/027/028 proxy + restricted static server (stdlib only)."""
+"""Area Canvas local-only XKT026/027/028/029 proxy + restricted static server (stdlib only)."""
 import argparse
 import gzip
 import io
@@ -22,6 +22,8 @@ PROVIDERS = {
                     'fields': ('A49_001', 'A49_002', 'A49_003', 'target_year'), 'zooms': (13, 14, 15)},
     'tsunami': {'url': 'https://www.reinfolib.mlit.go.jp/ex-api/external/XKT028',
                'fields': ('A40_001', 'A40_002', 'A40_003', 'target_year'), 'zooms': (14, 15)},
+    'landslide': {'url': 'https://www.reinfolib.mlit.go.jp/ex-api/external/XKT029',
+                  'fields': tuple(f'A33_{i:03d}' for i in range(1, 9)), 'zooms': (11, 12, 13, 14, 15)},
 }
 LIMIT = 32 * 1024 * 1024
 _UPSTREAM_LOCK = threading.Lock()
@@ -105,6 +107,7 @@ class TileService:
 class Handler(SimpleHTTPRequestHandler):
     service = TileService()
     coastal_services = {kind: TileService(provider=kind) for kind in ('storm-surge', 'tsunami')}
+    landslide_service = TileService(provider='landslide')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -156,7 +159,7 @@ class Handler(SimpleHTTPRequestHandler):
                 self.send_json(400, {'status': 'UNAVAILABLE'})
                 return
             try:
-                service = self.service if kind == 'flood' else self.coastal_services[kind]
+                service = self.service if kind == 'flood' else self.landslide_service if kind == 'landslide' else self.coastal_services[kind]
                 body = service.get(tile)
                 self.send_json(200, body)
             except Exception:

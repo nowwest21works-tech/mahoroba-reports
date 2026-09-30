@@ -46,6 +46,8 @@ function harness(terrainIdentify, elevation = { status: 'NO_DATA', value: null }
     CoastalIdentifyDomain: require('../../area-canvas/js/coastal-identify-domain.js'),
     CoastalIdentify: { stormSurge: { identify: async () => ({status:'NO_DATA',hits:[],invalidCount:0}) },
       tsunami: { identify: async () => ({status:'UNAVAILABLE',hits:[],invalidCount:0}) } },
+    LandslideIdentifyDomain: require('../../area-canvas/js/landslide-identify-domain.js'),
+    LandslideIdentify: { identify: async () => ({status:'NO_DATA',hits:[],invalidCount:0,lineCount:0}), cancel: () => {} },
     TerrainIdentify: { identify: terrainIdentify },
     ElevationIdentify: { identify: async () => elevation },
     fetch: async () => { geologyRequests += 1; throw Error('offline'); },
@@ -82,6 +84,12 @@ test('adapter renders coordinates, missing evidence, sources and live context wi
     assert.ok(coastalFolds.every((node) => node.open !== true));
     assert.equal(coastalFolds[1].children.filter((node) => node.children.some((child) => child.tagName === 'a')).length, 3);
   }
+  const landslide = h.output.children.find((node) => node.children[0]?.textContent === '土砂災害');
+  const landslideFolds = landslide.children.filter((node) => node.tagName === 'details');
+  assert.deepEqual(landslideFolds.map((node) => node.children[0].textContent), ['詳細', 'Evidence・出典・注意事項']);
+  assert.ok(landslideFolds.every((node) => node.open !== true));
+  assert.equal(landslideFolds[1].children.filter((node) => node.children.some((child) => child.tagName === 'a')).length, 7);
+  assert.match(h.text(), /斜面災害等の危険がないことを意味しません/);
   assert.match(h.text(), /地質図レイヤーがOFF/);
   assert.equal(h.geologyRequests(), 0);
   const sourceIndex = h.text().indexOf('出典・参照資料');

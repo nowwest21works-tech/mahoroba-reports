@@ -127,3 +127,7 @@ Decision InspectorにXKT026の公式Vector Evidenceを追加しました。洪�
 ## Hazard Identify Coastal Pilot 01（Local）
 
 Decision Inspectorに公式XKT027（高潮）・XKT028（津波）のVector Evidenceを追加しました。Rasterとは独立照会し、Status・該当件数・浸水深を常時表示、詳細とEvidence・出典・注意事項は折りたたみます。浸水深は各APIの文字列を保持し、Floodのランク表で変換しません。起動・公式Schema・Fail Closed・Human Browser確認は [Coastal Pilot手順](docs/hazard-identify-coastal-pilot.md) を参照してください。土砂災害の地点Identifyは未実装です。
+
+## Hazard Identify Landslide Pilot 01（Local）
+
+Decision Inspectorに公式XKT029（土砂災害警戒区域等）のVector Identifyを追加しました。現象種別・指定済／指定前を含む区域区分を各Featureで保持します。詳細・Evidenceは折りたたみ、Line資料はPolygonへ補完しません。公式仕様・年度・Fail Closed・起動・Human Browser確認は [Landslide Pilot手順](docs/hazard-identify-landslide-pilot.md) を参照してください。
