@@ -123,3 +123,7 @@ Research Layerの選択・表示状態、宅地利用年代（OFF時も選択値
 ## Hazard Identify Pilot 01｜Flood（Local）
 
 Decision InspectorにXKT026の公式Vector Evidenceを追加しました。洪水Rasterとは独立して地点照会し、全該当Featureの河川・管理者・公式浸水深ランク・年度根拠・Status・出典を表示します。API KeyはPython proxyの環境変数だけを使用します。通常のStatic ServerではFloodはUNAVAILABLEです。起動・仕様・制約・QA証拠は [Local Pilot手順](docs/hazard-identify-flood-pilot.md) を参照してください。Deep Time・公開設定・DBには変更ありません。
+
+## Hazard Identify Coastal Pilot 01（Local）
+
+Decision Inspectorに公式XKT027（高潮）・XKT028（津波）のVector Evidenceを追加しました。Rasterとは独立照会し、Status・該当件数・浸水深を常時表示、詳細とEvidence・出典・注意事項は折りたたみます。浸水深は各APIの文字列を保持し、Floodのランク表で変換しません。起動・公式Schema・Fail Closed・Human Browser確認は [Coastal Pilot手順](docs/hazard-identify-coastal-pilot.md) を参照してください。土砂災害の地点Identifyは未実装です。

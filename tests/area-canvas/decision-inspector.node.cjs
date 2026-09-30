@@ -43,6 +43,9 @@ function harness(terrainIdentify, elevation = { status: 'NO_DATA', value: null }
   const context = vm.createContext({ document, DecisionInspectorDomain: domain,
     FloodIdentifyDomain: require('../../area-canvas/js/flood-identify-domain.js'),
     FloodIdentify: { identify: async () => ({ status: 'NO_DATA', hits: [], invalidCount: 0 }) },
+    CoastalIdentifyDomain: require('../../area-canvas/js/coastal-identify-domain.js'),
+    CoastalIdentify: { stormSurge: { identify: async () => ({status:'NO_DATA',hits:[],invalidCount:0}) },
+      tsunami: { identify: async () => ({status:'UNAVAILABLE',hits:[],invalidCount:0}) } },
     TerrainIdentify: { identify: terrainIdentify },
     ElevationIdentify: { identify: async () => elevation },
     fetch: async () => { geologyRequests += 1; throw Error('offline'); },
@@ -72,6 +75,13 @@ test('adapter renders coordinates, missing evidence, sources and live context wi
   assert.ok(folds.every((node) => node.open !== true));
   assert.ok(!flood.children.filter((node) => node.tagName === 'p').some((node) => node.textContent.includes('2024年度')));
   assert.equal(folds[1].children.filter((node) => node.children.some((child) => child.tagName === 'a')).length, 3);
+  for (const title of ['高潮浸水想定', '津波浸水想定']) {
+    const coastal = h.output.children.find((node) => node.children[0]?.textContent === title);
+    const coastalFolds = coastal.children.filter((node) => node.tagName === 'details');
+    assert.deepEqual(coastalFolds.map((node) => node.children[0].textContent), ['詳細', 'Evidence・出典・注意事項']);
+    assert.ok(coastalFolds.every((node) => node.open !== true));
+    assert.equal(coastalFolds[1].children.filter((node) => node.children.some((child) => child.tagName === 'a')).length, 3);
+  }
   assert.match(h.text(), /地質図レイヤーがOFF/);
   assert.equal(h.geologyRequests(), 0);
   const sourceIndex = h.text().indexOf('出典・参照資料');

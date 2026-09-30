@@ -1,4 +1,4 @@
-"""Area Canvas local-only XKT026 proxy + restricted static server (stdlib only)."""
+"""Area Canvas local-only XKT026/027/028 proxy + restricted static server (stdlib only)."""
 import argparse
 import gzip
 import io
@@ -16,22 +16,31 @@ from urllib.request import Request, build_opener, HTTPRedirectHandler
 ROOT = Path(__file__).resolve().parents[1]
 UPSTREAM = 'https://www.reinfolib.mlit.go.jp/ex-api/external/XKT026'
 FIELDS = ('A31a_201', 'A31a_202', 'A31a_203', 'A31a_204', 'A31a_205')
+PROVIDERS = {
+    'flood': {'url': UPSTREAM, 'fields': FIELDS, 'zooms': (14, 15)},
+    'storm-surge': {'url': 'https://www.reinfolib.mlit.go.jp/ex-api/external/XKT027',
+                    'fields': ('A49_001', 'A49_002', 'A49_003', 'target_year'), 'zooms': (13, 14, 15)},
+    'tsunami': {'url': 'https://www.reinfolib.mlit.go.jp/ex-api/external/XKT028',
+               'fields': ('A40_001', 'A40_002', 'A40_003', 'target_year'), 'zooms': (14, 15)},
+}
 LIMIT = 32 * 1024 * 1024
+_UPSTREAM_LOCK = threading.Lock()
+_LAST_UPSTREAM_REQUEST = 0.0
 
 class NoRedirect(HTTPRedirectHandler):
     def redirect_request(self, req, fp, code, msg, headers, newurl):
         return None
 
-def tile_query(query):
+def tile_query(query, zooms=(14, 15)):
     args = parse_qs(query, keep_blank_values=True)
     if set(args) != {'z', 'x', 'y'} or any(len(v) != 1 or not v[0].isascii() or not v[0].isdigit() for v in args.values()):
         raise ValueError('Invalid tile')
     z, x, y = (int(args[k][0]) for k in ('z', 'x', 'y'))
-    if z not in (14, 15) or not 0 <= x < 2 ** z or not 0 <= y < 2 ** z:
+    if z not in zooms or not 0 <= x < 2 ** z or not 0 <= y < 2 ** z:
         raise ValueError('Invalid tile')
     return z, x, y
 
-def sanitize_collection(body):
+def sanitize_collection(body, fields=FIELDS):
     if body == []:
         return {'type': 'FeatureCollection', 'features': []}
     if not isinstance(body, dict) or body.get('type') != 'FeatureCollection' or not isinstance(body.get('features'), list):
@@ -44,11 +53,14 @@ def sanitize_collection(body):
         props = item.get('properties')
         props = props if isinstance(props, dict) else {}
         features.append({'type': item.get('type'), 'geometry': item.get('geometry'),
-                         'properties': {k: props.get(k) for k in FIELDS}})
+                         'properties': {k: props.get(k) for k in fields}})
     return {'type': 'FeatureCollection', 'features': features}
 
 class TileService:
-    def __init__(self, fetcher=None):
+    def __init__(self, fetcher=None, provider='flood'):
+        if provider not in PROVIDERS:
+            raise ValueError('Unknown provider')
+        self.provider = PROVIDERS[provider]
         self.cache = OrderedDict()
         self.lock = threading.Lock()
         self.last_request = 0
@@ -59,7 +71,7 @@ class TileService:
         if not key:
             raise ValueError('Unavailable')
         z, x, y = tile
-        req = Request(UPSTREAM + '?' + urlencode({'response_format': 'geojson', 'z': z, 'x': x, 'y': y}),
+        req = Request(self.provider['url'] + '?' + urlencode({'response_format': 'geojson', 'z': z, 'x': x, 'y': y}),
                       headers={'Ocp-Apim-Subscription-Key': key, 'Accept': 'application/json', 'Accept-Encoding': 'gzip'})
         with build_opener(NoRedirect()).open(req, timeout=20) as response:
             raw = response.read(LIMIT + 1)
@@ -72,17 +84,19 @@ class TileService:
         # Raw payload is never printed or saved; reject any reflected secret.
         if key.encode() in raw:
             raise ValueError('Unavailable')
-        return sanitize_collection(json.loads(raw))
+        return sanitize_collection(json.loads(raw), self.provider['fields'])
 
     def get(self, tile):
+        global _LAST_UPSTREAM_REQUEST
         with self.lock:
             now = time.monotonic()
             prior = self.cache.get(tile)
             if prior and now - prior[0] < 300:
                 return prior[1]
-            time.sleep(max(0, 0.5 - (now - self.last_request)))
-            self.last_request = time.monotonic()
-            body = self.fetcher(tile)
+            with _UPSTREAM_LOCK:
+                time.sleep(max(0, 0.5 - (time.monotonic() - _LAST_UPSTREAM_REQUEST)))
+                _LAST_UPSTREAM_REQUEST = time.monotonic()
+                body = self.fetcher(tile)
             self.cache[tile] = (time.monotonic(), body)
             while len(self.cache) > 16:
                 self.cache.popitem(last=False)
@@ -90,6 +104,7 @@ class TileService:
 
 class Handler(SimpleHTTPRequestHandler):
     service = TileService()
+    coastal_services = {kind: TileService(provider=kind) for kind in ('storm-surge', 'tsunami')}
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=str(ROOT), **kwargs)
@@ -133,17 +148,19 @@ class Handler(SimpleHTTPRequestHandler):
             self.send_json(403, {'status': 'UNAVAILABLE'})
             return
         url = urlsplit(self.path)
-        if url.path == '/api/flood':
+        kind = url.path.removeprefix('/api/') if url.path.startswith('/api/') else None
+        if kind in PROVIDERS:
             try:
-                tile = tile_query(url.query)
+                tile = tile_query(url.query, PROVIDERS[kind]['zooms'])
             except (ValueError, OverflowError):
                 self.send_json(400, {'status': 'UNAVAILABLE'})
                 return
             try:
-                body = self.service.get(tile)
+                service = self.service if kind == 'flood' else self.coastal_services[kind]
+                body = service.get(tile)
                 self.send_json(200, body)
             except Exception:
-                self.send_json(503, {'status': 'UNAVAILABLE', 'message': '公式Flood資料を取得できません。'})
+                self.send_json(503, {'status': 'UNAVAILABLE', 'message': '公式ハザード資料を取得できません。'})
             return
         if not self.static_allowed(url.path):
             self.send_json(404, {'status': 'UNAVAILABLE'})

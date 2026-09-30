@@ -55,4 +55,58 @@ class ProxyTest(unittest.TestCase):
         finally:
             server.shutdown();server.server_close();worker.join()
 
+class CoastalProxyTest(unittest.TestCase):
+    def test_independent_api_zooms_and_attribute_allowlists(self):
+        self.assertEqual(proxy.tile_query('z=13&x=0&y=0',proxy.PROVIDERS['storm-surge']['zooms']),(13,0,0))
+        with self.assertRaises(ValueError): proxy.tile_query('z=13&x=0&y=0',proxy.PROVIDERS['tsunami']['zooms'])
+        for kind,prefix in [('storm-surge','A49'),('tsunami','A40')]:
+            fields=proxy.PROVIDERS[kind]['fields']
+            result=proxy.sanitize_collection({'type':'FeatureCollection','features':[{'type':'Feature','geometry':None,
+                'properties':{prefix+'_003':'3m以上5m未満','target_year':2022,'A31a_205':2,'unapproved':'discard'}}]},fields)
+            self.assertEqual(set(result['features'][0]['properties']),set(fields))
+            self.assertEqual(result['features'][0]['properties']['target_year'],2022)
+            self.assertNotIn('A31a_205',result['features'][0]['properties'])
+        with self.assertRaises(ValueError): proxy.TileService(provider='landslide')
+
+    def test_coastal_missing_key(self):
+        with patch.dict(proxy.os.environ, {'REINFOLIB_API_KEY':''}):
+            for kind in ('storm-surge','tsunami'):
+                with self.assertRaises(ValueError): proxy.TileService(provider=kind).fetch((14,0,0))
+
+    def test_coastal_http_endpoints_cache_and_boundaries(self):
+        calls=[]
+        def service(kind):
+            def fetcher(tile):
+                calls.append((kind,tile))
+                return {'type':'FeatureCollection','features':[]}
+            return proxy.TileService(fetcher,provider=kind)
+        proxy.Handler.coastal_services={kind:service(kind) for kind in ('storm-surge','tsunami')}
+        server=proxy.ThreadingHTTPServer(('127.0.0.1',0),proxy.Handler)
+        worker=threading.Thread(target=server.serve_forever,daemon=True);worker.start()
+        base=f'http://127.0.0.1:{server.server_port}'
+        def request(path,headers=None):
+            return urllib.request.urlopen(urllib.request.Request(base+path,headers=headers or {}),timeout=4)
+        try:
+            for kind in ('storm-surge','tsunami'):
+                for _ in range(2):
+                    with request(f'/api/{kind}?z=14&x=0&y=0') as response:
+                        self.assertEqual(json.load(response)['features'],[])
+                        self.assertIsNone(response.headers.get('Access-Control-Allow-Origin'))
+                for headers in ({'Origin':'https://example.invalid'},{'Host':'example.invalid'},{'Sec-Fetch-Site':'cross-site'}):
+                    with self.assertRaises(urllib.error.HTTPError) as error: request(f'/api/{kind}?z=14&x=0&y=0',headers)
+                    self.assertEqual(error.exception.code,403);error.exception.close()
+            self.assertEqual(len(calls),2)
+            with request('/api/storm-surge?z=13&x=0&y=0') as response: self.assertEqual(response.status,200)
+            for path,code in [('/api/tsunami?z=13&x=0&y=0',400),('/api/landslide?z=14&x=0&y=0',404),
+                              ('/api/storm-surge?z=14&x=0&y=0&url=other',400)]:
+                with self.assertRaises(urllib.error.HTTPError) as error: request(path)
+                self.assertEqual(error.exception.code,code);error.exception.close()
+            for kind in ('storm-surge','tsunami'):
+                proxy.Handler.coastal_services[kind]=proxy.TileService(lambda tile: (_ for _ in ()).throw(ValueError('PRIVATE_ERROR')),provider=kind)
+                with self.assertRaises(urllib.error.HTTPError) as error: request(f'/api/{kind}?z=14&x=1&y=1')
+                self.assertEqual(error.exception.code,503)
+                self.assertNotIn(b'PRIVATE_ERROR',error.exception.read());error.exception.close()
+        finally:
+            server.shutdown();server.server_close();worker.join()
+
 if __name__ == '__main__': unittest.main()
